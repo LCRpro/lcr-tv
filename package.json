@@ -5,6 +5,8 @@
   "engines": {
     "node": ">=22"
   },
+  "_comment_packageManager": "Fige pnpm pour tout le monde, y compris les machines d'EAS Build. Sans cela elles installaient avec pnpm 10, qui ne lit plus « pnpm.overrides » depuis ce fichier — le lockfile, ecrit par pnpm 9, declarait donc des overrides que l'installation figee ne retrouvait pas, et le build echouait avant meme de compiler.",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "_comment_postinstall": "@iptv/shared est consomme depuis son dist/, ignore par git : sans cette ligne une machine fraiche — celles d'EAS Build comme un clone neuf — installe les dependances et ne trouve pas le paquet partage.",
     "postinstall": "pnpm --filter @iptv/shared build",
