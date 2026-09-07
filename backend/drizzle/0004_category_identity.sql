@@ -1,0 +1,1 @@
+CREATE INDEX "categories_identity_idx" ON "categories" USING btree ("type","xtream_id","provider_id");

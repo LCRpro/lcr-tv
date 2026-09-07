@@ -1,0 +1,27 @@
+{
+  "name": "iptv-monorepo",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "_comment_postinstall": "@iptv/shared est consomme depuis son dist/, ignore par git : sans cette ligne une machine fraiche — celles d'EAS Build comme un clone neuf — installe les dependances et ne trouve pas le paquet partage.",
+    "postinstall": "pnpm --filter @iptv/shared build",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:web": "pnpm --filter web dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "19.2.3",
+      "react-dom": "19.2.3"
+    }
+  }
+}

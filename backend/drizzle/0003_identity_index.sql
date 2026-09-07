@@ -1,0 +1,2 @@
+CREATE INDEX "series_identity_idx" ON "series" USING btree ("xtream_id","provider_id");--> statement-breakpoint
+CREATE INDEX "streams_identity_idx" ON "streams" USING btree ("type","xtream_id","provider_id");

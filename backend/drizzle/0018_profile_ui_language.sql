@@ -1,0 +1,11 @@
+-- La langue de l'interface, distincte des langues du catalogue.
+--
+-- L'interface suivait la premiere langue mise en avant par le profil : un choix
+-- defendable, mais qui confondait deux intentions. Classer son catalogue en
+-- italien ne veut pas dire vouloir des boutons en italien — d'autant que
+-- l'interface n'existe qu'en quatre langues quand le catalogue en porte 127.
+--
+-- Nulle par defaut : le reglage suit alors les langues du catalogue, comme
+-- avant. Ce n'est donc pas un changement de comportement, c'est une echappatoire
+-- pour ceux qui en ont besoin.
+ALTER TABLE "profiles" ADD COLUMN "ui_language" text;

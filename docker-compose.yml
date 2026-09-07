@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: iptv-db
+    restart: unless-stopped
+    # 64 Mo par défaut : Postgres échoue en 53100 (« could not resize shared
+    # memory segment ») dès qu'une requête parallèle sur le catalogue dépasse.
+    shm_size: "1gb"
+    environment:
+      POSTGRES_USER: iptv
+      POSTGRES_PASSWORD: iptv
+      POSTGRES_DB: iptv
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iptv -d iptv"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:

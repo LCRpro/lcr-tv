@@ -1,0 +1,903 @@
+/*
+ * Squelettes, demarrage, declinaisons et le reste des ecrans.
+ *
+ * Tranche 7 sur 7 — voir `globals.css` pour l'ordre.
+ */
+
+/* ------------------------------------------------------------- squelettes */
+
+/*
+ * Une page qui charge montre sa forme, pas son attente.
+ *
+ * Un rond qui tourne au centre d'un écran vide ne dit rien : ni ce qui arrive,
+ * ni combien de temps ça prendra, et la page saute au moment où le contenu le
+ * remplace. Les squelettes occupent d'emblée la place exacte des vignettes,
+ * donc rien ne bouge à l'arrivée des données — et la mise en page est lisible
+ * avant même d'avoir un octet à afficher.
+ */
+.skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--elevated);
+  border-radius: var(--radius-sm);
+}
+
+/*
+ * Un reflet qui traverse, pas un clignotement.
+ *
+ * Une opacité qui pulse fait battre toute la page en même temps, ce qui attire
+ * l'œil sans l'informer. Le reflet balaie de gauche à droite : c'est le sens de
+ * lecture, et le décalage entre les blocs suggère une progression.
+ */
+.skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(232, 241, 247, 0.055),
+    var(--accent-soft),
+    transparent
+  );
+  animation: skel-sweep 1.5s var(--ease) infinite;
+}
+
+@keyframes skel-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* Décale chaque colonne : un balayage rigoureusement simultané se lit comme
+   un défaut d'affichage, pas comme un chargement. */
+.skel-grid > *:nth-child(3n + 2) .skel::after {
+  animation-delay: 0.12s;
+}
+.skel-grid > *:nth-child(3n + 3) .skel::after {
+  animation-delay: 0.24s;
+}
+
+.skel-line {
+  display: block;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.skel-sm {
+  height: 7px;
+  width: 38%;
+  opacity: 0.6;
+}
+
+/* La vignette garde le format de la vraie carte : 2/3 pour une affiche,
+   16/9 pour un logo de chaîne. Sinon la grille se réorganise à l'arrivée. */
+.skel-poster {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius);
+}
+
+.skel-wide {
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+}
+
+.skel-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.skel-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.skel-row .skel-wide {
+  flex-shrink: 0;
+  width: 92px;
+}
+
+.skel-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------ écran de démarrage */
+
+/*
+ * Le premier écran, avant même de savoir qui regarde.
+ *
+ * Il dure le temps d'un aller-retour de session : trop court pour lire une
+ * phrase, assez long pour qu'un écran noir vide passe pour une panne. La marque
+ * suffit — elle dit que l'application a démarré.
+ */
+.boot {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  gap: var(--space-4);
+  align-content: center;
+}
+
+.boot-mark {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  height: 44px;
+}
+
+/* Trois barres d'égaliseur : le logo lui-même, animé. Rien d'autre à dessiner,
+   et le mouvement dit « ça vit » là où un rond qui tourne dit « ça attend ». */
+.boot-mark span {
+  width: 7px;
+  border-radius: 4px;
+  background: var(--accent);
+  animation: boot-bar 1.05s var(--ease) infinite alternate;
+}
+
+.boot-mark span:nth-child(1) {
+  height: 40%;
+  animation-delay: 0s;
+}
+.boot-mark span:nth-child(2) {
+  height: 100%;
+  animation-delay: 0.18s;
+}
+.boot-mark span:nth-child(3) {
+  height: 62%;
+  animation-delay: 0.36s;
+}
+
+@keyframes boot-bar {
+  from {
+    transform: scaleY(0.35);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.boot-mark span {
+  transform-origin: bottom;
+}
+
+.boot-label {
+  font-family: var(--font-title);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* Le mouvement est décoratif : coupé, il ne reste qu'une forme statique
+   parfaitement lisible. */
+@media (prefers-reduced-motion: reduce) {
+  .skel::after,
+  .boot-mark span {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  font-size: var(--text-sm);
+  transition: background 0.15s var(--ease), color 0.15s var(--ease),
+    border-color 0.15s var(--ease);
+}
+
+.chip:hover {
+  background: var(--hover);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.chip[data-active='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ---------------------------------------------------- choix segmenté */
+
+/*
+ * Trois états visibles à la fois, plutôt qu'un menu déroulant.
+ *
+ * Un `<select>` cache les options tant qu'on ne l'ouvre pas : on ne sait pas
+ * ce qu'on peut demander avant de cliquer. À trois choix qui ne bougeront
+ * jamais, les montrer coûte moins de place que la flèche du menu.
+ */
+/*
+ * Le choix segmenté : une piste, et une pastille qui s'y déplace.
+ *
+ * Le libellé au repos était dans la teinte la plus pâle — celle des légendes —
+ * alors qu'il désigne un choix qu'on peut faire : deux options sur trois se
+ * lisaient mal. Il prend la teinte moyenne, et le survol lui donne son propre
+ * fond, pour que la cible se voie avant le clic et non après.
+ *
+ * La pastille retenue porte une ombre. Sans elle, elle était un aplat de plus
+ * dans un cadre d'aplats ; posée dessus, on voit qu'elle glisse sur une piste.
+ */
+.seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+}
+
+.seg button {
+  border: 0;
+  background: none;
+  padding: 5px var(--space-3);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--dim);
+  white-space: nowrap;
+  transition: color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.seg button:hover:not([data-on]) {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.seg button:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.seg button[data-on] {
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: var(--shadow);
+}
+
+/* ------------------------------------------------- trait de navigation */
+
+/*
+ * Il ne mesure rien.
+ *
+ * Aucune barre de progression de navigation ne connaît sa durée : afficher un
+ * pourcentage serait mentir. Celui-ci avance vite puis ralentit à l'approche du
+ * bord, sans jamais l'atteindre — il dit « ça travaille », et disparaît quand
+ * la page arrive.
+ */
+.nav-progress {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  height: 2px;
+  z-index: 60;
+  border-radius: 0 2px 2px 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  box-shadow: 0 0 10px var(--accent-line);
+  animation: nav-progress 2.4s var(--ease) forwards;
+}
+
+@keyframes nav-progress {
+  0% {
+    width: 0;
+  }
+  30% {
+    width: 42%;
+  }
+  70% {
+    width: 76%;
+  }
+  100% {
+    width: 92%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress {
+    animation: none;
+    width: 100%;
+    opacity: 0.6;
+  }
+}
+
+/* ---------------------------------------------------- champ à œil révélateur */
+
+.input-reveal {
+  position: relative;
+}
+
+.input-reveal input {
+  /* La place de l'œil, pour que le texte ne passe pas dessous. */
+  padding-right: var(--space-6);
+}
+
+.input-reveal button {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--faint);
+  transition: color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.input-reveal button:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+/* --------------------------------------------- compteur dans un choix segmenté */
+
+/*
+ * Le compte, dans sa pastille.
+ *
+ * « Films 12 » se lisait comme un seul libellé — le nombre passait pour la fin
+ * du mot. Dans sa pastille, il redevient une donnée, et il dit d'un coup d'œil
+ * où il y a quelque chose à voir avant même de cliquer.
+ */
+.seg-count {
+  margin-left: var(--space-1);
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.seg button[data-on] .seg-count {
+  background: color-mix(in srgb, var(--on-accent) 26%, transparent);
+  color: var(--on-accent);
+}
+
+/* =========================================================== accueil */
+
+/*
+ * Le salut, à côté du titre de la barre.
+ *
+ * « Accueil » tout seul ne s'adresse à personne. Sur un écran partagé, savoir
+ * pour qui la page propose ce qu'elle propose évite d'ouvrir le menu du compte
+ * pour vérifier qui est aux commandes.
+ */
+.page-hello {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--faint);
+  /* La date commence par le jour : « mardi 2 septembre » prend sa majuscule. */
+  text-transform: capitalize;
+}
+
+/*
+ * Le lien de fin de rangée.
+ *
+ * Il était en gris de légende, du même poids que les sous-titres de vignettes :
+ * on ne le voyait pas. Il reste discret au repos, mais la flèche avance au
+ * survol — assez pour signaler qu'il mène ailleurs.
+ */
+.row-more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--faint);
+  white-space: nowrap;
+  transition: color 0.15s var(--ease);
+}
+
+.row-more:hover {
+  color: var(--accent-hover);
+}
+
+.row-more span {
+  transition: transform 0.15s var(--ease);
+}
+
+.row-more:hover span {
+  transform: translateX(3px);
+}
+
+/* Le libellé de droite n'est pas un lien : il dit ce que le champ couvre.
+   Sur écran étroit il passe à la ligne pour rien, il disparaît. */
+@media (max-width: 720px) {
+  .row-header span.row-more {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------- langues d'un profil */
+
+/*
+ * Les drapeaux, à côté du salut de l'accueil.
+ *
+ * Tout l'écran dépend des langues mises en avant — ce qui remonte en tête de
+ * chaque rangée, l'ordre des catégories, les résultats de recherche — et rien
+ * ne le disait : un profil réglé en allemand voyait un catalogue allemand sans
+ * savoir d'où ça venait ni où le changer. Le lien mène au réglage.
+ */
+.page-langs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: var(--elevated);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  transition: box-shadow 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+.page-langs:hover {
+  background: var(--hover);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+/* Le sélecteur, dans le formulaire de profil. */
+.langs {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.langs-chosen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/*
+ * Une langue retenue, et son rang.
+ *
+ * L'ordre compte — la première passe devant la deuxième — et rien d'autre ne
+ * le montrerait : trois pastilles identiques se liraient comme un ensemble
+ * sans ordre, alors que déplacer la deuxième en première change tout l'écran.
+ */
+.lang-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-1);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.lang-chip > b {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.lang-chip > button {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--dim);
+  font-size: var(--text-md);
+  line-height: 1;
+  transition: background 0.13s var(--ease), color 0.13s var(--ease);
+}
+
+.lang-chip > button:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+/*
+ * La liste des langues disponibles.
+ *
+ * Le catalogue en contient 127 : sans hauteur bornée, le formulaire de profil
+ * devenait dix fois plus haut que l'écran. Le champ de filtre au-dessus fait
+ * le reste du travail.
+ */
+.langs-list {
+  max-height: 168px;
+  overflow-y: auto;
+  display: grid;
+  gap: 2px;
+  padding-right: var(--space-1);
+}
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--dim);
+  font-size: var(--text-sm);
+  text-align: left;
+  transition: background 0.13s var(--ease), color 0.13s var(--ease);
+}
+
+.lang-option:hover,
+.lang-option:focus-visible {
+  background: var(--hover);
+  color: var(--text);
+  outline: none;
+}
+
+/* Le volume, à droite : il dit si la langue vaut la peine d'être choisie. */
+.lang-option em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: var(--text-xs);
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dans le sélecteur de langues la note précède le contenu qu'elle explique :
+   la marge passe donc dessous, et le texte respire sur deux lignes. */
+.langs .field-note,
+.form-field > .field-note {
+  margin: 2px 0 var(--space-1);
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------- recherche */
+
+/* Une famille sans résultat reste visible mais inerte : la masquer ferait
+   sauter les boutons d'une frappe à l'autre. */
+.seg button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.seg button:disabled:hover {
+  color: var(--faint);
+}
+
+/* Posé seul dans le flux de la page et non dans l'en-tête d'un panneau, le
+   choix segmenté a besoin de sa propre respiration. */
+.seg-block {
+  margin-bottom: var(--space-5);
+}
+
+/* Le bloc de résultats garde l'espacement d'une rangée, sans son défilement :
+   la recherche montre tout, elle ne fait pas défiler. */
+.row > .grid {
+  margin-top: 2px;
+}
+
+/* Le décompte d'un bloc n'est pas un lien : il en prend la place et la
+   discrétion, mais ni la couleur au survol ni la flèche. */
+span.row-more {
+  cursor: default;
+}
+
+/* ------------------------------------------------------- image manquante */
+
+/*
+ * Le cadre reste occupé quand le fournisseur n'a pas d'image.
+ *
+ * Il n'en donne pas pour tout, et les adresses qu'il donne meurent : sans
+ * repli, la vignette gardait un rectangle vide, et une liste de suggestions
+ * ressemblait à une liste à moitié chargée.
+ *
+ * Les initiales plutôt qu'un logo répété. Un même visuel sur chaque entrée sans
+ * image en ferait un mur de marques identiques, impossible à parcourir de
+ * l'œil ; « TS3 » distingue « Toy Story 3 » de son voisin.
+ */
+.noimg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7%;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 50% 15%, #222836, #10141c);
+}
+
+/*
+ * Le repli ne se dimensionne pas lui-même.
+ *
+ * Il reçoit la classe de cadrage de ce qu'il remplace — `card-poster`,
+ * `detail-poster`, `episode-still` — et celle-ci porte déjà la largeur et le
+ * rapport. Une taille imposée ici l'aurait écrasée : `episode-still` fait
+ * 132 px, un `width: 100%` en aurait fait toute la largeur de la ligne.
+ *
+ * Restent les cadres qui n'ont pas de classe à donner parce que c'est leur
+ * conteneur qui mesure : là, le repli remplit.
+ */
+.quick-thumb .noimg {
+  width: 100%;
+  height: 100%;
+}
+
+.noimg b {
+  font-family: var(--font-title);
+  font-size: clamp(11px, 21cqw, 30px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: color-mix(in srgb, var(--on-art) 34%, transparent);
+}
+
+/*
+ * La marque de l'application, en filigrane.
+ *
+ * Les trois barres de l'égaliseur, celles de la barre de navigation : elles
+ * disent d'où vient le cadre sans disputer la place aux lettres. Sous 40 px de
+ * large, elles ne seraient qu'une tache — le conteneur les masque.
+ */
+.noimg-mark {
+  width: 26%;
+  max-width: 40px;
+  /* Le rapport explicite et l'interdiction de rétrécir : dans une boîte large
+     et courte — le format d'un logo de chaîne — le SVG se retrouvait écrasé à
+     zéro pixel de haut, présent mais invisible. */
+  height: auto;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  fill: var(--accent);
+  opacity: 0.22;
+}
+
+/* La taille des initiales suit celle du cadre : les mêmes 22 % de largeur font
+   11 px dans une suggestion et 30 px sur une affiche de fiche. */
+.noimg {
+  container-type: inline-size;
+}
+
+/* Sous 64 px, empiler la marque et les lettres écraserait les deux : les
+   initiales suffisent, elles disent déjà de quoi il s'agit. */
+@container (max-width: 64px) {
+  .noimg-mark {
+    display: none;
+  }
+}
+
+/*
+ * Le choix de la sorte de source, en tete du formulaire.
+ *
+ * Deux pavés côte à côte plutôt qu'une liste déroulante : le choix décide de
+ * tous les champs qui suivent, et il se fait une fois. Une liste déroulante
+ * l'aurait caché derrière un clic, avec deux libellés qui ne disent rien à qui
+ * ne connaît pas déjà la différence — d'où la ligne d'explication sous chacun.
+ */
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+  margin: 2px 0 var(--space-4);
+}
+
+.kinds button {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--space-3) var(--space-3);
+  text-align: left;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.kinds button:hover {
+  border-color: var(--accent);
+}
+
+.kinds button[data-on] {
+  border-color: var(--accent);
+  background: var(--accent-soft, var(--accent-soft));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.kinds b {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.kinds span {
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  color: var(--faint);
+}
+
+@media (max-width: 520px) {
+  .kinds {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+ * Un groupe de réglages, et non un champ.
+ *
+ * Le choix de vignette, celui de couleur et celui des langues empruntaient
+ * `.form-field` pour sa mise en page. Ce ne sont pourtant pas des champs : ce
+ * sont des ensembles de boutons, sans `<input>` à étiqueter. Leur donner la
+ * classe d'un champ, c'était laisser croire à un `<label for>` qui ne désignait
+ * rien — et un lecteur d'écran annonçait une saisie là où il y a douze boutons.
+ */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.form-group > span {
+  font-size: var(--text-xs);
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+/*
+ * L'écran vide, qui propose quelque chose.
+ *
+ * Le vide se disait en une phrase grise au milieu de rien — au moment précis
+ * où l'on a le plus besoin d'être aidé. Un titre qui porte, une explication, et
+ * quand il y en a une, la sortie.
+ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+}
+
+.empty-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty-hint {
+  margin: 0;
+  max-width: 46ch;
+  font-size: var(--text-md);
+  line-height: 1.55;
+  color: var(--dim);
+}
+
+.empty-action {
+  margin-top: var(--space-2);
+}
+
+/*
+ * La barre d'outils : ce qui agit sur les résultats, juste au-dessus d'eux.
+ *
+ * Elle vivait dans la barre de rubrique, où un filtre de langue pesait autant
+ * que le titre de la page. Il ne change pourtant pas de page — il change ce
+ * qu'on voit dessous, et c'est donc là qu'il se pose.
+ */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+/* Le code d'erreur sert à en parler, pas à la comprendre : il passe derrière. */
+.notice-error code {
+  margin-left: auto;
+  padding-left: var(--space-3);
+  font-family: ui-monospace, monospace;
+  font-size: var(--text-xs);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+/*
+ * Les nouveautés depuis la dernière visite.
+ *
+ * Un bandeau et non une rangée : il porte un chiffre, pas des vignettes. Les
+ * rangées « récemment ajoutés » montrent déjà les vingt derniers titres — ce
+ * qui manquait, c'est l'échelle : sept cent seize films sont arrivés cette
+ * semaine, et rien ne le disait nulle part.
+ */
+.arrivals {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-soft);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.15s var(--ease),
+    background 0.15s var(--ease);
+}
+
+.arrivals:hover {
+  border-color: var(--accent-line);
+  background: var(--hover);
+}
+
+/* Le chiffre est l'information : il a la taille d'un titre. */
+.arrivals-count {
+  font-family: var(--font-title);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.arrivals-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.arrivals-text b {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.arrivals-text span {
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+
+.arrivals-go {
+  margin-left: auto;
+  font-size: var(--text-xl);
+  color: var(--faint);
+  flex-shrink: 0;
+}
+
+.arrivals:hover .arrivals-go {
+  color: var(--accent);
+}
+

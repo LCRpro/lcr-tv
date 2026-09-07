@@ -1,0 +1,227 @@
+/*
+ * Boutons, colonnes de categories, tableaux et notices.
+ *
+ * Tranche 4 sur 7 — voir `globals.css` pour l'ordre.
+ */
+
+/* ----------------------------------------------------------------- boutons */
+
+/*
+ * Le bouton, en une seule declaration.
+ *
+ * Il en existait deux, a quarante lignes d'ecart : la premiere posait les
+ * couleurs et la taille, la seconde ajoutait la mise en page et l'icone. Deux
+ * blocs pour un composant, c'est une regle qu'on oublie de lire avant d'en
+ * modifier l'autre.
+ *
+ * Les variantes se lisent sur `data-variant` plutot que sur des classes
+ * cumulees : `.btn.btn-primary.btn-sm` laissait chaque appel choisir sa
+ * combinaison, y compris celles qui n'avaient pas de sens.
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--elevated);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.15s var(--ease),
+    border-color 0.15s var(--ease),
+    color 0.15s var(--ease);
+}
+
+.btn svg {
+  flex-shrink: 0;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* L'action principale d'un ecran : l'inversion encre/papier, sans teinte. */
+.btn[data-variant='primary'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.btn[data-variant='primary']:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* Ce qui detruit porte la seule autre teinte de l'application. */
+.btn[data-variant='danger'] {
+  color: var(--live);
+  border-color: var(--live);
+  background: transparent;
+}
+
+.btn[data-variant='danger']:hover:not(:disabled) {
+  background: var(--live-soft);
+}
+
+/* Une action de second plan : pas de cadre tant qu'on ne la survole pas. */
+.btn[data-variant='ghost'] {
+  background: transparent;
+  border-color: transparent;
+  color: var(--dim);
+}
+
+.btn[data-variant='ghost']:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.btn[data-size='sm'] {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.btn[data-size='lg'] {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-lg);
+}
+
+.btn[data-block] {
+  width: 100%;
+}
+
+/* L'attente se voit sur le bouton lui-meme, pas seulement dans son libelle. */
+.btn-spin {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: btn-spin 0.7s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-spin {
+    animation-duration: 2.4s;
+  }
+}
+
+/*
+ * Les anciennes classes, gardees le temps que les appels migrent.
+ * Elles ne font que rejouer la variante correspondante.
+ */
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.sidebar-empty {
+  padding: var(--space-4) var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--faint);
+  text-align: center;
+}
+
+/* ----------------------------------------------------------------- tableaux */
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-soft);
+  min-width: 520px;
+}
+
+.table-wrap > .table {
+  border: 0;
+  border-radius: 0;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-md);
+}
+
+.table th {
+  color: var(--faint);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: color-mix(in srgb, var(--on-art) 2%, transparent);
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ notices */
+
+.notice {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-md);
+}
+
+.notice-error {
+  /* Le message d'abord, le code d'erreur poussé au bout : il sert à en parler,
+     pas à la comprendre. */
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  border-color: color-mix(in srgb, var(--live) 45%, transparent);
+  background: color-mix(in srgb, var(--live) 09%, transparent);
+}
+
+.notice-warn {
+  border-color: rgba(210, 153, 34, 0.5);
+  background: rgba(210, 153, 34, 0.09);
+}
+
+.empty {
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+  color: var(--dim);
+}

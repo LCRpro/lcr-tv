@@ -1,0 +1,599 @@
+/*
+ * Le lecteur en plein ecran, de son bandeau haut a ses menus.
+ *
+ * Tranche 5 sur 7 — voir `globals.css` pour l'ordre.
+ */
+
+/* ------------------------------------------------------------------ lecteur */
+
+/*
+ * Le lecteur reprend tout l'écran et fabrique son propre habillage.
+ *
+ * Les contrôles natifs de Chrome ne suivent ni la palette ni la langue de
+ * l'interface, ne savent rien du direct ni des qualités disponibles, et
+ * laissaient l'image seule au milieu d'un aplat noir. Tout est donc redessiné
+ * ici : deux voiles dégradés qui portent le texte, et rien d'autre par-dessus
+ * l'image.
+ */
+.pl {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  overflow: hidden;
+  /* Le voile bas ne doit pas rogner l'image : elle occupe tout, il flotte. */
+  display: block;
+  user-select: none;
+}
+
+.pl-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+/*
+ * Les quatre cadrages, réglés depuis la barre du lecteur.
+ *
+ * `.pl` masque ce qui dépasse : le zoom peut donc grandir sans repousser quoi
+ * que ce soit. Le facteur n'est pas choisi à l'œil — 16/9 ÷ 4/3 vaut 4/3, soit
+ * exactement de quoi faire disparaître les bandes d'un 4:3 incrusté dans un
+ * signal 16:9, le cas courant des vieilles chaînes.
+ */
+.pl-video[data-fit='cover'] {
+  object-fit: cover;
+}
+
+.pl-video[data-fit='fill'] {
+  object-fit: fill;
+}
+
+.pl-video[data-fit='zoom'] {
+  object-fit: cover;
+  transform: scale(1.3333);
+}
+
+/* Curseur et habillage disparaissent ensemble après quelques secondes d'inaction. */
+.pl[data-idle] {
+  cursor: none;
+}
+
+.pl[data-idle] .pl-top,
+.pl[data-idle] .pl-bottom {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pl[data-idle] .pl-top {
+  transform: translateY(-8px);
+}
+
+.pl[data-idle] .pl-bottom {
+  transform: translateY(10px);
+}
+
+/* --------------------------------------------------------------- bandeau haut */
+
+.pl-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--gutter) var(--space-7);
+  color: var(--on-art);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.35) 55%, transparent);
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+}
+
+/* Le logo de chaîne a besoin d'un fond à lui : ce sont des PNG transparents. */
+.pl-logo {
+  width: 54px;
+  height: 34px;
+  object-fit: contain;
+  padding: var(--space-1) var(--space-1);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--on-art) 7%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.pl-heading {
+  min-width: 0;
+  flex: 1;
+}
+
+.pl-title {
+  margin: 0;
+  font-size: clamp(15px, 2vw, 19px);
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.pl-title > :not(.flag):not(.pl-tag) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Qualité en cours : une étiquette, pas un mot perdu dans le titre. */
+.pl-tag {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px var(--space-1);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--on-art) 14%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+
+.pl-sub {
+  margin: 3px 0 0;
+  font-size: var(--text-sm);
+  color: color-mix(in srgb, var(--on-art) 68%, transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-live {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: var(--space-1) var(--space-3);
+  border-radius: 999px;
+  background: var(--live-soft);
+  border: 1px solid color-mix(in srgb, var(--live) 42%, transparent);
+  color: var(--live);
+}
+
+.pl-live i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pl-pulse 2s var(--ease) infinite;
+}
+
+@keyframes pl-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 55%, transparent);
+  }
+  70% {
+    opacity: 0.75;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-live i {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------- centre */
+
+.pl-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.pl-big {
+  pointer-events: auto;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  padding-left: var(--space-1);
+  color: var(--on-accent);
+  background: var(--accent);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55);
+  transition: transform 0.18s var(--ease), background 0.18s var(--ease);
+}
+
+.pl-big:hover {
+  transform: scale(1.07);
+  background: var(--accent-hover);
+}
+
+.pl-spinner {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.16);
+  border-top-color: var(--accent);
+  animation: spin 0.85s linear infinite;
+}
+
+/* --------------------------------------------------------------- bandeau bas */
+
+.pl-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--space-8) var(--gutter) var(--space-4);
+  color: var(--on-art);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0.4) 55%, transparent);
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
+}
+
+.pl-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.pl-spacer {
+  flex: 1;
+}
+
+.pl-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--on-art);
+  flex-shrink: 0;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+
+.pl-icon:hover,
+.pl-icon[data-open] {
+  background: color-mix(in srgb, var(--on-art) 14%, transparent);
+}
+
+.pl-icon:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pl-time {
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  padding: 0 var(--space-2);
+  white-space: nowrap;
+}
+
+.pl-time span {
+  color: color-mix(in srgb, var(--on-art) 55%, transparent);
+}
+
+/*
+ * Le curseur de volume ne se déplie qu'au survol du groupe : trois contrôles
+ * de largeur fixe suffisent sur un téléphone, la barre serait de toute façon
+ * inutilisable au doigt.
+ */
+.pl-volume {
+  display: flex;
+  align-items: center;
+}
+
+.pl-slider {
+  width: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  transition: width 0.2s var(--ease), opacity 0.2s var(--ease);
+  accent-color: var(--accent);
+  background: transparent;
+  border: 0;
+}
+
+.pl-volume:hover .pl-slider,
+.pl-slider:focus-visible {
+  width: 88px;
+  opacity: 1;
+  margin: 0 var(--space-2) 0 2px;
+}
+
+@media (max-width: 640px) {
+  .pl-volume:hover .pl-slider {
+    width: 0;
+    opacity: 0;
+    margin: 0;
+  }
+}
+
+/* ----------------------------------------------------------------- barres */
+
+.pl-track {
+  position: relative;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--on-art) 22%, transparent);
+  cursor: pointer;
+  /* Zone de préhension bien plus haute que le trait, sans le déplacer. */
+  padding: var(--space-2) 0;
+  background-clip: content-box;
+  transition: height 0.15s var(--ease);
+}
+
+.pl-track-static {
+  cursor: default;
+  padding: 0;
+  height: 3px;
+}
+
+.pl-track-buffer,
+.pl-track-played {
+  position: absolute;
+  left: 0;
+  top: 9px;
+  height: 4px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.pl-track-static .pl-track-buffer,
+.pl-track-static .pl-track-played {
+  top: 0;
+  height: 3px;
+}
+
+.pl-track-buffer {
+  background: color-mix(in srgb, var(--on-art) 30%, transparent);
+}
+
+.pl-track-played {
+  background: var(--accent);
+}
+
+/* Poignée : discrète au repos, elle grossit quand la barre est visée. */
+.pl-track-played i {
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translateY(-50%) scale(0);
+  transition: transform 0.15s var(--ease);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.pl-track:hover .pl-track-played i,
+.pl-track:focus-visible .pl-track-played i {
+  transform: translateY(-50%) scale(1);
+}
+
+.pl-track-hint {
+  position: absolute;
+  bottom: 24px;
+  transform: translateX(-50%);
+  padding: 3px var(--space-2);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid color-mix(in srgb, var(--on-art) 14%, transparent);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- programme */
+
+.pl-programme-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.pl-programme-line strong {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.pl-programme-time {
+  color: color-mix(in srgb, var(--on-art) 60%, transparent);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/*
+ * La suite se lit dans le prolongement du titre, pas à l'autre bout.
+ *
+ * `margin-left: auto` la collait au bord droit : sur une fenêtre large, elle se
+ * retrouvait sous le bouton plein écran, à un mètre du programme qu'elle
+ * annonce. C'est elle qui se fait rogner quand la place manque — le titre en
+ * cours, lui, reste entier.
+ */
+.pl-programme-next {
+  color: color-mix(in srgb, var(--on-art) 45%, transparent);
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+  /*
+   * C'est la suite qui cède, jamais le programme en cours.
+   *
+   * À facteur égal, un titre long se faisait rogner autant que l'autre : on
+   * lisait « Journal de 13 heures présenté par M… » à côté d'une annonce
+   * entière. L'écart de facteur vide la seconde bien avant d'entamer la
+   * première.
+   */
+  flex-shrink: 20;
+}
+
+.pl-programme-next .pl-dot {
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+/*
+ * Les points de suspension vivent sur le texte, pas sur la boîte qui le range.
+ *
+ * `text-overflow` ne s'applique pas à un conteneur `flex` : le titre était
+ * coupé net au milieu d'un mot, sans rien pour dire qu'il continuait.
+ */
+.pl-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Le chiffre qu'on cherche, au bout de la barre dont il parle. */
+.pl-programme-left {
+  margin-left: auto;
+  padding-left: var(--space-4);
+  color: color-mix(in srgb, var(--on-art) 72%, transparent);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.pl-programme-empty {
+  font-size: var(--text-sm);
+  padding: var(--space-1) 0;
+}
+
+/*
+ * Faute de grille, la ligne n'a qu'une chose à dire : elle la dit en entier,
+ * sans se faire rogner par une concurrence qui n'existe pas.
+ */
+.pl-programme-empty .pl-programme-next {
+  flex-shrink: 0;
+}
+
+/* Trop étroit pour trois informations : la suite cède, le restant tient. */
+@media (max-width: 640px) {
+  .pl-programme-next {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------- menu */
+
+.pl-menu-wrap {
+  position: relative;
+}
+
+.pl-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  min-width: 168px;
+  padding: var(--space-1);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--elevated) 97%, transparent);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lift);
+  backdrop-filter: blur(10px);
+}
+
+.pl-menu-title {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--faint);
+  padding: var(--space-1) var(--space-2) var(--space-2);
+}
+
+.pl-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-2);
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+
+.pl-menu-item:hover {
+  background: var(--hover);
+}
+
+.pl-menu-item[aria-checked='true'] {
+  color: var(--accent-hover);
+}
+
+.pl-menu-check {
+  width: 16px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.pl-menu-note {
+  margin-left: auto;
+  padding-left: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- message */
+
+.pl-message {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+  z-index: 2;
+}
+
+.pl-message > div {
+  max-width: 520px;
+  width: 100%;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  text-align: center;
+  box-shadow: var(--shadow-lift);
+}
+
+@media (max-width: 640px) {
+  .pl-top {
+    padding-bottom: var(--space-6);
+    gap: var(--space-2);
+  }
+  .pl-logo {
+    width: 42px;
+    height: 28px;
+  }
+  .pl-bottom {
+    padding-top: var(--space-7);
+  }
+}

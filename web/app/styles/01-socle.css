@@ -1,0 +1,359 @@
+/*
+ * ============================================================================
+ * SOCLE — « salle de projection »
+ * ============================================================================
+ *
+ * Le catalogue, c'est cent quatre-vingt-quatre mille affiches et des milliers
+ * de logos de chaînes, tous saturés et tous différents. Une interface qui
+ * ajoute sa propre couleur leur fait concurrence : on ne regarde plus les
+ * visuels, on regarde le décor autour.
+ *
+ * D'où la règle qui tient tout : **le contenu porte la couleur, la coquille
+ * porte le contraste.** Ce qui est sélectionné ne change pas de teinte, il
+ * change de valeur — l'encre et le papier s'inversent. Il ne reste donc que
+ * deux teintes dans toute l'application, et chacune veut dire une chose :
+ *
+ *   — le rouge, et rien d'autre, veut dire « ça passe en ce moment » ;
+ *   — le laiton signale ce qui appelle l'œil : la note d'une œuvre, et l'anneau
+ *     de focus au clavier. Nulle part ailleurs.
+ *
+ * Cela remplace un accent cyan. Son raisonnement était juste — les affiches
+ * tirent vers le chaud, une couleur froide reste lisible par-dessus — mais il
+ * répondait à la mauvaise question : plutôt que de chercher la teinte qui
+ * résiste au contenu, on retire la teinte de la coquille.
+ *
+ * Les neutres tirent vers le chaud, et non vers le bleu. Un gris bleuté est le
+ * fond par défaut de toutes les applications de télévision ; un gris chaud se
+ * choisit, et surtout il accueille mieux des affiches qui sont chaudes.
+ *
+ * ---------------------------------------------------------------- les échelles
+ *
+ * Espacements et tailles de texte suivent une échelle. Avant, vingt-neuf
+ * espacements distincts et quinze tailles de police dont des demi-pixels
+ * (10,5 — 11,5 — 12,5 — 13,5) : la signature du réglage à l'œil, valeur par
+ * valeur, jusqu'à ce que ça tombe juste. Huit pas suffisent, et deux éléments
+ * réglés séparément retombent alors d'accord sans qu'on s'en occupe.
+ *
+ * ------------------------------------------------------------------ les thèmes
+ *
+ * Trois états, pas deux : un choix explicite pose `data-theme` sur la racine,
+ * et le réglage « système » ne pose rien — seul `prefers-color-scheme` sépare
+ * alors le clair du sombre. Chaque bloc redéfinit **les mêmes jetons** ; aucune
+ * couleur ne doit être écrite ailleurs qu'ici.
+ */
+
+:root {
+  /* ---------------------------------------------------------- neutres, clair */
+  --paper: #f7f5f2;
+  --bg: #f7f5f2;
+  --bg-soft: #efece7;
+  --elevated: #ffffff;
+  --hover: #e8e4dd;
+  --border: #e0dbd3;
+  --border-strong: #938c81;
+  --text: #1c1a17;
+  --dim: #6b655c;
+  /* Assombri pour tenir 3:1 sur les deux fonds clairs : mesure, pas d'oeil. */
+  --faint: #8c867c;
+
+  /* --------------------------------------------------------------- signaux */
+  /*
+   * L'accent n'est pas une teinte : c'est l'inversion encre/papier. Les jetons
+   * gardent leur nom — cinq mille huit cents lignes s'en servent — mais ils ne
+   * désignent plus une couleur, ils désignent le contraste maximal.
+   */
+  --accent: #1c1a17;
+  --accent-hover: #000000;
+  --accent-soft: rgba(28, 26, 23, 0.08);
+  --accent-line: rgba(28, 26, 23, 0.28);
+  --on-accent: #f7f5f2;
+
+  /* Le direct, et rien d'autre. */
+  --live: #c8322f;
+  --live-soft: rgba(200, 50, 47, 0.12);
+  /* Les notes, et l'anneau de focus. */
+  --gold: #9a6b12;
+  --ok: #2f6d4a;
+  --warn: #8a6112;
+
+  /* ------------------------------------------------------------- l'échelle */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 22px;
+  --text-3xl: 28px;
+  --text-4xl: 36px;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --header-h: 56px;
+  --bar-h: 60px;
+  --bar-gap: 12px;
+  --gutter: 28px;
+
+  --shadow: 0 1px 2px rgba(28, 26, 23, 0.06), 0 6px 18px -12px rgba(28, 26, 23, 0.3);
+  --shadow-lift: 0 2px 6px rgba(28, 26, 23, 0.08), 0 24px 48px -24px rgba(28, 26, 23, 0.35);
+  /* L'anneau de focus est la seule place du laiton hors des notes. */
+  --ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--gold);
+  --ease: cubic-bezier(0.22, 0.61, 0.24, 1);
+
+  /*
+   * Ce qui se pose sur une image, et non sur le papier de l'application : le
+   * fond n'est alors pas le theme mais le visuel, et l'encre reste claire dans
+   * les deux cas. Ces deux jetons ne sont donc **pas** redefinis par theme.
+   */
+  --on-art: #ffffff;
+  --scrim: rgba(0, 0, 0, 0.55);
+
+  /*
+   * La plaque des logos de chaines et de categories.
+   *
+   * Elle etait blanche : les logos du fournisseur sont pour moitie des PNG
+   * blancs sur fond transparent — DAZN, Disney+, ESPN+, Apple TV, Arte — et
+   * disparaissaient entierement. Mesure sur le catalogue reel : sur fond
+   * sombre, tous se lisent, les blancs comme les noirs, a condition d un halo
+   * clair qui detoure ceux qui sont sombres (ABC, NHL).
+   *
+   * Elle ne suit donc pas le theme, comme `--on-art` : ce qu elle accueille
+   * n est pas notre encre, c est un visuel etranger dessine pour du sombre.
+   */
+  --plaque: #1b1a18;
+  --plaque-halo: drop-shadow(0 0 1.2px rgba(255, 255, 255, 0.45));
+
+  /*
+   * Une seule famille, deux graisses.
+   *
+   * Les titres etaient en antique (Fraunces), le reste en grotesque : le
+   * contraste se voulait editorial, il a ete lu comme un decalage. Archivo
+   * prend tout, et un titre se distingue par sa taille et sa graisse — pas par
+   * un changement de registre.
+   */
+  --font-title: var(--font-ui), -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-body: var(--font-ui), -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/*
+ * Le sombre par défaut du système. Guardé pour qu'un choix explicite « clair »
+ * l'emporte sur un système en sombre.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #121110;
+    --bg: #121110;
+    --bg-soft: #191817;
+    --elevated: #201e1c;
+    --hover: #2a2724;
+    --border: #2d2a27;
+    --border-strong: #6e6963;
+    --text: #f2efe9;
+    --dim: #a49d93;
+    --faint: #736c63;
+
+    --accent: #f2efe9;
+    --accent-hover: #ffffff;
+    --accent-soft: rgba(242, 239, 233, 0.1);
+    --accent-line: rgba(242, 239, 233, 0.32);
+    --on-accent: #121110;
+
+    --live: #f0554f;
+    --live-soft: rgba(240, 85, 79, 0.16);
+    --gold: #d9a441;
+    --ok: #5fbb8a;
+    --warn: #d9a441;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px -14px rgba(0, 0, 0, 0.8);
+    --shadow-lift: 0 2px 8px rgba(0, 0, 0, 0.55), 0 28px 56px -28px rgba(0, 0, 0, 0.9);
+    --ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--gold);
+  }
+}
+
+/* Le choix explicite du sombre, qui doit gagner sur un système en clair. */
+:root[data-theme='dark'] {
+  --paper: #121110;
+  --bg: #121110;
+  --bg-soft: #191817;
+  --elevated: #201e1c;
+  --hover: #2a2724;
+  --border: #2d2a27;
+  --border-strong: #6e6963;
+  --text: #f2efe9;
+  --dim: #a49d93;
+  --faint: #736c63;
+
+  --accent: #f2efe9;
+  --accent-hover: #ffffff;
+  --accent-soft: rgba(242, 239, 233, 0.1);
+  --accent-line: rgba(242, 239, 233, 0.32);
+  --on-accent: #121110;
+
+  --live: #f0554f;
+  --live-soft: rgba(240, 85, 79, 0.16);
+  --gold: #d9a441;
+  --ok: #5fbb8a;
+  --warn: #d9a441;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px -14px rgba(0, 0, 0, 0.8);
+  --shadow-lift: 0 2px 8px rgba(0, 0, 0, 0.55), 0 28px 56px -28px rgba(0, 0, 0, 0.9);
+  --ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--gold);
+}
+
+@media (max-width: 640px) {
+  :root {
+    --gutter: 14px;
+    --header-h: 56px;
+  }
+}
+
+/*
+ * Les grands ecrans, et le televiseur.
+ *
+ * La page n'est plus bornee : passe deux mille pixels, tout se joue sur la
+ * taille des vignettes. Les garder a 164 px donnerait dix-neuf colonnes
+ * d'affiches minuscules — plus de contenu a l'ecran, moins de lisible. Elles
+ * grandissent donc avec la fenetre.
+ *
+ * La gouttiere, elle, ne bouge pas. Elle avait grandi avec l'ecran, au nom du
+ * recul devant un televiseur : le resultat etait exactement ce qu'on voulait
+ * eviter, une bande vide de plus en plus large a gauche d'une colonne qui
+ * devait tenir le bord. C'est la colonne qui va chercher ce bord (voir
+ * `.split` dans la tranche 8) ; la marge reste ce qu'elle est.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+ * La gouttière de la barre de défilement est réservée en permanence.
+ *
+ * Sans elle, une catégorie courte tient dans l'écran, la barre disparaît, et
+ * toute la page se décale de dix pixels vers la droite. En passer d'une
+ * catégorie à l'autre faisait sauter la mise en page horizontalement.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /*
+   * `clip` et non `hidden`.
+   *
+   * `overflow-x: hidden` force `overflow-y` à `auto` : <body> devient un
+   * conteneur de défilement, et tout `position: sticky` à l'intérieur se met à
+   * coller par rapport à lui — c'est-à-dire à ne plus coller du tout. L'en-tête
+   * disparaissait au premier défilement. `clip` coupe sans créer de conteneur.
+   */
+  overflow-x: clip;
+}
+
+h1,
+h2,
+h3,
+.brand {
+  font-family: var(--font-title);
+  letter-spacing: -0.012em;
+}
+
+/*
+ * Deux halos croisés plutôt qu'un dégradé centré : le fond cesse d'être un
+ * aplat sans jamais attirer l'œil, et les affiches gardent tout le contraste.
+ * Le second, plus froid, évite que le premier vire au monochrome violet.
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 680px;
+  background:
+    radial-gradient(58% 78% at 14% 0%, var(--accent-soft), transparent 62%),
+    radial-gradient(52% 68% at 86% 4%, var(--accent-soft), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  background: var(--elevated);
+  color: var(--text);
+  /*
+   * La bordure forte, et non la discrete : WCAG 1.4.11 demande 3:1 pour ce qui
+   * delimite un composant. A `--border`, le cadre d un champ tombait a 1,3:1 —
+   * on devinait la zone de saisie a la nuance de fond, pas au trait.
+   */
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+input::placeholder {
+  color: var(--faint);
+}
+
+input:hover,
+select:hover {
+  border-color: var(--border-strong);
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -1,0 +1,692 @@
+/*
+ * Barre de rubrique, grille horaire, listes, rangees et cartes.
+ *
+ * Tranche 3 sur 7 — voir `globals.css` pour l'ordre.
+ */
+
+/* --------------------------------------------------------- barre de rubrique */
+
+/*
+ * Titre, recherche, affichage et compteur sur une seule ligne.
+ *
+ * L'en-tête précédent empilait un surtitre, un grand titre, une accroche et un
+ * filet : trois cents pixels avant le premier contenu, et un trait qui coupait
+ * la page en deux. Tout tient maintenant sur une ligne, collée sous la barre de
+ * navigation, sans plaque ni bordure — c'est le fond de page qui passe dessous.
+ */
+/*
+ * La barre reprend les colonnes de la grille en dessous.
+ *
+ * Le titre surmonte la colonne des catégories, les outils surmontent le
+ * contenu : la barre explique la page au lieu de flotter au-dessus. Alignés
+ * bout à bout, ils laissaient mille pixels de vide entre le champ de recherche
+ * et les commandes — le regard n'avait aucune raison de traverser.
+ */
+.bar {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: var(--bar-h);
+  margin-bottom: var(--bar-gap);
+  isolation: isolate;
+}
+
+/*
+ * Le fond de la barre déborde jusqu'aux bords de la fenêtre.
+ *
+ * `.page` garde une gouttière de chaque côté : sans ce débordement, le fond de
+ * la barre s'arrêtait à l'intérieur, et les vignettes défilaient **à côté**
+ * d'elle, dans les marges, bien visibles. On aurait juré que le contenu était
+ * coupé à gauche et à droite. Le pseudo-élément s'étire jusqu'aux bords réels,
+ * et couvrait de la même façon les quatre cents pixels de marge que la page
+ * laissait quand elle était encore bornée à 1680 px.
+ */
+.bar::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: calc(-50vw + 50%);
+  right: calc(-50vw + 50%);
+  /*
+   * Fond opaque, et non un dégradé qui s'efface.
+   *
+   * Il finissait transparent sur son tiers inférieur : les vignettes défilaient
+   * visiblement au travers, juste au-dessus du filet. Le même traitement que la
+   * barre de navigation — presque opaque, et un flou pour ce qui passe dessous.
+   */
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  /* Le filet vit ici, donc il a exactement la même étendue que le fond. Séparés,
+     le fond débordait de 33 px de chaque côté et la ligne s'arrêtait avant. */
+  border-bottom: 1px solid var(--border);
+  pointer-events: none;
+}
+
+/* Ce qu'on regarde : le titre, et combien il y en a — sur la même ligne, pour
+   que la bande n'ait qu'une ligne à porter. */
+.bar-id {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Ce que la barre porte à droite : le champ, et sur la liste ses tris. Ils ne
+   passent pas à la ligne — la barre n'a qu'une ligne — c'est le champ qui cède. */
+.bar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.bar h1 {
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Le champ tient le bout opposé, sans s'étirer sur toute la ligne. */
+.bar .field {
+  flex: 0 1 320px;
+  min-width: 120px;
+}
+
+/* Plus ramassé que dans un formulaire : c'est lui qui dictait la hauteur. */
+.bar .field input {
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  font-size: var(--text-md);
+}
+
+/*
+ * Le compteur devient une ligne à côté du titre, plus une pastille.
+ *
+ * Posé seul à l'autre bout de la barre, il pesait autant qu'un bouton alors
+ * qu'il ne se clique pas. Ici il se lit comme la légende du titre —
+ * « Live, 24 542 » — et rend sa place aux vraies commandes.
+ */
+.bar-id .page-count {
+  padding: 0;
+  background: none;
+  border: 0;
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+.bar-id .page-count b {
+  font-size: var(--text-xs);
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--dim);
+}
+
+@media (max-width: 900px) {
+  /* Empilée, elle n'a plus de hauteur imposée — et n'est plus collante :
+     l'en-tête wrappe lui aussi, sa hauteur ne vaut donc plus `--header-h`. */
+  .bar {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    height: auto;
+    padding: var(--space-3) 0;
+    position: static;
+  }
+  .bar::before {
+    display: none;
+  }
+  .bar-id {
+    gap: var(--space-2);
+  }
+  .bar .field {
+    flex: 1 1 100%;
+  }
+  /* Empilées, les commandes prennent leur propre ligne, calées a gauche. */
+  .bar-actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/*
+ * Ligne d'outils des résultats.
+ *
+ * Le choix d'affichage agit sur ce qui suit : il se pose au-dessus, aligné à
+ * droite. Dans la barre de rubrique il pesait autant que le titre alors qu'il ne
+ * décide que de la façon de lire la liste.
+ */
+
+/*
+ * Le drapeau, dans une pastille de choix.
+ *
+ * Le `.flag` porte une marge à droite et une taille relative, pensées pour un
+ * drapeau posé devant du texte courant. Dans un bouton, il faut que les deux
+ * s'alignent sur la même ligne de base et respirent également des deux côtés —
+ * sans quoi le drapeau touche le libellé et déborde du haut de la pastille.
+ */
+.seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.seg .flag {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------------- liste */
+
+/*
+ * Mode liste : trois fois plus d'entrées à l'écran, et de la place pour le
+ * programme en cours. Il vaut mieux que la vignette dans une catégorie où
+ * quarante chaînes partagent le même logo — celui-ci n'y distingue rien.
+ */
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.clamp-1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------------- rangées */
+
+.muted {
+  color: var(--dim);
+}
+
+.row {
+  margin-bottom: var(--space-6);
+}
+
+.row-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* Filet d'accent devant chaque titre de rangée : rythme la page sans bruit. */
+.row-header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.row-header h2::before {
+  content: '';
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.row-header a {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--dim);
+  transition: color 0.15s var(--ease);
+}
+
+.row-header a:hover {
+  color: var(--accent-hover);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(164px, 1fr));
+  gap: var(--space-5) var(--space-4);
+}
+
+/*
+ * La grille des chaînes tient la même trame que celle des œuvres.
+ *
+ * Une carte de chaîne porte maintenant un visuel 16/9 et deux lignes de
+ * texte : elle a la largeur d'une affiche, pas celle d'une ligne de guide.
+ */
+.grid[data-kind='channel'] {
+  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
+  gap: var(--space-5) var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .grid[data-kind='channel'] {
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: var(--space-4) var(--space-2);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: var(--space-4) var(--space-2);
+  }
+}
+
+/* Les vignettes grandissent avec la fenêtre plutôt que de se multiplier. */
+@media (min-width: 1800px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(188px, 1fr));
+  }
+  .grid[data-kind='channel'] {
+    grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+  }
+}
+
+@media (min-width: 2400px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(214px, 1fr));
+  }
+  .grid[data-kind='channel'] {
+    grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  }
+}
+
+/* ------------------------------------------------------------------- cartes */
+
+.card {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  position: relative;
+  transition: transform 0.22s var(--ease);
+}
+
+/*
+ * Survol volontairement discret.
+ *
+ * La carte sautait de six pixels, l'affiche zoomait, un voile noir tombait et le
+ * titre changeait de couleur : quatre effets pour une seule intention. Il ne
+ * reste que ce qui sert — un liseré d'accent qui dit ce qui est visé, et le
+ * bouton de lecture qui dit ce qu'un clic va faire.
+ */
+.card:hover .card-media {
+  box-shadow: var(--shadow), inset 0 0 0 1px var(--accent-line);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+  border-radius: var(--radius-lg);
+}
+
+.card-media {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--elevated), var(--bg-soft));
+  /* Le liseré interne clair détache la vignette du fond sans ajouter de trait. */
+  box-shadow: var(--shadow), inset 0 0 0 1px color-mix(in srgb, var(--text) 06%, transparent);
+  transition: box-shadow 0.18s var(--ease);
+}
+
+.card-poster {
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/*
+ * Les logos de chaînes sont des PNG sur fond transparent, souvent minuscules :
+ * ils ont besoin d'air et d'un fond à eux, pas d'un recadrage plein cadre.
+ */
+
+/*
+ * Troncage à deux lignes, porté par l'enveloppe du texte et non par son parent.
+ * `-webkit-box` compte chaque enfant comme une ligne : appliqué au conteneur,
+ * le drapeau consommait à lui seul la première des deux.
+ */
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Repli en initiales quand le visuel manque ou qu'il est mort chez l'hôte. */
+/*
+ * Voile au survol : assombrit le visuel et fait apparaître l'action. Il ne
+ * consomme aucune place au repos, contrairement à un bouton toujours visible.
+ */
+.card-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 34%, transparent);
+  opacity: 0;
+  transition: opacity 0.18s var(--ease);
+  pointer-events: none;
+}
+
+.card:hover .card-media::after {
+  opacity: 1;
+}
+
+.card-play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.card:hover .card-play {
+  opacity: 1;
+}
+
+.card-play span {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-sm);
+  padding-left: 3px;
+}
+
+/*
+ * Étoile de favori, posée par-dessus la vignette.
+ *
+ * Elle est **à côté** de la carte dans le balisage — la carte est déjà un
+ * bouton, et imbriquer une commande dans une autre rendrait le clic ambigu.
+ */
+.card-wrap {
+  position: relative;
+}
+
+.card-star {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 7%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
+  color: color-mix(in srgb, var(--on-art) 75%, transparent);
+  opacity: 0;
+  transition: opacity 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+/* Au repos, seules les chaînes déjà en favori montrent leur étoile. */
+.card-wrap:hover .card-star,
+.card-star:focus-visible,
+.card-star[data-on] {
+  opacity: 1;
+}
+
+.card-star:hover,
+.card-star[data-on] {
+  color: var(--gold);
+}
+
+@media (hover: none) {
+  .card-star {
+    opacity: 1;
+  }
+}
+
+.card-body {
+  padding: var(--space-3) 2px 0;
+}
+
+/*
+ * Le titre porte lui-même le troncage à deux lignes.
+ *
+ * Il était en `flex`, avec le drapeau d'un côté et le texte de l'autre : la
+ * deuxième ligne repartait alors sous la première lettre du titre au lieu de
+ * revenir à la marge, et la vignette perdait quinze pixels de largeur sur
+ * chaque ligne suivante.
+ */
+/*
+ * Le titre réserve ses deux lignes, qu'il en remplisse une ou deux.
+ *
+ * Mesuré : « Capitaine » faisait une carte de 298 px, « Les Dents de la mer 4 :
+ * La Revanche » une de 315. Les affiches, elles, sont identiques au pixel —
+ * c'est le titre seul qui décalait la ligne du dessous, et une rangée finissait
+ * en dents de scie. La place des deux lignes est donc toujours prise ; le
+ * troncage veille à ce qu'il n'y en ait jamais trois.
+ */
+.card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.7em;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.card-sub {
+  font-size: var(--text-xs);
+  color: var(--faint);
+  margin-top: var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+ * Programme en cours. Le point rouge dit « ça passe maintenant » — c'est le seul
+ * endroit de la grille où le rouge apparaît, et c'est ce qui lui rend son sens.
+ */
+.card-now {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--dim);
+}
+
+.card-now::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--live);
+  flex-shrink: 0;
+}
+
+.card-now strong {
+  color: var(--text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/*
+ * Avancement du programme en cours, sur le bord bas du visuel. Rend visible
+ * d'un coup d'œil s'il reste du temps ou si ça se termine.
+ */
+.card-elapsed {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--scrim);
+  z-index: 1;
+}
+
+.card-elapsed > span {
+  display: block;
+  height: 100%;
+  background: var(--live);
+}
+
+.progress-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--scrim);
+  z-index: 1;
+}
+
+.progress-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* Marqueurs posés sur le visuel : 18+ à gauche, note à droite, jamais ensemble. */
+.badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  padding: 3px var(--space-2);
+  border-radius: 6px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--on-art);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+/*
+ * La note, centrée en haut de l'affiche.
+ *
+ * Elle était calée à droite, là où se pose aussi l'étoile de favori : il avait
+ * fallu la décaler de 42 px quand les deux se rencontraient, si bien qu'une
+ * grille où seules quelques vignettes sont en liste alignait des notes à deux
+ * hauteurs de marge différentes. Au centre, elle n'a plus de voisin.
+ */
+/*
+ * La note, en haut à gauche.
+ *
+ * Elle était centrée sur le bord haut de l'affiche, où elle coupait en deux le
+ * titre imprimé de la plupart des jaquettes. Dans un coin, elle laisse
+ * l'affiche entière et se retrouve toujours au même endroit d'une vignette à
+ * l'autre.
+ */
+.badge-rating {
+  top: var(--space-2);
+  left: var(--space-2);
+  right: auto;
+  transform: none;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * L'âge passe à droite, sous l'étoile.
+ *
+ * Il partageait le coin gauche avec la note : deux pastilles au même point,
+ * l'une par-dessus l'autre. Il est rare, la place de droite lui suffit.
+ */
+.badge:not(.badge-rating) {
+  top: 42px;
+  right: var(--space-2);
+  left: auto;
+}
+
+/*
+ * Le pavé numérique.
+ *
+ * Il ne s'affiche qu'en tapant : c'est un retour visuel, pas un élément de
+ * page. Posé au-dessus de tout, au centre du bas, là où l'œil est déjà quand
+ * on tape sans regarder — le geste vient de la mémoire, pas de la lecture.
+ */
+.keypad {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-7);
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--elevated) 94%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-lift);
+  animation: keypad-in 0.12s var(--ease);
+}
+
+@keyframes keypad-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keypad {
+    animation: none;
+  }
+}
+
+/* Le numéro tapé est l'information : il a la taille d'un titre. */
+.keypad-digits {
+  font-family: var(--font-title);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.4em;
+  text-align: center;
+}
+
+.keypad-name {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--dim);
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keypad img {
+  width: 46px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: var(--plaque);
+  filter: var(--plaque-halo);
+  padding: 2px;
+}
+

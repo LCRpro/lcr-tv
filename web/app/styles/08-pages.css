@@ -1,0 +1,2994 @@
+/*
+ * Les cinq écrans refaits : l'accueil, le direct, les films, les séries, la
+ * liste.
+ *
+ * Tranche 8 sur 8 — voir `globals.css` pour l'ordre. Elle vient après tout le
+ * reste parce qu'elle compose avec ce qui existe — `.bar`, `.grid`, `.card`,
+ * `.chip`, `.seg` — et ne redéfinit rien.
+ */
+
+/* ============================================================== les blocs */
+
+/*
+ * Un bloc de page : un titre, une note, une sortie, puis son contenu.
+ *
+ * Les rangées de l'accueil portaient chacune leur propre en-tête ; les zones
+ * du direct un autre ; les sections de compte un troisième. Un seul en-tête
+ * de bloc, partout — la hiérarchie se lit d'une page à l'autre.
+ */
+.blk {
+  margin-bottom: var(--space-7);
+}
+
+.blk-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.blk-head h2 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* Le chiffre est l'information : il a la taille d'un titre, et il vient avant. */
+.blk-big {
+  font-family: var(--font-title);
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.blk-note {
+  font-size: var(--text-sm);
+  color: var(--faint);
+}
+
+.blk-more {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--dim);
+  white-space: nowrap;
+  transition: color 0.15s var(--ease);
+}
+
+.blk-more:hover {
+  color: var(--text);
+}
+
+.blk-more span {
+  transition: transform 0.15s var(--ease);
+}
+
+.blk-more:hover span {
+  transform: translateX(3px);
+}
+
+/* Un sous-bloc — « Films », « Séries » sous « Nouveau ». */
+.blk-sub {
+  margin-top: var(--space-4);
+}
+
+.blk-subhead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.blk-subhead h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+/* ============================================================== les puces */
+
+/*
+ * Les puces, à la place de la colonne.
+ *
+ * Elles enchaînent sur une ligne et passent à la suivante si la place manque :
+ * vingt genres tiennent en deux lignes, là où la colonne prenait un quart de
+ * la largeur pour ne rien montrer d'autre.
+ */
+.chips-wrap {
+  margin-bottom: var(--space-4);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip-count {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--faint);
+}
+
+.chip[data-active='true'] .chip-count {
+  color: var(--on-accent);
+  opacity: 0.72;
+}
+
+.chip svg {
+  color: var(--gold);
+}
+
+.chip[data-active='true'] svg {
+  color: var(--on-accent);
+}
+
+/* « + 32 autres » : une puce sans compte, en pointillé, qui déplie. */
+.chip-more {
+  border-style: dashed;
+}
+
+.chips-more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-soft);
+}
+
+.chips-filter {
+  max-width: 320px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 999px;
+  font-size: var(--text-sm);
+}
+
+.chips-empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--faint);
+}
+
+/* ============================================================ la vignette */
+
+/*
+ * Le titre sur l'affiche.
+ *
+ * Il vivait dessous, sur deux lignes réservées, suivi d'une ligne
+ * « année · genre ». Trois choses écrites sous une image qui, neuf fois sur
+ * dix, porte déjà le titre — et une carte dont la hauteur dépendait de la
+ * longueur du titre, d'où des rangées en dents de scie. Posé sur l'affiche, il
+ * rend à la carte la hauteur exacte de son visuel.
+ *
+ * `z-index: 1`, comme la barre de progression qui le suit dans le balisage :
+ * à égalité, c'est l'ordre du document qui tranche, et la barre passe dessus.
+ */
+.card-over-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: var(--space-7) var(--space-3) var(--space-3);
+  color: var(--on-art);
+  /* La carte entière est déjà un lien : ce voile ne doit rien intercepter. */
+  pointer-events: none;
+}
+
+/*
+ * Le voile, sur son propre calque.
+ *
+ * Un simple dégradé du transparent au noir ne suffisait pas : sa pente étant
+ * régulière, il n'était qu'à moitié opaque à la hauteur où le titre s'écrit, et
+ * « Flubber » sur un vert vif ou « Les Dents de la mer 3 » sur une mer bleue se
+ * lisaient mal. Le noir arrive donc plus tôt, et un flou léger efface le détail
+ * de l'affiche sous le texte — c'est lui qui rend le titre lisible quelle que
+ * soit la jaquette.
+ *
+ * Le calque est un pseudo-élément et non l'élément lui-même : son masque, qui
+ * fait entrer le flou en douceur au lieu d'une arête franche, aurait sinon
+ * effacé le haut du titre avec.
+ */
+.card-over-name::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(0, 0, 0, 0.42) 34%,
+    rgba(0, 0, 0, 0.84) 66%,
+    rgba(0, 0, 0, 0.94) 100%
+  );
+  backdrop-filter: blur(6px) saturate(0.85);
+  -webkit-backdrop-filter: blur(6px) saturate(0.85);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 46%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 46%);
+}
+
+/* Le texte passe au-dessus du calque, jamais dedans. */
+.card-over-name > * {
+  position: relative;
+}
+
+.card-over-name b {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.card-over-name > span {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  opacity: 0.78;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Au survol, le synopsis prend toute l'affiche : le titre s'efface pour lui. */
+.card-wrap[data-over]:hover .card-over-name,
+.card-wrap[data-over]:focus-within .card-over-name {
+  opacity: 0;
+  transition: opacity 0.16s var(--ease);
+}
+
+/*
+ * Le format du visuel, porté par un attribut.
+ *
+ * `poster` est le défaut de `.card-poster` (tranche 3). Le logo d'une chaîne
+ * se contient sur sa plaque — un logo tronqué ne se reconnaît plus — dans un
+ * 16/9 : c'est la forme de l'historique, où une chaîne se range à côté
+ * d'images d'épisodes.
+ */
+.card-poster[data-shape='logo'] {
+  object-fit: contain;
+  object-position: center;
+  padding: var(--space-3);
+  background: var(--plaque);
+  filter: var(--plaque-halo);
+  aspect-ratio: 16 / 9;
+}
+
+/* Une image d'épisode : 16/9, recadrée, comme la reprise. */
+.card-poster[data-shape='still'] {
+  aspect-ratio: 16 / 9;
+}
+
+/* Le repli prend le même format que l'image qu'il remplace. */
+.noimg[data-shape='logo'],
+.noimg[data-shape='still'] {
+  aspect-ratio: 16 / 9;
+}
+
+/* Une grille d'images d'épisodes : plus large qu'une affiche, moins qu'un logo serré. */
+.grid[data-kind='still'] {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4) var(--space-3);
+}
+
+/* « Vu » : en bas à gauche du visuel, là où l'œil finit de lire l'affiche. */
+/* En haut à gauche : le bas de l'affiche appartient au titre. */
+.card-seen {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 2;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/*
+ * Le voile du survol : le synopsis prend l'affiche.
+ *
+ * Il ne consomme rien au repos. Au survol, le bas de l'affiche s'assombrit et
+ * le texte se lit dessus — un noir, pas un dégradé du fond : il tombe sur une
+ * image, il tient dans les deux thèmes sans changer. Le texte laisse passer les
+ * clics vers l'affiche ; seuls les boutons les gardent.
+ */
+.card-over {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  aspect-ratio: 2 / 3;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.9) 58%);
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease);
+}
+
+.card-wrap[data-over]:hover .card-over,
+.card-wrap[data-over]:focus-within .card-over {
+  opacity: 1;
+}
+
+.card-over p {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.card-over-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.card-over-actions > * {
+  pointer-events: auto;
+}
+
+/* Les deux gestes, en blanc sur le noir du voile : lire, ou aller à la fiche. */
+.card-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.card-act:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.card-act[data-primary] {
+  background: #fff;
+  border-color: #fff;
+  color: #121110;
+}
+
+.card-act[data-primary]:hover {
+  background: #f2efe9;
+}
+
+/* Le bouton de lecture de la vignette cède la place au voile quand il y en a un. */
+.card-wrap[data-over]:hover .card-play {
+  opacity: 0;
+}
+
+/* Sur un écran tactile il n'y a pas de survol : la fiche fait le reste. */
+@media (hover: none) {
+  .card-over {
+    display: none;
+  }
+}
+
+/* ================================================================ ce soir */
+
+/*
+ * La sélection du jour et les reprises, dans le même bloc — toujours plein.
+ *
+ * Une grande carte et une colonne de trois. La grande carte porte la
+ * proposition du jour — ou, sans proposition, la reprise la plus récente ;
+ * la colonne porte les reprises puis les propositions suivantes, jusqu'à
+ * trois. Deux blocs séparés laissaient une colonne aux deux tiers vide dès
+ * qu'on n'avait qu'une ou deux lectures en cours.
+ *
+ * Le voile est un noir, pas un dégradé du fond : il tombe sur une image, il
+ * tient dans les deux thèmes sans changer — et les boutons posés dessus
+ * prennent les couleurs de l'image, jamais celles du papier.
+ */
+.tonight {
+  margin-bottom: var(--space-7);
+}
+
+.tonight-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+/* Seule, la grande carte prend toute la largeur plutôt que la moitié. */
+.tonight-body[data-alone] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tonight-main {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 372px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #121110;
+}
+
+.tonight-art {
+  position: absolute;
+  inset: 0;
+}
+
+/* Le sujet d'une image large est rarement au centre : on garde sa droite,
+   le texte prend sa gauche. */
+.tonight-art img,
+.tonight-art .noimg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 70% 30%;
+}
+
+.tonight-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.92) 0%,
+      rgba(0, 0, 0, 0.74) 36%,
+      rgba(0, 0, 0, 0.3) 66%,
+      rgba(0, 0, 0, 0.06) 100%
+    ),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.72) 0%, transparent 46%);
+}
+
+.tonight-text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  max-width: 58ch;
+  color: var(--on-art);
+}
+
+.tonight-k {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+.tonight-text h3 {
+  margin: 0;
+  font-size: clamp(26px, 2.4vw, 34px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+/* Les faits en pastilles : la note en laiton, l'année, le genre — ou l'épisode. */
+.tonight-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.tonight-facts > span {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Le laiton d'une note, sur une image : la teinte claire, dans les deux thèmes. */
+.tonight-facts .tonight-rating {
+  font-weight: 700;
+  color: #f0c866;
+  background: rgba(240, 200, 102, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(240, 200, 102, 0.28);
+}
+
+.tonight-plot {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  opacity: 0.88;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tonight-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.26);
+  overflow: hidden;
+}
+
+.tonight-bar span {
+  display: block;
+  height: 100%;
+  background: var(--on-art);
+}
+
+.tonight-left {
+  margin: 0;
+  font-size: var(--text-sm);
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.tonight-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* Sur l'image, l'encre du thème ne se voit pas : blanc sur noir, dans les deux thèmes. */
+.tonight-actions .btn[data-variant='primary'] {
+  background: var(--on-art);
+  border-color: var(--on-art);
+  color: #121110;
+}
+
+.tonight-actions .btn[data-variant='primary']:hover:not(:disabled) {
+  background: #f2efe9;
+  border-color: #f2efe9;
+}
+
+.tonight-actions .btn:not([data-variant='primary']) {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.32);
+  color: var(--on-art);
+}
+
+.tonight-actions .btn:not([data-variant='primary']):hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+/* La colonne : les cartes se partagent la hauteur de la grande, sans vide. */
+.tonight-side {
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+/*
+ * Une carte de la colonne : le visuel, trois lignes, un geste au bout.
+ *
+ * L'intitulé dit ce que c'est, le titre est le titre, la dernière ligne ce
+ * qu'on veut savoir avant de cliquer ; le rond au bout de la ligne dit ce que
+ * le clic fera. Sans lui, la moitié droite de la carte restait vide.
+ */
+.tonight-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--elevated);
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.15s var(--ease),
+    background 0.15s var(--ease);
+}
+
+.tonight-item:hover {
+  border-color: var(--accent-line);
+  background: var(--hover);
+}
+
+.tonight-item:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.tonight-item-art {
+  position: relative;
+  width: 148px;
+  aspect-ratio: 16 / 9;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--hover);
+}
+
+.tonight-item-art img,
+.tonight-item-art .noimg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tonight-item-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.tonight-item-bar span {
+  display: block;
+  height: 100%;
+  background: var(--on-art);
+}
+
+.tonight-item-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tonight-item-k {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.tonight-item-text b {
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tonight-item-text > span:last-child {
+  font-size: var(--text-xs);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tonight-item-go {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding-left: 1px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  color: var(--dim);
+  font-size: var(--text-lg);
+  line-height: 1;
+  transition:
+    background 0.15s var(--ease),
+    color 0.15s var(--ease),
+    border-color 0.15s var(--ease);
+}
+
+.tonight-item:hover .tonight-item-go {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+@media (max-width: 900px) {
+  .tonight-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tonight-main {
+    min-height: 250px;
+  }
+  .tonight-text {
+    padding: var(--space-5) var(--space-4) var(--space-4);
+  }
+  .tonight-text h3 {
+    font-size: var(--text-2xl);
+  }
+  .tonight-item-art {
+    width: 120px;
+  }
+}
+
+/* ================================================================ la barre */
+
+/* Les tris et les langues ne se compressent pas : c'est le champ qui cède. */
+.bar-actions .seg {
+  flex-shrink: 0;
+}
+
+/* ============================================================ la fiche */
+
+/*
+ * L'image large tient la page.
+ *
+ * Elle déborde des gouttières jusqu'aux bords, et se fond dans le fond de
+ * page par le bas : l'affiche et le titre viennent se poser dessus. Sans image
+ * large, l'affiche floutée en tient lieu — la page prend la couleur du film
+ * sans qu'aucune donnée manquante ne se voie.
+ */
+.fiche-hero {
+  position: relative;
+  height: 360px;
+  margin: 0 calc(-1 * var(--gutter));
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+
+.fiche-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 28%;
+}
+
+.fiche-hero[data-blur] img {
+  filter: blur(48px) saturate(1.4);
+  transform: scale(1.35);
+  opacity: 0.55;
+}
+
+.fiche-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg) 8%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 30%, transparent) 55%,
+    var(--bg) 100%
+  );
+}
+
+.fiche-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: var(--space-6);
+  margin-top: -130px;
+  margin-bottom: var(--space-7);
+}
+
+.fiche-poster {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  box-shadow: var(--shadow-lift);
+}
+
+.fiche-poster img,
+.fiche-poster .noimg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fiche-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: 138px;
+  min-width: 0;
+}
+
+.fiche-main h1 {
+  margin: 0;
+  font-size: clamp(28px, 3.6vw, 40px);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.fiche-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.fiche-meta b {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.fiche-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* La reprise : la barre et le temps restant, sous les gestes. */
+.fiche-resume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 420px;
+}
+
+.fiche-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.fiche-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.fiche-resume > span {
+  font-size: var(--text-xs);
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.fiche-plot {
+  margin: 0;
+  max-width: 66ch;
+  font-size: var(--text-lg);
+  line-height: 1.6;
+}
+
+/* La fiche technique : des faits en colonnes, pas des paragraphes gris. */
+.fiche-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-5);
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  max-width: 820px;
+}
+
+.fiche-facts dt {
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.fiche-facts dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.fiche-wide {
+  grid-column: span 2;
+}
+
+.fiche-cast {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.fiche-cast span {
+  padding: 3px var(--space-2);
+  border-radius: 999px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  font-size: var(--text-xs);
+}
+
+/*
+ * Les versions, en une ligne de pastilles après les gestes.
+ *
+ * La langue, la qualité, le format — et l'avertissement sur la pastille qui le
+ * mérite, en couleur d'alerte : c'est la seule chose de la ligne qui décide
+ * si le clic marchera.
+ */
+.versions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.versions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.versions-k {
+  margin-right: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.version {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--elevated);
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: border-color 0.14s var(--ease), box-shadow 0.14s var(--ease);
+}
+
+.version:hover {
+  border-color: var(--border-strong);
+}
+
+.version[data-on] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.version small {
+  font-size: var(--text-xs);
+  color: var(--faint);
+  font-weight: 400;
+}
+
+.version em {
+  margin-left: var(--space-1);
+  font-style: normal;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--warn);
+}
+
+.versions-note {
+  margin: 0;
+  max-width: 66ch;
+}
+
+@media (max-width: 760px) {
+  .fiche-hero {
+    height: 220px;
+  }
+  .fiche-body {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    margin-top: -80px;
+  }
+  .fiche-poster {
+    width: 150px;
+  }
+  .fiche-main {
+    padding-top: 0;
+  }
+  .fiche-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ============================================================ les épisodes */
+
+/*
+ * Un épisode : l'image, le numéro, le titre, deux lignes, ce qu'il reste.
+ *
+ * Le prochain à voir est cadré ; les autres suivent au même format. La durée
+ * est sur l'image, la progression aussi, « Vu » aussi — le texte ne dit que ce
+ * que l'image ne peut pas dire.
+ */
+.eps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ep {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-soft);
+  transition: border-color 0.14s var(--ease);
+}
+
+.ep:hover {
+  border-color: var(--border-strong);
+}
+
+.ep[data-next] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.ep[data-seen] .ep-title {
+  color: var(--dim);
+}
+
+.ep-still {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--hover);
+  cursor: pointer;
+}
+
+.ep-still img,
+.ep-still .noimg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ep-prog {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--scrim);
+}
+
+.ep-prog b {
+  display: block;
+  height: 100%;
+  background: var(--on-art);
+}
+
+.ep-len {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.66);
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ep-seen {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.ep-play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--on-art);
+  opacity: 0;
+  transition: opacity 0.16s var(--ease);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.ep-still:hover .ep-play,
+.ep-still:focus-visible .ep-play {
+  opacity: 1;
+}
+
+.ep-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.ep-n {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.ep-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.ep-plot {
+  margin: 0;
+  max-width: 70ch;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ep-status {
+  font-size: var(--text-xs);
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.ep-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+@media (max-width: 760px) {
+  .ep {
+    grid-template-columns: 1fr;
+  }
+  .ep-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* ============================================================ l'historique */
+
+/* Le résumé de la semaine : quatre chiffres, avant la liste. */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.stat b {
+  display: block;
+  font-family: var(--font-title);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat span {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+/* Le jour, en intertitre : le mot, puis un filet jusqu'au bord. */
+.day {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.day::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Oublier : une croix posée sur la vignette, révélée au survol. */
+.card-x {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(6px);
+  color: var(--on-art);
+  font-size: var(--text-lg);
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.16s var(--ease), background 0.16s var(--ease);
+}
+
+.card-wrap:hover .card-x,
+.card-x:focus-visible {
+  opacity: 1;
+}
+
+.card-x:hover {
+  background: var(--live);
+  color: #fff;
+}
+
+@media (hover: none) {
+  .card-x {
+    opacity: 1;
+  }
+}
+
+/* Une affiche recadrée en 16/9 : le haut, où sont les visages et le titre. */
+.card-poster[data-shape='still'] {
+  object-position: center 22%;
+}
+
+/* ============================================================ la recherche */
+
+/* Le terme cherché, dans le titre qui l'a trouvé. */
+mark {
+  background: color-mix(in srgb, var(--gold) 26%, transparent);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* ============================================================ mon compte */
+
+/* Qui je suis à gauche, ce que je règle à droite. */
+.acct {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+  margin-bottom: var(--space-8);
+}
+
+.acct-side {
+  position: sticky;
+  top: calc(var(--header-h) + var(--bar-h) + var(--bar-gap));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-soft);
+  text-align: center;
+}
+
+.acct-side h2 {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-2xl);
+  font-weight: 600;
+}
+
+.acct-mail {
+  font-size: var(--text-sm);
+  color: var(--dim);
+  overflow-wrap: anywhere;
+}
+
+.acct-tags {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.acct-since {
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+.acct-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/*
+ * Un groupe de réglages : un titre, une note, puis des lignes.
+ *
+ * Les groupes donnent des repères là où la liste actuelle n'en donnait qu'un,
+ * le défilement.
+ */
+.rowset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--elevated);
+  overflow: hidden;
+}
+
+.rowset-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-soft);
+}
+
+.rowset-head b {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.rowset-head > span:not(.spacer) {
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+.rowset-body {
+  padding: var(--space-2) var(--space-4);
+}
+
+.rowset-ic {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  color: var(--dim);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+/* Les profils en pastilles, avec leurs langues. */
+.profs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+
+.prof {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  transition: border-color 0.14s var(--ease);
+}
+
+.prof:hover {
+  border-color: var(--border-strong);
+}
+
+.prof[data-add] {
+  border-style: dashed;
+  color: var(--dim);
+}
+
+.prof-plus {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 29%;
+  border: 1px dashed var(--border-strong);
+  font-size: var(--text-lg);
+}
+
+.prof-t {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prof-t b {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.prof-t span {
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+@media (max-width: 900px) {
+  .acct {
+    grid-template-columns: 1fr;
+  }
+  .acct-side {
+    position: static;
+  }
+}
+
+/* ============================================================ comptes */
+
+/* Un tableau, cinq colonnes : ce qu'on compare d'un compte à l'autre. */
+.tbl {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--elevated);
+  overflow: hidden;
+  margin-bottom: var(--space-6);
+}
+
+.tbl-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) 1.2fr 0.9fr 1fr 1.2fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.tbl-row > span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.tbl-row[data-off] {
+  opacity: 0.6;
+}
+
+.tbl-head {
+  border-top: 0;
+  background: var(--bg-soft);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.tbl-who {
+  gap: var(--space-2) !important;
+  flex-wrap: nowrap !important;
+}
+
+.tbl-who > span:not(.tbl-av) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tbl-who b {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tbl-who span span {
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+.tbl-av {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.tbl-sub {
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+@media (max-width: 900px) {
+  .tbl-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .tbl-head,
+  .tbl-row > span:nth-child(3),
+  .tbl-row > span:nth-child(4),
+  .tbl-row > span:nth-child(5) {
+    display: none;
+  }
+}
+
+/* Les actions d'une ligne, dans un menu. */
+.menu {
+  position: relative;
+}
+
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 180px;
+  padding: var(--space-1);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--elevated) 97%, transparent);
+  box-shadow: var(--shadow-lift);
+  backdrop-filter: blur(12px);
+}
+
+.menu-panel button {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+
+.menu-panel button:hover {
+  background: var(--hover);
+}
+
+.menu-panel button[data-danger] {
+  color: var(--live);
+}
+
+/* La politique d'inscription : trois états, celui en vigueur cadré. */
+.policy {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.pol {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--elevated);
+}
+
+.pol[data-on] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.pol b {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.pol span {
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+@media (max-width: 760px) {
+  .policy {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================ abonnements */
+
+/* Une carte par source, qui dit ce qui compte ce soir. */
+.abos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+}
+
+.abo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--elevated);
+  transition: border-color 0.16s var(--ease);
+}
+
+.abo:hover {
+  border-color: var(--border-strong);
+}
+
+/* Désactivée, elle reste lisible mais recule. */
+.abo[data-off] {
+  opacity: 0.62;
+}
+
+.abo-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.abo-head h2 {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.abo-host {
+  font-family: ui-monospace, monospace;
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+/* La jauge en cases : une par connexion, celles qui sont prises en encre. */
+.gauge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gauge-bar {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+}
+
+.gauge-bar i {
+  flex: 1;
+  border-radius: 4px;
+  background: var(--border);
+}
+
+.gauge-bar i[data-used] {
+  background: var(--accent);
+}
+
+.gauge > span {
+  font-size: var(--text-xs);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.abo-playing {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.abo-playing li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  min-width: 0;
+}
+
+.abo-kv {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.abo-kv dt {
+  margin-bottom: 3px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.abo-kv dd {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+.abo-kv dd b {
+  font-weight: 600;
+}
+
+.abo-bad {
+  color: var(--live);
+}
+
+.abo-result {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--live);
+}
+
+.abo-result[data-ok] {
+  color: var(--ok);
+}
+
+.abo-actions {
+  display: flex;
+  gap: var(--space-1);
+  margin-top: auto;
+}
+
+/* Le catalogue : la dernière synchronisation, la grille, leurs boutons. */
+.jobs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.job {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-soft);
+}
+
+.job[data-running] {
+  border-color: var(--accent-line);
+}
+
+.job-big {
+  flex-shrink: 0;
+  font-family: var(--font-title);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.job-t {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.job-t b {
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.job-t span {
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+@media (max-width: 900px) {
+  .jobs {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================ l'entrée */
+
+/*
+ * Connexion et inscription, en deux moitiés.
+ *
+ * À gauche les affiches du catalogue, penchées et fondues vers le bas, avec
+ * la marque et une phrase ; à droite le formulaire. Le panneau est toujours
+ * sombre : il porte des images, pas le papier de l'application, et son texte
+ * reste clair dans les deux thèmes.
+ */
+.auth {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  position: relative;
+  z-index: 1;
+}
+
+.auth-art {
+  position: relative;
+  overflow: hidden;
+  background: #121110;
+}
+
+.auth-mosaic {
+  position: absolute;
+  inset: -6%;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  transform: rotate(-6deg) scale(1.12);
+  opacity: 0.5;
+}
+
+.auth-mosaic img {
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.auth-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(18, 17, 16, 0.2) 0%, rgba(18, 17, 16, 0.94) 100%);
+}
+
+.auth-say {
+  position: absolute;
+  left: var(--space-7);
+  right: var(--space-7);
+  bottom: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: #fff;
+}
+
+.auth-say .brand {
+  color: #fff;
+  font-size: var(--text-xl);
+}
+
+.auth-say .brand::before {
+  background: #fff;
+}
+
+.auth-say h2 {
+  margin: 0;
+  font-size: clamp(26px, 3.2vw, 38px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  max-width: 18ch;
+}
+
+.auth-say p {
+  margin: 0;
+  max-width: 44ch;
+  font-size: var(--text-md);
+  line-height: 1.55;
+  opacity: 0.8;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8) clamp(var(--space-5), 6vw, 80px);
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.auth-form h1 {
+  margin: 0 0 var(--space-1);
+  font-size: clamp(26px, 3vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.auth-lede {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.auth-alt {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-sm);
+  color: var(--faint);
+}
+
+.auth-alt a {
+  color: var(--accent-hover);
+  font-weight: 600;
+}
+
+.auth-alt a:hover {
+  text-decoration: underline;
+}
+
+/* Les trois étapes de l'inscription, annoncées avant de signer. */
+.steps {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.steps li[data-on] {
+  color: var(--text);
+}
+
+.steps i {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.steps li[data-on] i {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Les exigences du mot de passe, qui se cochent en tapant. */
+.checks {
+  display: inline-flex;
+  gap: var(--space-3);
+}
+
+.checks span[data-ok] {
+  color: var(--ok);
+}
+
+@media (max-width: 900px) {
+  .auth {
+    grid-template-columns: 1fr;
+  }
+  .auth-art {
+    min-height: 260px;
+  }
+  .auth-say {
+    left: var(--space-5);
+    right: var(--space-5);
+    bottom: var(--space-5);
+  }
+  .auth-form {
+    padding: var(--space-6) var(--space-5);
+  }
+}
+
+/* ============================================================ qui regarde */
+
+/* Le profil sous le curseur — clavier ou souris — cadré, pour qu'on le voie de loin. */
+.picker-cell[data-cursor] .picker-face {
+  box-shadow: 0 0 0 3px var(--text);
+}
+
+.picker-langs {
+  display: inline-flex;
+  gap: var(--space-1);
+  font-size: var(--text-md);
+  line-height: 1;
+}
+
+.picker-langs .flag {
+  margin: 0;
+}
+
+.picker-keys {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: calc(-1 * var(--space-3)) 0 var(--space-5);
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+.picker-keys kbd {
+  display: inline-block;
+  margin-right: 3px;
+  padding: 2px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  font: 600 11px/1.2 var(--font-body);
+  color: var(--dim);
+}
+
+/* ================================================= la colonne de catégories */
+
+/*
+ * La page de parcours se partage : la colonne à gauche, les résultats à
+ * droite. La colonne reste en vue pendant qu'on descend dans la grille — c'est
+ * le repère de la page — et seule sa liste défile.
+ *
+ * Elle touche le bord gauche de la fenêtre. La grille entière se décale d'une
+ * gouttière vers la gauche, et la première colonne s'élargit d'autant : les
+ * résultats ne bougent donc pas d'un pixel, mais la plaque de la colonne va
+ * chercher le bord au lieu de flotter à quarante pixels de lui. La gouttière
+ * repasse à l'intérieur de la plaque, si bien que les libellés restent alignés
+ * sur la marque de l'en-tête.
+ */
+.split {
+  display: grid;
+  grid-template-columns: calc(264px + var(--gutter)) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+  margin-left: calc(-1 * var(--gutter));
+  /*
+   * La colonne touche le bandeau de la page.
+   *
+   * Le bandeau porte une marge basse de douze pixels — la respiration qu'il
+   * faut à du texte. Une plaque, elle, n'en veut pas : cet écart la faisait
+   * flotter sous la barre au lieu de s'y accrocher. La grille remonte donc de
+   * la même marge, et les résultats la reprennent en retrait pour eux seuls.
+   */
+  margin-top: calc(-1 * var(--bar-gap));
+}
+
+.results {
+  min-width: 0;
+  /* Ce que la colonne refuse, le texte le garde. */
+  padding-top: var(--bar-gap);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  /* Juste sous le bandeau de la page, sans écart : c'est à lui qu'elle
+     s'accroche, et elle y reste pendant tout le défilement. */
+  top: calc(var(--header-h) + var(--bar-h));
+  max-height: calc(100vh - var(--header-h) - var(--bar-h) - var(--space-5));
+  /* La gouttière, moins le retrait que la tête et la liste portent déjà. */
+  padding-left: calc(var(--gutter) - var(--space-2));
+  border: 1px solid var(--border);
+  border-left: 0;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  /*
+   * `--elevated`, et une ombre.
+   *
+   * La plaque était en `--bg-soft` : sur le fond de page, mesuré, un rapport
+   * de contraste de 1,06 — autant dire rien. Collée au bord gauche et privée
+   * de son filet de ce côté, elle n'avait plus aucune arête visible, et on
+   * pouvait la croire décollée alors qu'elle touchait le bord. Elle monte donc
+   * d'un cran de surface, et l'ombre lui rend un bord.
+   */
+  background: var(--elevated);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.sidebar-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+/*
+ * `.field` porte `flex: 0 1 300px`, pensé pour la barre de rubrique, où
+ * l'axe principal est horizontal et ces 300 px une largeur. Ici l'axe est
+ * vertical : la même règle donnait au champ **trois cents pixels de haut**, et
+ * la colonne s'ouvrait sur un vide de la hauteur d'une carte.
+ */
+.sidebar-head .field {
+  flex: 0 0 auto;
+  margin: 0 var(--space-1) var(--space-2);
+}
+
+.sidebar-head .field input {
+  padding-top: var(--space-2);
+  padding-bottom: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.sidebar-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-2);
+  scrollbar-width: thin;
+}
+
+.sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sidebar-pick,
+.sidebar-star {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--dim);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.sidebar-pick {
+  min-width: 0;
+  padding: var(--space-2);
+  text-align: left;
+}
+
+/* Dans une ligne, le libellé prend la place que l'étoile laisse. Cette
+   croissance n'a de sens que là : en colonne, elle porterait sur la hauteur. */
+.sidebar-row .sidebar-pick {
+  flex: 1;
+}
+
+/* Le libellé se tronque ; la marque et le compte gardent leur place. */
+.sidebar-pick > span:not(.flag):not(.mark):not(.sidebar-count) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-pick:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+/* L'entrée choisie s'inverse — encre et papier — comme tout ce qui est choisi. */
+.sidebar-pick[data-active='true'],
+.sidebar-row[data-active='true'] .sidebar-pick {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.sidebar-count {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--faint);
+}
+
+.sidebar-pick[data-active='true'] .sidebar-count,
+.sidebar-row[data-active='true'] .sidebar-count {
+  color: var(--on-accent);
+  opacity: 0.7;
+}
+
+/* L'épingle n'apparaît qu'au survol de sa ligne, sauf quand elle est posée. */
+.sidebar-star {
+  flex-shrink: 0;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--faint);
+  opacity: 0;
+}
+
+.sidebar-row:hover .sidebar-star,
+.sidebar-star:focus-visible,
+.sidebar-star[data-on] {
+  opacity: 1;
+}
+
+.sidebar-star:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.sidebar-star[data-on] {
+  color: var(--text);
+}
+
+.sidebar-logo {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 1px;
+  border-radius: 4px;
+  object-fit: contain;
+  background: var(--plaque);
+  filter: var(--plaque-halo);
+}
+
+/*
+ * Titre de groupe : la langue.
+ *
+ * Il reste collé en haut pendant le défilement — sur trois cent quatre-vingt-huit
+ * catégories, on perdrait sinon de vue dans quel groupe on se trouve — et il ne
+ * colle que le temps de sa propre section, chacune ayant son bloc.
+ *
+ * Un filet part du mot et court jusqu'au bord : sans lui, le titre était une
+ * ligne grise de plus au milieu de lignes grises, et rien ne disait qu'une
+ * section s'ouvrait là. Il tient lieu de séparateur et de titre à la fois.
+ *
+ * L'espace qui précède est un remplissage, jamais une marge : collé, un titre
+ * à marge laisse passer les lignes derrière la bande vide qu'il traîne.
+ */
+.sidebar-group {
+  position: sticky;
+  top: calc(-1 * var(--space-2));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-2) var(--space-2);
+  background: var(--elevated);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.sidebar-group span {
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-group::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  min-width: var(--space-4);
+  /* Marqué près du mot, effacé au bout : un filet plein d'un bord à l'autre
+     découpait la colonne en tiroirs, et `--border` seul ne se voyait pas. */
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--border-strong) 75%, transparent),
+    transparent
+  );
+}
+
+/* La première section ouvre la liste : elle n'a rien à séparer de ce qui
+   précède, et ce blanc-là était juste du vide en haut de la colonne. */
+.sidebar-sect:first-child .sidebar-group {
+  padding-top: var(--space-1);
+}
+
+/* Au-dessus des résultats : ce qu'on regarde, et les tris à droite. */
+.results-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.results-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.results-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* La colonne s'élargit avec la fenêtre : à 264 px, « CANAL+ SPORTS PREMIÈRE »
+   se coupait alors que la place ne manquait nulle part ailleurs. */
+@media (min-width: 1800px) {
+  .split {
+    grid-template-columns: calc(300px + var(--gutter)) minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+@media (min-width: 2400px) {
+  .split {
+    grid-template-columns: calc(340px + var(--gutter)) minmax(0, 1fr);
+  }
+}
+
+/* Sous 900 px la colonne passe au-dessus, en hauteur bornée : une liste
+   verticale de trois cents catégories repousserait la grille hors de l'écran. */
+@media (max-width: 900px) {
+  .split {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    margin-left: 0;
+    margin-top: 0;
+  }
+  .results {
+    padding-top: 0;
+  }
+  .sidebar {
+    position: static;
+    max-height: 320px;
+    padding-left: 0;
+    border-left: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+}
+
+/* ================================================= la carte d'une chaîne */
+
+/*
+ * Une carte de programme, pas une plaque de chaîne.
+ *
+ * Elle a été une tuile de logo, puis une ligne de guide, et les deux
+ * répondaient à « quelles chaînes existe-t-il ? ». Celle-ci répond à « qu'y
+ * a-t-il en ce moment ? » : un visuel 16/9, l'avancement de l'émission au bas
+ * du visuel, et dessous ce qu'on regarde — le direct, la chaîne, l'heure, puis
+ * le titre en gras et son résumé.
+ *
+ * Le visuel est le logo sur sa plaque : ni le fournisseur ni l'agenda importé
+ * ne publient d'image d'émission. Il occupe donc les deux tiers du cadre,
+ * centré, plutôt que de le remplir.
+ */
+.chan-wrap {
+  position: relative;
+}
+
+.chan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chan-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  /* Plus de place en bas : le nom s'y pose, et le logo ne doit pas passer
+     dessous. */
+  padding: var(--space-4) var(--space-4) var(--space-6);
+  border-radius: var(--radius);
+  background: var(--plaque);
+  overflow: hidden;
+  transition: box-shadow 0.15s var(--ease);
+}
+
+/*
+ * Le fond : le logo lui-même, agrandi jusqu'à remplir le cadre et flouté
+ * jusqu'à n'être plus qu'un champ coloré.
+ *
+ * Aucune image d'émission n'existe dans nos données. Restait un aplat sombre
+ * identique sur cent cartes. Le logo porte les couleurs de la chaîne : TF1 est
+ * bleu et rouge, Gulli vert, M6 violet. Étalé derrière, il rend à chaque carte
+ * ce qui la distingue déjà, sans rien télécharger de plus.
+ *
+ * Il déborde du cadre de sa moitié : un flou de trente pixels laisserait
+ * sinon quatre bords transparents, et le cadre se lirait comme une vignette
+ * mal détourée.
+ */
+.chan-back {
+  position: absolute;
+  inset: -25%;
+  width: 150%;
+  height: 150%;
+  object-fit: cover;
+  filter: blur(22px) saturate(2.2);
+  opacity: 0.72;
+  transform: scale(1.15);
+}
+
+/*
+ * Un voile par-dessus le fond, sous le logo.
+ *
+ * Sans lui, un logo clair posé sur son propre halo clair perdait ses contours,
+ * et le numéro en haut à gauche flottait sur un fond imprévisible.
+ */
+.chan-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    74% 74% at 50% 45%,
+    color-mix(in srgb, var(--plaque) 38%, transparent),
+    color-mix(in srgb, var(--plaque) 70%, transparent)
+  );
+}
+
+.chan-logo {
+  position: relative;
+  z-index: 1;
+  max-width: 68%;
+  max-height: 68%;
+  object-fit: contain;
+  filter: var(--plaque-halo);
+}
+
+/* Le repli occupe le cadre entier : ses initiales tiennent lieu de logo. */
+.chan-media .noimg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 0;
+}
+
+.chan:hover .chan-media,
+.chan:focus-visible .chan-media {
+  box-shadow: inset 0 0 0 2px var(--accent-line);
+}
+
+.chan:focus-visible {
+  outline: none;
+}
+
+.chan:focus-visible .chan-media {
+  box-shadow: var(--ring);
+}
+
+/*
+ * Le numéro et la qualité, en colonne à gauche.
+ *
+ * Ils se posaient l'un à gauche, l'autre à droite. Mais l'étoile occupe ce
+ * coin droit — trente pixels de bouton sur une étiquette de douze : la
+ * qualité disparaissait dessous dès que la carte portait une étoile, c'est-à-
+ * dire partout où l'on peut mettre une chaîne de côté, et en permanence sur
+ * un écran tactile où l'étoile ne s'efface jamais. La droite appartient à
+ * l'étoile ; ce que la carte dit d'elle-même tient dans une seule colonne.
+ */
+.chan-tags {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+/* Le numéro : c'est lui qu'on connaît par cœur. */
+.chan-num {
+  min-width: 20px;
+  padding: 1px var(--space-1);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.14);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--on-art);
+  font-variant-numeric: tabular-nums;
+}
+
+/* La qualité et l'âge, sous le numéro : sur le visuel, pas dans le texte. */
+.chan-q {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--on-art);
+}
+
+.chan-play {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding-left: 2px;
+  border-radius: 50%;
+  background: var(--on-art);
+  color: #121110;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.15s var(--ease), transform 0.15s var(--ease);
+}
+
+.chan:hover .chan-play,
+.chan:focus-visible .chan-play {
+  opacity: 1;
+  transform: none;
+}
+
+/* L'avancement de l'émission, au ras du visuel — le seul rouge de la carte. */
+.chan-elapsed {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.chan-elapsed i {
+  display: block;
+  height: 100%;
+  background: var(--live);
+}
+
+/*
+ * Le nom, sur la plaque.
+ *
+ * Il était écrit sous le visuel, en troisième position, après « En direct » et
+ * avant la catégorie du fournisseur : trois lignes dont deux répétaient ce que
+ * le logo et la colonne de gauche disaient déjà. Posé sur son propre dégradé,
+ * il distingue enfin les trente-trois chaînes d'une ligue qui partagent le
+ * même logo, et la carte s'arrête à sa plaque.
+ */
+.chan-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: var(--space-5) var(--space-3) var(--space-2);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: var(--on-art);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.72));
+  /* Deux lignes au plus : « Canal+ Sport 360 » passe, un libellé à rallonge
+     ne mange pas la moitié du visuel. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.chan-name .flag,
+.chan-name .mark {
+  vertical-align: -0.12em;
+}
+
+/*
+ * L'émission, sous le visuel — et rien quand l'agenda se tait.
+ *
+ * C'est la seule chose que la plaque ne peut pas porter : un titre d'émission
+ * est trop long pour tenir sur une image sans la couvrir.
+ */
+.chan-prog {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+/* Deux lignes réservées : « Télématin » à côté de « Des magazines ou
+   documentaires de société » ne doit pas décaler l'heure de l'une par rapport
+   à l'autre. */
+.chan-prog b {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.6em;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.chan-prog > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chan-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-right: 2px;
+  border-radius: 50%;
+  background: var(--live);
+}
+
+/* L'étoile se pose sur le visuel, comme sur une affiche. */
+.chan-wrap .card-star {
+  top: 6px;
+  right: 6px;
+}
+
+@media (max-width: 640px) {
+  .chan-media {
+    padding: var(--space-4) var(--space-3);
+  }
+}
+
+/* ================================================= le direct, par catégorie */
+
+.cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-2);
+}
+
+.cat {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 58px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--elevated);
+  color: var(--text);
+  transition: border-color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.cat:hover {
+  border-color: var(--accent-line);
+  background: var(--hover);
+}
+
+/*
+ * La marque d'une catégorie : son logo, ou son thème.
+ *
+ * Les deux ne se présentent pas pareil. Un logo est un visuel étranger : il
+ * lui faut sa plaque, comme sur une chaîne. Un thème est notre propre tracé :
+ * il se pose sur le fond de la carte, sans cadre — encadré, il se lisait
+ * comme une image qui n'aurait pas chargé.
+ */
+.cat-mark {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.cat-mark[data-logo] {
+  background: var(--plaque);
+}
+
+.cat-mark img {
+  width: 100%;
+  height: 100%;
+  padding: 5px;
+  object-fit: contain;
+  filter: var(--plaque-halo);
+}
+
+.cat-mark .flag,
+.cat-mark .mark {
+  margin: 0;
+  font-size: 21px;
+  width: auto;
+  height: auto;
+  color: var(--dim);
+}
+
+/* Le tracé prend la taille de la plaque qu'il remplace, pas celle d'un mot. */
+.cat-mark .mark svg {
+  width: 24px;
+  height: 24px;
+}
+
+.cat:hover .cat-mark .mark {
+  color: var(--text);
+}
+
+.cat-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cat-text b {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-text span {
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+/* ==================================================== le compte des nouveautés */
+
+/*
+ * « 142 nouveautés » : le seul chiffre de la page qui commande une action —
+ * descendre voir. Aligné avec les autres titres il ne se distinguait plus de
+ * « Ma liste » ou « Le direct ». Il prend donc une plaque à lui, encre et
+ * papier inversés, seule façon d'insister que la charte autorise.
+ */
+.news {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.news-n {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 104px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.news-n b {
+  font-size: var(--text-4xl);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.news-n > span {
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.news-t {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.news-t h2 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.news-t p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+
+@media (max-width: 640px) {
+  .news-n {
+    min-width: 82px;
+    padding: var(--space-2) var(--space-3);
+  }
+  .news-n b {
+    font-size: var(--text-3xl);
+  }
+  .news-t h2 {
+    font-size: var(--text-xl);
+  }
+}
+
+/* ================================================= les rangées qui défilent */
+
+/*
+ * Une rangée qui glisse. La barre de défilement est masquée — elle coupait
+ * le bas des vignettes — et deux choses la remplacent : les flèches, du côté
+ * où il reste quelque chose, et le glissement à la souris. Le doigt et le
+ * pavé tactile glissent déjà tout seuls.
+ */
+.rail {
+  position: relative;
+}
+
+.rail-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 164px;
+  gap: var(--space-4);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: var(--space-1) 0 var(--space-3);
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 56px), transparent);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 56px), transparent);
+}
+
+.rail-track::-webkit-scrollbar {
+  display: none;
+}
+
+.rail-track > * {
+  scroll-snap-align: start;
+}
+
+/*
+ * Le navigateur sait déjà faire glisser une image et un lien — une affiche est
+ * les deux. Son glisser-déposer prenait la main au quatrième pixel et coupait
+ * le nôtre. Le `dragstart` est refusé en JavaScript ; ceci couvre les moteurs
+ * qui décident avant de l'émettre.
+ */
+.rail-track img,
+.rail-track a {
+  -webkit-user-drag: none;
+}
+
+.rail-track[data-scrollable] {
+  cursor: grab;
+}
+
+.rail-track[data-dragging] {
+  cursor: grabbing;
+  user-select: none;
+  scroll-snap-type: none;
+}
+
+.rail-track[data-dragging] * {
+  pointer-events: none;
+}
+
+/* Le dégradé de fin de rangée s'efface quand une flèche le double. */
+.rail:hover .rail-track {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.rail-arrow {
+  position: absolute;
+  top: 0;
+  /* La hauteur du visuel, pas celle de la rangée entière : centrée sur le
+     tout, la flèche tombait sur le titre de la vignette. */
+  bottom: 52px;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--text);
+  opacity: 0;
+  transition: opacity 0.18s var(--ease);
+}
+
+.rail-arrow[data-side='left'] {
+  left: -10px;
+  background: linear-gradient(90deg, var(--bg) 42%, transparent);
+}
+
+.rail-arrow[data-side='right'] {
+  right: -10px;
+  background: linear-gradient(270deg, var(--bg) 42%, transparent);
+}
+
+.rail-arrow[data-side='left'] svg {
+  transform: rotate(180deg);
+}
+
+/* Elles n'existent qu'au survol de la rangée : posées en permanence, deux
+   plaques mangeaient la première et la dernière vignette de chaque ligne. */
+.rail:hover .rail-arrow,
+.rail-arrow:focus-visible {
+  opacity: 1;
+}
+
+/* Sur écran tactile, le doigt fait le travail. */
+@media (hover: none) {
+  .rail-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .rail-track {
+    grid-auto-columns: 120px;
+  }
+}
+
+/* Une rangée suit la grille : même largeur de vignette d'un bloc à l'autre. */
+@media (min-width: 1800px) {
+  .rail-track {
+    grid-auto-columns: 188px;
+  }
+}
+
+@media (min-width: 2400px) {
+  .rail-track {
+    grid-auto-columns: 214px;
+  }
+}
+
+
+/*
+ * « Vu » descend d'un cran quand une note occupe déjà le coin.
+ *
+ * Les deux pastilles vivent en haut à gauche depuis que le titre a pris le bas
+ * de l'affiche. Elles se superposaient sur toute œuvre notée et déjà vue —
+ * c'est-à-dire précisément celles qu'on cherche dans « vus récemment ».
+ */
+.card-media:has(.badge-rating) .card-seen {
+  top: 40px;
+}

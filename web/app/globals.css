@@ -1,0 +1,17 @@
+/*
+ * La feuille de styles, en tranches.
+ *
+ * Elle a compte six mille lignes d'un seul tenant. Les tranches suivent
+ * **l'ordre d'origine** et non un regroupement par sujet : en CSS l'ordre est
+ * une regle, et deplacer un bloc pour le rapprocher de ses semblables
+ * changerait qui l'emporte sur qui. L'ordre des imports ci-dessous est donc
+ * l'ordre du fichier d'avant, a la ligne pres.
+ */
+@import './styles/01-socle.css';
+@import './styles/02-coquille.css';
+@import './styles/03-catalogue.css';
+@import './styles/04-kit.css';
+@import './styles/05-lecteur.css';
+@import './styles/06-compte.css';
+@import './styles/07-detail.css';
+@import './styles/08-pages.css';

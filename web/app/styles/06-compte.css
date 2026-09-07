@@ -1,0 +1,756 @@
+
+
+/*
+ * Champ de formulaire : un libellé au-dessus, un champ dessous.
+ *
+ * Renommé depuis `.field`, qui désignait déjà le champ de recherche. Comme
+ * cette règle-ci arrivait plus loin dans la feuille, elle l'emportait : toutes
+ * les recherches de l'application héritaient d'une disposition en colonne et
+ * d'une marge basse de 15 px, qui décalait le champ vers le haut de sa barre.
+ */
+/*
+ * Le champ et son libelle.
+ *
+ * `.form-field` reste, le temps que les formulaires migrent vers `<Field>` ;
+ * `.field` est la meme chose, posee par la primitive. Les deux partagent leurs
+ * regles pour qu'aucune ne derive de l'autre pendant la transition.
+ */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.form-field > label,
+.form-field label {
+  font-size: var(--text-xs);
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.form-field > input,
+.form-field > select,
+.form-field input {
+  width: 100%;
+}
+
+/* Un champ en faute se voit sans qu'on lise le message. */
+.form-field[data-invalid] > input,
+.form-field[data-invalid] > select {
+  border-color: var(--live);
+}
+
+.inline {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/*
+ * Drapeaux.
+ *
+ * Windows n'embarque aucune police couvrant les indicateurs régionaux : sans
+ * cette règle, Chrome affiche « FR » en petites capitales, c'est-à-dire
+ * exactement le code que le drapeau devait remplacer. Noto Color Emoji est
+ * chargée par `next/font` dans le layout ; c'est ici qu'elle sert, et nulle
+ * part ailleurs — le reste de l'interface garde la police système.
+ */
+.flag {
+  font-family: var(--font-emoji), 'Noto Color Emoji', 'Segoe UI Emoji', 'Apple Color Emoji',
+    sans-serif;
+  font-size: 1.05em;
+  line-height: 1;
+  flex-shrink: 0;
+  /* Les glyphes emoji descendent sous la ligne de base : on les remonte. */
+  vertical-align: -0.08em;
+  margin-right: 0.35em;
+}
+
+/*
+ * Marque dessinée : le pendant du drapeau quand il n'y a pas de pays.
+ *
+ * Elle occupe la même boîte et la même ligne de base, sinon les libellés d'une
+ * même liste ne s'aligneraient plus selon qu'ils portent un drapeau ou un tracé.
+ */
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05em;
+  height: 1.05em;
+  flex-shrink: 0;
+  margin-right: 0.35em;
+  color: var(--faint);
+  vertical-align: -0.16em;
+}
+
+.spin {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -2px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Le point rouge est réservé au direct : ici, il dit « ça consomme une
+   connexion en ce moment même ». */
+.dot-live {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--live);
+  box-shadow: 0 0 0 3px var(--live-soft);
+}
+
+.link-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--faint);
+  transition: color 0.13s var(--ease);
+}
+
+.link-btn:hover {
+  color: var(--live);
+}
+
+/* ------------------------------------------------------------ interrupteur */
+
+/*
+ * Une bascule, pas une case à cocher.
+ *
+ * Le geste est « allumer/éteindre » et non « cocher une option d'un
+ * formulaire » : il n'y a pas de bouton « Enregistrer » derrière, l'effet est
+ * immédiat. L'état se lit de loin, sans chercher la coche.
+ */
+.switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: var(--hover);
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition: background 0.18s var(--ease);
+  cursor: pointer;
+}
+
+.switch span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--faint);
+  transition:
+    transform 0.18s var(--ease),
+    background 0.18s var(--ease);
+}
+
+.switch[aria-checked='true'] {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+.switch[aria-checked='true'] span {
+  transform: translateX(18px);
+  background: var(--on-accent);
+}
+
+.switch:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ------------------------------------------------------------ modale : chapô */
+
+.modal-lede {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--faint);
+}
+
+/* --------------------------------------------------- blocs de réglages */
+
+/*
+ * Les pages de compte étaient une suite de `<h2>` et de tableaux nus : rien ne
+ * disait où finissait un sujet et où commençait le suivant, et les réglages
+ * flottaient au milieu de la page. Le cadre fait ce découpage.
+ */
+.panel {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.panel-head h2 {
+  font-family: var(--font-title);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* Répond une fois pour toutes à « qu'est-ce que ça change si j'y touche ? » —
+   question qu'on se posait devant chaque case. */
+.panel-head p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--faint);
+  max-width: 62ch;
+}
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Le dernier bloc ne colle pas au bas de la fenêtre. */
+.panel:last-child {
+  margin-bottom: var(--space-8);
+}
+
+/* ------------------------------------------------------- lignes de liste */
+
+/*
+ * Une rangée d'objet : visuel ou pastille, corps, actions à droite.
+ *
+ * Remplace les tableaux là où il n'y a pas vraiment de colonnes à comparer —
+ * un appareil connecté, un abonnement, une entrée d'historique. Le tableau y
+ * imposait des en-têtes pour des données qui se lisent d'elles-mêmes, et
+ * devenait illisible dès qu'on réduisait la fenêtre.
+ */
+.trow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.trow:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.trow:first-child {
+  padding-top: 0;
+}
+
+.trow-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.trow-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.trow-sub {
+  margin-top: 3px;
+  font-size: var(--text-xs);
+  color: var(--faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trow-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .trow {
+    flex-wrap: wrap;
+  }
+  .trow-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* --------------------------------------------------------- étiquettes */
+
+/*
+ * Un état en un mot. Le tableau écrivait « actif » dans une colonne dédiée,
+ * ce qui coûtait une colonne entière pour un seul bit d'information.
+ */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--border);
+  background: var(--elevated);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.tag[data-tone='on'] {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 40%, transparent);
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+
+.tag[data-tone='live'] {
+  color: var(--live);
+  border-color: color-mix(in srgb, var(--live) 40%, transparent);
+  background: var(--live-soft);
+}
+
+.tag[data-tone='accent'] {
+  color: var(--accent-hover);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+/*
+ * La règle sous un champ, avant la faute plutôt qu'après.
+ *
+ * « Dix caractères minimum » écrit une fois la saisie refusée arrive trop
+ * tard. La note est là dès le départ et vire au rouge quand elle est
+ * enfreinte : même texte, deux états.
+ */
+.field-note {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--faint);
+}
+
+.field-note[data-bad] {
+  color: var(--live);
+}
+
+/* --------------------------------------------------- premier abonnement */
+
+/*
+ * Compte créé, catalogue vide, et rien à attendre.
+ *
+ * L'écran ne propose qu'une chose. Centré et sans chrome autour, il ne laisse
+ * pas croire qu'il y aurait autre chose à explorer d'abord.
+ */
+.onboard {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: var(--space-8) 0 var(--space-8);
+  text-align: center;
+}
+
+.onboard-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: var(--space-5);
+  border-radius: 17px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.onboard h1 {
+  font-family: var(--font-title);
+  font-size: clamp(22px, 3.4vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-2);
+}
+
+.onboard p {
+  color: var(--dim);
+  font-size: var(--text-md);
+  line-height: 1.6;
+  margin: 0 0 var(--space-5);
+}
+
+/*
+ * Ce que le nouveau venu se demande sans oser le demander : où vont mes
+ * identifiants, qui voit mon catalogue, à qui appartiennent les connexions.
+ * Y répondre ici évite trois inquiétudes plutôt que de les laisser traîner.
+ */
+.onboard-notes {
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.onboard-notes li {
+  position: relative;
+  padding-left: var(--space-5);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  color: var(--faint);
+}
+
+.onboard-notes li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.55;
+}
+
+/* ------------------------------------------------------- sélecteur de profil */
+
+/*
+ * « Qui regarde ? »
+ *
+ * L'écran arrive juste après la connexion et n'a ni barre de navigation ni
+ * chrome : à ce moment-là il n'y a qu'une chose à faire, et tout le reste ne
+ * serait que du bruit autour d'elle. Les vignettes sont larges parce que le
+ * même écran sert à trois mètres, sur un téléviseur, à la télécommande.
+ */
+.picker {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-7) var(--gutter);
+  background:
+    radial-gradient(64% 62% at 50% 0%, var(--accent-soft), transparent 68%),
+    var(--bg);
+}
+
+.picker-inner {
+  width: 100%;
+  max-width: 880px;
+  text-align: center;
+}
+
+.picker-title {
+  font-family: var(--font-title);
+  font-size: clamp(26px, 4.6vw, 40px);
+  font-weight: 800;
+  margin: 0 0 var(--space-2);
+  letter-spacing: -0.02em;
+}
+
+.picker-lede {
+  color: var(--dim);
+  margin: 0 0 var(--space-6);
+  font-size: var(--text-md);
+}
+
+.picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.picker-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.16s var(--ease);
+}
+
+.picker-face {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  /*
+   * L'anneau est toujours là, transparent au repos : le faire *apparaître* au
+   * survol décalerait la vignette de deux pixels, et toute la rangée
+   * tressauterait au passage de la souris.
+   */
+  box-shadow: 0 0 0 3px transparent;
+  transition:
+    transform 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+}
+
+.picker-pick:hover .picker-face,
+.picker-pick:focus-visible .picker-face {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 3px var(--text);
+}
+
+.picker-pick:focus-visible {
+  outline: none;
+}
+
+.picker-pick:hover .picker-name,
+.picker-pick:focus-visible .picker-name {
+  color: var(--text);
+}
+
+/*
+ * Rayon proportionnel, et non une valeur fixe.
+ *
+ * `16px` sur une vignette de 96 px donne le carré arrondi voulu ; sur celle de
+ * 22 px du bloc « Profil actif », il dépassait la moitié du côté et la
+ * transformait en rond. Le pourcentage suit le `rx="7"` du SVG (7 sur 24), donc
+ * la forme est identique à toutes les tailles — et aucune surcharge par taille
+ * n'est plus nécessaire.
+ */
+.avatar {
+  display: block;
+  border-radius: 29%;
+}
+
+.picker-name {
+  font-family: var(--font-title);
+  font-size: var(--text-md);
+  font-weight: 600;
+  transition: color 0.16s var(--ease);
+}
+
+.picker-tag {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  margin-top: calc(-1 * var(--space-1));
+}
+
+/* En mode gestion, le crayon couvre la vignette : le geste change de sens,
+   l'apparence doit le dire avant le clic. */
+.picker-face[data-managing]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+}
+
+.picker-edit {
+  position: absolute;
+  z-index: 1;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+}
+
+.picker-add {
+  width: 112px;
+  height: 112px;
+  border-radius: 16px;
+  border: 2px dashed var(--border-strong);
+  color: var(--faint);
+}
+
+.picker-pick:hover .picker-add {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (max-width: 560px) {
+  .picker-grid {
+    gap: var(--space-4);
+  }
+  .avatar,
+  .picker-add {
+    width: 84px;
+    height: 84px;
+  }
+}
+
+/* ------------------------------------------------------------------- modale */
+
+.modal-back {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(3, 7, 11, 0.74);
+  backdrop-filter: blur(6px);
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--bg-soft);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lift);
+  text-align: left;
+}
+
+.modal-title {
+  font-family: var(--font-title);
+  font-size: var(--text-xl);
+  margin: 0 0 var(--space-4);
+}
+
+.modal-face {
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.pick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pick-chip {
+  padding: 3px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  line-height: 0;
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow 0.14s var(--ease);
+  cursor: pointer;
+}
+
+.pick-chip[data-on] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.pick-chip:hover {
+  box-shadow: 0 0 0 2px var(--border-strong);
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+  font-size: var(--text-md);
+  cursor: pointer;
+}
+
+.check input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.check em {
+  display: block;
+  font-style: normal;
+  font-size: var(--text-xs);
+  color: var(--faint);
+  margin-top: 2px;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.modal-actions .spacer {
+  flex: 1;
+}
+
+.btn-danger {
+  color: var(--live);
+  border-color: color-mix(in srgb, var(--live) 32%, transparent);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--live-soft);
+}
+
+/* ----------------------------------------------- profil dans le menu du compte */
+
+.account-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.account-who .avatar {
+  flex-shrink: 0;
+}
+
+.account-who span {
+  min-width: 0;
+}
+
+.account-who b {
+  display: block;
+  font-size: var(--text-sm);
+}
+
+.account-who em {
+  display: block;
+  font-style: normal;
+  font-size: var(--text-xs);
+  color: var(--faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Le bouton porte la vignette : le rond gris générique est remplacé par le
+   profil lui-même, on voit qui est aux commandes sans ouvrir le menu. */

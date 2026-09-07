@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.next/
+.next-build/
+.expo/
+
+# Les projets natifs sont regeneres par `expo prebuild` — sur cette machine
+# comme sur celles d'EAS Build. Les versionner ferait diverger le greffon
+# `mobile/plugins/withAndroidTv.js` de ce qui est reellement compile.
+mobile/android/
+mobile/ios/
+*.tsbuildinfo
+.env
+.env.local
+pgdata/
+
+next-env.d.ts
