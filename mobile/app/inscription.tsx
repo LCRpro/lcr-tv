@@ -8,6 +8,7 @@ import { useSession } from '../lib/session';
 import { colors, styles } from '../lib/theme';
 import { Button, Loading } from '../components/ui';
 import { Focusable } from '../components/Focusable';
+import { AuthBackdrop } from '../components/AuthBackdrop';
 
 /**
  * Création de compte.
@@ -66,11 +67,13 @@ export default function InscriptionScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={{ padding: 24, flexGrow: 1, justifyContent: 'center' }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AuthBackdrop />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={{ padding: 24, flexGrow: 1, justifyContent: 'center' }}>
         <View style={styles.brandDot}>
           <Text style={styles.brandDotText}>L</Text>
         </View>
@@ -110,8 +113,9 @@ export default function InscriptionScreen() {
             J&apos;ai déjà un compte · Se connecter
           </Text>
         </Focusable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 

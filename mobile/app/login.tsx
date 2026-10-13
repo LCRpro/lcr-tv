@@ -8,6 +8,7 @@ import { useSession } from '../lib/session';
 import { colors, styles } from '../lib/theme';
 import { Button } from '../components/ui';
 import { Focusable } from '../components/Focusable';
+import { AuthBackdrop } from '../components/AuthBackdrop';
 
 export default function LoginScreen() {
   const { login } = useSession();
@@ -37,11 +38,13 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.screen, { justifyContent: 'center', padding: 24 }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <Text style={styles.h1}>Connexion</Text>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <AuthBackdrop />
+      <KeyboardAvoidingView
+        style={{ flex: 1, justifyContent: 'center', padding: 24 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <Text style={styles.h1}>Connexion</Text>
       <Text style={[styles.dim, { marginBottom: 20 }]}>
         {canSignup
           ? 'Connectez-vous, ou créez un compte pour votre foyer.'
@@ -92,6 +95,7 @@ export default function LoginScreen() {
           </Text>
         </Focusable>
       ) : null}
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
