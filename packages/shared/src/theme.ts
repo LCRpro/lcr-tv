@@ -79,41 +79,20 @@ export const LIGHT: Palette = {
   warn: '#8a6112',
 };
 
-export const DARK: Palette = {
-  bg: '#121110',
-  bgSoft: '#191817',
-  elevated: '#201e1c',
-  hover: '#2a2724',
-  border: '#2d2a27',
-  borderStrong: '#6e6963',
-  text: '#f2efe9',
-  dim: '#a49d93',
-  faint: '#736c63',
-  accent: '#f2efe9',
-  accentHover: '#ffffff',
-  accentSoft: 'rgba(242, 239, 233, 0.1)',
-  accentLine: 'rgba(242, 239, 233, 0.32)',
-  onAccent: '#121110',
-  live: '#f0554f',
-  liveSoft: 'rgba(240, 85, 79, 0.16)',
-  gold: '#d9a441',
-  ok: '#5fbb8a',
-  warn: '#d9a441',
-};
-
 /**
- * « Nuit indigo » — la charte du client mobile et téléviseur.
+ * « Nuit indigo » — la charte sombre de tout le produit.
  *
- * Le web garde l'encre chaude de `DARK` ; l'application du salon, elle, assume
- * une couleur. La règle ne change pas — l'affiche porte la teinte, la coquille
- * porte le contraste — mais ici la coquille n'est plus neutre : le fond tire
- * vers un bleu de nuit, et l'accent est un périvenche électrique. Il devient
- * donc, lui, une vraie teinte (le bouton de lecture, la puce active, l'anneau
- * de focus), là où `DARK` inversait seulement l'encre et le papier. Le rouge
- * reste le direct, le laiton reste la note : ces deux-là ne bougent pas.
+ * Site web, application mobile et téléviseur la partagent : un seul endroit
+ * décide des couleurs du mode sombre. La règle ne change pas — l'affiche porte
+ * la teinte, la coquille porte le contraste — mais ici la coquille n'est plus
+ * neutre : le fond tire vers un bleu de nuit, et l'accent est un périvenche
+ * électrique. L'accent devient donc une vraie teinte (le bouton de lecture, la
+ * puce active, l'anneau de focus), là où un sombre neutre n'inversait que
+ * l'encre et le papier. Le rouge reste le direct, le laiton reste la note : ces
+ * deux-là ne bougent pas. Le web garde en plus un thème clair, `LIGHT`.
  *
- * `onAccent` redevient sombre, parce que le périvenche est clair : une encre
- * foncée s'y lit mieux qu'un blanc qui tomberait sous le seuil.
+ * `onAccent` est sombre, parce que le périvenche est clair : une encre foncée
+ * s'y lit mieux qu'un blanc qui tomberait sous le seuil.
  */
 export const INDIGO: Palette = {
   bg: '#0d0e16',
@@ -121,7 +100,7 @@ export const INDIGO: Palette = {
   elevated: '#1b1e2a',
   hover: '#232738',
   border: '#272b3a',
-  borderStrong: '#3c4257',
+  borderStrong: '#6a7091',
   text: '#eef0f7',
   dim: '#9aa0b5',
   faint: '#686d84',

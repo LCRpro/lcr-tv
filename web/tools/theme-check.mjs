@@ -16,7 +16,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DARK, LIGHT, ON_ART } from '@iptv/shared';
+import { INDIGO, LIGHT, ON_ART } from '@iptv/shared';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOCLE = join(ROOT, 'app', 'styles', '01-socle.css');
@@ -82,10 +82,10 @@ const blocks = [
   {
     nom: 'sombre (prefers-color-scheme)',
     selector: ":root:not([data-theme='light'])",
-    palette: DARK,
+    palette: INDIGO,
     fixed: false,
   },
-  { nom: "sombre (data-theme='dark')", selector: ":root[data-theme='dark']", palette: DARK, fixed: false },
+  { nom: "sombre (data-theme='dark')", selector: ":root[data-theme='dark']", palette: INDIGO, fixed: false },
 ];
 
 const ecarts = [];
