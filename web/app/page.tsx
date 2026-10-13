@@ -65,8 +65,8 @@ export default function Landing() {
           LCR TV
         </span>
         <nav className="lp-topnav">
-          <Link href="/login" className="lp-signin">
-            Connexion
+          <Link href="/tv" className="lp-signin">
+            Associer une TV
           </Link>
         </nav>
       </header>
@@ -130,6 +130,7 @@ export default function Landing() {
           LCR TV
         </span>
         <nav>
+          <Link href="/tv">Associer une TV</Link>
           <Link href="/login">Connexion</Link>
           <Link href="/inscription">Créer un compte</Link>
         </nav>
