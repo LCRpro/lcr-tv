@@ -46,9 +46,7 @@ export default function LoginScreen() {
       >
         <Text style={styles.h1}>Connexion</Text>
       <Text style={[styles.dim, { marginBottom: 20 }]}>
-        {canSignup
-          ? 'Connectez-vous, ou créez un compte pour votre foyer.'
-          : "Accès réservé. Les comptes sont créés par l'administrateur."}
+        Avec l&apos;adresse et le mot de passe du compte.
       </Text>
 
       {error ? (
@@ -90,8 +88,9 @@ export default function LoginScreen() {
 
       {canSignup ? (
         <Focusable onPress={() => router.push('/inscription')} style={{ marginTop: 18 }}>
-          <Text style={{ color: colors.accent, textAlign: 'center', fontWeight: '600' }}>
-            Pas encore de compte · Créer un compte
+          <Text style={{ textAlign: 'center' }}>
+            <Text style={styles.dim}>Pas encore de compte ? </Text>
+            <Text style={{ color: colors.accent, fontWeight: '600' }}>Créer un compte</Text>
           </Text>
         </Focusable>
       ) : null}
