@@ -19,6 +19,12 @@
         "buildType": "apk"
       }
     },
+    "tvos": {
+      "corepack": true,
+      "distribution": "internal",
+      "env": { "EXPO_TV": "1" },
+      "ios": { "simulator": false }
+    },
     "production": {
       "corepack": true,
       "autoIncrement": true,

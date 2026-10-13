@@ -19,7 +19,8 @@
       "expo-video",
       "expo-secure-store",
       "./plugins/withAndroidTv",
-      "expo-font"
+      "expo-font",
+      "@react-native-tvos/config-tv"
     ],
     "extra": {
       "apiUrl": "http://192.168.1.15:3001",
