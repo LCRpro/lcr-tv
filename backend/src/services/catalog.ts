@@ -2053,11 +2053,19 @@ let mosaicCache: { at: number; items: string[] } | null = null;
 
 export async function mosaicPosters(limit = 18): Promise<string[]> {
   if (mosaicCache && Date.now() - mosaicCache.at < 3600_000) return mosaicCache.items;
+  /*
+   * Pas de filtre sur les connecteurs actifs, ici : ce panneau est l'écran
+   * d'avant la connexion, purement décoratif, et il ne montre que des affiches
+   * hébergées par TMDB — rien qui identifie un fournisseur. Le restreindre à
+   * l'actif le vidait dès qu'un abonnement était désactivé, alors qu'il doit
+   * juste dire « voilà de la télévision » à quelqu'un qui n'a pas de compte.
+   * Sur une installation neuve, sans catalogue, il reste vide — et le panneau
+   * garde alors sa marque et sa phrase, seules.
+   */
   const rows = await db.execute<{ icon_url: string }>(raw`
     select icon_url from streams
     where type = 'vod' and removed_at is null and rating >= 7
       and icon_url like 'https://image.tmdb.org/%'
-      and provider_id in (select id from providers where is_active)
     order by md5(id::text || ${daySeed()})
     limit ${limit}
   `);
