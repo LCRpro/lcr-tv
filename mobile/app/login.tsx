@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Text, TextInput, View } from 'react-native';
-import { ApiError } from '../lib/api';
+import { useRouter } from 'expo-router';
+import type { SignupPolicy } from '@iptv/shared';
+import { api, ApiError } from '../lib/api';
+import { useAsync } from '../lib/hooks';
 import { useSession } from '../lib/session';
 import { colors, styles } from '../lib/theme';
 import { Button } from '../components/ui';
+import { Focusable } from '../components/Focusable';
 
 export default function LoginScreen() {
   const { login } = useSession();
+  const router = useRouter();
+  // La porte d'inscription ne s'affiche que si le serveur l'ouvre.
+  const policy = useAsync<SignupPolicy>(() => api.get('/api/auth/signup-policy'), []);
+  const canSignup = policy.data ? policy.data.mode !== 'closed' : false;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +43,9 @@ export default function LoginScreen() {
     >
       <Text style={styles.h1}>Connexion</Text>
       <Text style={[styles.dim, { marginBottom: 20 }]}>
-        Accès réservé. Les comptes sont créés par l&apos;administrateur.
+        {canSignup
+          ? 'Connectez-vous, ou créez un compte pour votre foyer.'
+          : "Accès réservé. Les comptes sont créés par l'administrateur."}
       </Text>
 
       {error ? (
@@ -74,6 +84,14 @@ export default function LoginScreen() {
         disabled={busy}
         onPress={() => void submit()}
       />
+
+      {canSignup ? (
+        <Focusable onPress={() => router.push('/inscription')} style={{ marginTop: 18 }}>
+          <Text style={{ color: colors.accent, textAlign: 'center', fontWeight: '600' }}>
+            Pas encore de compte · Créer un compte
+          </Text>
+        </Focusable>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }

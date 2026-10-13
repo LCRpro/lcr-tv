@@ -14,10 +14,11 @@ function Gate() {
 
   useEffect(() => {
     if (loading) return;
-    const onLogin = segments[0] === 'login';
+    const onAuth = segments[0] === 'login' || segments[0] === 'inscription';
     const onPicker = segments[0] === 'profils';
     if (!user) {
-      if (!onLogin) router.replace('/login');
+      // Connexion et inscription sont les deux portes ouvertes sans session.
+      if (!onAuth) router.replace('/login');
       return;
     }
     /*
@@ -31,7 +32,7 @@ function Gate() {
       if (!onPicker) router.replace('/profils');
       return;
     }
-    if (onLogin || onPicker) router.replace('/');
+    if (onAuth || onPicker) router.replace('/');
   }, [user, profile, loading, segments, router]);
 
   if (loading) {
@@ -52,6 +53,7 @@ function Gate() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="inscription" options={{ headerShown: false }} />
       <Stack.Screen name="profils" options={{ headerShown: false }} />
       <Stack.Screen name="compte" options={{ title: 'Compte' }} />
       <Stack.Screen name="search" options={{ title: 'Recherche' }} />

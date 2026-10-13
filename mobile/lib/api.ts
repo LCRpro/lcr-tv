@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import type { ApiErrorBody, ErrorCode } from '@iptv/shared';
@@ -29,19 +30,50 @@ export class ApiError extends Error {
 /**
  * Le token vit dans le trousseau du systeme, pas dans AsyncStorage : c'est un
  * secret de session, au meme titre qu'un mot de passe.
+ *
+ * Sur le web, il n'y a pas de trousseau : `expo-secure-store` y rejette tout
+ * appel. On retombe donc sur `localStorage`, sans quoi *chaque* requete
+ * echouerait avant meme le fetch — le token n'y est pas aussi bien garde que
+ * dans un trousseau natif, mais le web est une prevision/secours, pas la cible.
  */
 let cachedToken: string | null = null;
+const onWeb = Platform.OS === 'web';
+
+async function readToken(): Promise<string | null> {
+  if (onWeb) {
+    try {
+      return typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
+    } catch {
+      return null;
+    }
+  }
+  return SecureStore.getItemAsync(TOKEN_KEY);
+}
+
+async function writeToken(token: string | null): Promise<void> {
+  if (onWeb) {
+    try {
+      if (token) localStorage.setItem(TOKEN_KEY, token);
+      else localStorage.removeItem(TOKEN_KEY);
+    } catch {
+      // Stockage indisponible (navigation privee) : le cache memoire suffit a
+      // la session courante.
+    }
+    return;
+  }
+  if (token) await SecureStore.setItemAsync(TOKEN_KEY, token);
+  else await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
 
 export async function getToken(): Promise<string | null> {
   if (cachedToken !== null) return cachedToken;
-  cachedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+  cachedToken = await readToken();
   return cachedToken;
 }
 
 export async function setToken(token: string | null): Promise<void> {
   cachedToken = token;
-  if (token) await SecureStore.setItemAsync(TOKEN_KEY, token);
-  else await SecureStore.deleteItemAsync(TOKEN_KEY);
+  await writeToken(token);
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {

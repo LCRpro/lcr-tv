@@ -20,6 +20,8 @@ interface SessionState {
   leaveProfile: () => Promise<void>;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  /** Crée un compte et ouvre la session dans la foulée (transport bearer). */
+  signup: (email: string, password: string, profileName?: string, code?: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -84,6 +86,25 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     [refresh],
   );
 
+  const signup = useCallback(
+    async (email: string, password: string, profileName?: string, code?: string) => {
+      const res = await api.post<LoginResponse>('/api/auth/signup', {
+        email,
+        password,
+        profileName,
+        code,
+        transport: 'bearer',
+        deviceLabel: 'Application mobile',
+      });
+      if (res.token) await setToken(res.token);
+      setUser(res.user);
+      // Un compte neuf n'a qu'un profil : /me le choisit seul, et l'app ouvre
+      // directement sur l'accueil plutot que sur « qui regarde ? ».
+      await refresh();
+    },
+    [refresh],
+  );
+
   const selectProfile = useCallback(async (id: number) => {
     setProfile(await api.post<Profile>(`/api/profiles/${id}/select`));
   }, []);
@@ -111,8 +132,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, profiles, loading, login, logout, refresh, selectProfile, leaveProfile }),
-    [user, profile, profiles, loading, login, logout, refresh, selectProfile, leaveProfile],
+    () => ({ user, profile, profiles, loading, login, signup, logout, refresh, selectProfile, leaveProfile }),
+    [user, profile, profiles, loading, login, signup, logout, refresh, selectProfile, leaveProfile],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
