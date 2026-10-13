@@ -34,7 +34,17 @@ const walk = (d) => {
   for (const e of readdirSync(d)) {
     const f = join(d, e);
     if (statSync(f).isDirectory()) walk(f);
-    else if (/\.tsx?$/.test(f) && !/[\\/]locales[\\/]/.test(f)) sources.push(f);
+    else if (/\.tsx?$/.test(f) && !/[\\/]locales[\\/]/.test(f)) {
+      /*
+       * Exemption explicite : un fichier qui porte `i18n-ignore-file` n'est pas
+       * relu. C'est pour la vitrine — une page marketing n'appartient pas au
+       * système de traduction de l'application : son texte se travaille et se
+       * traduit à part, quand on décide de la lancer dans une autre langue. Le
+       * marqueur est volontairement moche pour qu'on le repère et qu'on ne
+       * l'abuse pas sur un écran de l'application.
+       */
+      if (!readFileSync(f, 'utf8').includes('i18n-ignore-file')) sources.push(f);
+    }
   }
 };
 for (const dir of ['app', 'components', 'lib']) walk(join(ROOT, dir));
