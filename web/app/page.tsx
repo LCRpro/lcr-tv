@@ -6,66 +6,55 @@
  * lance dans une autre langue. Le reste de l'application, lui, reste vérifié.
  */
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { api } from '../lib/api';
 
 /**
  * La vitrine — la seule page publique du web.
  *
- * Le produit, ce sont les applications ; le web ne les remplace pas, il les
- * présente et, demain, mène aux magasins. Une page, pas une arborescence :
- * ce qu'on vient y chercher, c'est comprendre ce que fait LCR TV et sur quels
- * écrans, puis télécharger. L'accès au compte et l'activation d'un téléviseur
- * vivent en bas, discrètement — ce ne sont pas ce qu'on vient voir d'abord.
+ * Le produit, ce sont les applications ; le web les présente et, demain, mène
+ * aux magasins. Le parti pris visuel suit celui du genre : un fond de nuit, un
+ * titre en dégradé, les badges des magasins, et surtout l'application montrée
+ * dans des téléphones. Ces captures sont les vrais écrans de LCR TV, en nuit
+ * indigo.
  *
- * Le fond est le même parti pris que partout : l'affiche porte la couleur, la
- * nuit indigo porte le reste. Les affiches viennent de la route publique qui
- * ne renvoie que des images TMDB.
+ * Un disclaimer, tout de suite sous le titre : LCR TV est un lecteur, pas un
+ * fournisseur de contenu. C'est vrai, et c'est la première chose à dire.
  */
-const PLATFORMS = ['iPhone', 'iPad', 'Apple TV', 'Android', 'Fire TV'] as const;
-
 const FEATURES: { title: string; text: string }[] = [
   {
-    title: 'Un compte, plusieurs profils',
-    text: 'Le compte, c’est le foyer. Chaque personne a son profil : sa liste, son historique, ses chaînes épinglées, sa langue.',
+    title: 'Toutes vos sources, réunies',
+    text: 'Branchez votre abonnement Xtream ou vos playlists M3U. LCR TV les rassemble en un seul catalogue, cherchable et rangé — le direct, les films, les séries.',
   },
   {
-    title: 'Toutes vos sources, au même endroit',
-    text: 'Branchez votre abonnement Xtream ou vos playlists M3U. LCR TV les réunit en un seul catalogue, cherchable et rangé.',
-  },
-  {
-    title: 'Direct, films et séries',
-    text: 'Les chaînes en direct, un catalogue de films et de séries avec affiches et synopsis, et la reprise de lecture là où vous vous étiez arrêté.',
+    title: 'Un profil par personne',
+    text: 'Le compte, c’est le foyer. Chacun a son profil : sa liste, son historique, ses chaînes épinglées, sa langue. La reprise de lecture suit, d’un écran à l’autre.',
   },
   {
     title: 'La TV se connecte au QR',
-    text: 'Sur Apple TV comme sur Android TV, un QR code s’affiche : scannez-le avec votre téléphone pour connecter le téléviseur, sans rien taper à la télécommande.',
+    text: 'Sur Apple TV comme sur Android TV, un QR code s’affiche. Scannez-le avec votre téléphone pour connecter le téléviseur — sans rien taper à la télécommande.',
   },
 ];
 
-const STEPS: { n: string; title: string; text: string }[] = [
-  { n: '1', title: 'Créez un compte', text: 'Une adresse, un mot de passe. C’est le compte du foyer.' },
-  { n: '2', title: 'Branchez vos sources', text: 'Votre abonnement ou vos playlists, depuis l’application.' },
-  { n: '3', title: 'Regardez partout', text: 'Téléphone, tablette, téléviseur — tout suit votre profil.' },
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: 'LCR TV fournit-il des chaînes ou des films ?',
+    a: 'Non. LCR TV est une application de lecture : elle n’héberge et ne fournit aucun contenu. Vous y branchez votre propre abonnement ou vos propres playlists.',
+  },
+  {
+    q: 'Sur quels appareils ?',
+    a: 'iPhone, iPad, Apple TV, Android et Fire TV — une seule application, un seul compte. Le site web, lui, sert à présenter l’app et à activer un téléviseur.',
+  },
+  {
+    q: 'Comment se connecter sur le téléviseur ?',
+    a: 'La TV affiche un QR code ; vous le scannez avec votre téléphone déjà connecté, et le téléviseur s’ouvre sur votre compte. Pas de mot de passe à saisir à la télécommande.',
+  },
+  {
+    q: 'Combien de profils puis-je créer ?',
+    a: 'Autant que le foyer en a besoin. Chaque profil garde ses favoris, son historique et ses réglages, séparément des autres.',
+  },
 ];
 
 export default function Landing() {
-  const [posters, setPosters] = useState<string[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .get<{ items: string[] }>('/api/auth/mosaic')
-      .then((res) => {
-        if (!cancelled) setPosters(res.items);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
     <main className="lp">
       <header className="lp-top">
@@ -77,49 +66,36 @@ export default function Landing() {
         </span>
         <nav className="lp-topnav">
           <Link href="/login" className="lp-signin">
-            Se connecter
+            Connexion
           </Link>
         </nav>
       </header>
 
       {/* ------------------------------------------------------------- hero */}
       <section className="lp-hero">
-        <div className="lp-mosaic" aria-hidden>
-          {posters.map((src) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={src} src={src} alt="" loading="lazy" />
-          ))}
+        <h1 className="lp-title">
+          Toute votre télévision,
+          <br />
+          sur tous vos écrans.
+        </h1>
+        <p className="lp-disclaimer">
+          LCR TV est une application de lecture : elle ne fournit aucun contenu. Vous y branchez
+          votre propre abonnement.
+        </p>
+
+        <div className="lp-stores">
+          <StoreBadge kind="apple" top="Télécharger dans" name="l’App Store" />
+          <StoreBadge kind="google" top="Disponible sur" name="Google Play" />
         </div>
-        <span className="lp-veil" aria-hidden />
+        <p className="lp-soon">Bientôt sur les magasins — iPhone · iPad · Apple TV · Android · Fire TV</p>
 
-        <div className="lp-hero-body">
-          <h1>
-            Toute votre télévision,
-            <br />
-            sur tous vos écrans.
-          </h1>
-          <p className="lp-lede">
-            Vos abonnements, vos chaînes numérotées, vos films et séries — réunis dans une seule
-            application. Un compte pour le foyer, un profil par personne.
-          </p>
-
-          <div className="lp-stores">
-            <StoreButton store="App Store" sub="iPhone · iPad" />
-            <StoreButton store="Google Play" sub="Android" />
-            <StoreButton store="Apple TV" sub="tvOS" />
-          </div>
-          <p className="lp-soon">Bientôt sur les magasins · un compte, tous vos écrans.</p>
+        {/* Les vrais écrans, dans des téléphones. */}
+        <div className="lp-devices" aria-hidden>
+          <span className="lp-glow" />
+          <img className="lp-device lp-device-left" src="/shots/direct.png" alt="" />
+          <img className="lp-device lp-device-main" src="/shots/accueil.png" alt="" />
+          <img className="lp-device lp-device-right" src="/shots/profils.png" alt="" />
         </div>
-      </section>
-
-      {/* -------------------------------------------------------- plateformes */}
-      <section className="lp-strip">
-        <span className="lp-strip-label">Une seule app</span>
-        <ul>
-          {PLATFORMS.map((p) => (
-            <li key={p}>{p}</li>
-          ))}
-        </ul>
       </section>
 
       {/* --------------------------------------------------------- features */}
@@ -132,20 +108,17 @@ export default function Landing() {
         ))}
       </section>
 
-      {/* ------------------------------------------------------ comment ça marche */}
-      <section className="lp-steps">
-        <h2>Comment ça marche</h2>
-        <ol>
-          {STEPS.map((s) => (
-            <li key={s.n}>
-              <span className="lp-step-n">{s.n}</span>
-              <div>
-                <h4>{s.title}</h4>
-                <p>{s.text}</p>
-              </div>
-            </li>
+      {/* -------------------------------------------------------------- faq */}
+      <section className="lp-faq">
+        <h2>Questions fréquentes</h2>
+        <div className="lp-faq-list">
+          {FAQ.map((item) => (
+            <details key={item.q} className="lp-faq-item">
+              <summary>{item.q}</summary>
+              <p>{item.a}</p>
+            </details>
           ))}
-        </ol>
+        </div>
       </section>
 
       {/* ------------------------------------------------------------- footer */}
@@ -157,22 +130,36 @@ export default function Landing() {
           LCR TV
         </span>
         <nav>
-          <Link href="/login">Se connecter</Link>
+          <Link href="/login">Connexion</Link>
           <Link href="/inscription">Créer un compte</Link>
         </nav>
-        <span className="lp-copy">© {new Date().getFullYear()} LCR TV</span>
+        <span className="lp-copy">© {new Date().getFullYear()} LCR TV · Lecteur, sans contenu fourni</span>
       </footer>
     </main>
   );
 }
 
-/** Un bouton de magasin, en attente des vrais liens : il annonce la plateforme
+/** Un badge de magasin, en attente des vrais liens : il annonce la plateforme
  *  sans promettre un lien qui n'existe pas encore. */
-function StoreButton({ store, sub }: { store: string; sub: string }) {
+function StoreBadge({ kind, top, name }: { kind: 'apple' | 'google'; top: string; name: string }) {
   return (
-    <span className="lp-store" aria-disabled>
-      <span className="lp-store-sub">{sub}</span>
-      <span className="lp-store-name">{store}</span>
+    <span className="lp-badge" aria-disabled>
+      {kind === 'apple' ? (
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden>
+          <path d="M16.365 1.43c0 1.14-.42 2.2-1.12 2.99-.78.9-2.06 1.6-3.12 1.52-.13-1.1.42-2.27 1.1-3.02.76-.84 2.1-1.48 3.14-1.49zM20.5 17.1c-.57 1.32-.85 1.9-1.59 3.06-1.03 1.63-2.48 3.65-4.28 3.66-1.6.02-2.01-1.04-4.18-1.03-2.17.01-2.62 1.05-4.22 1.04-1.8-.02-3.17-1.85-4.2-3.47C-.9 17.9-1.2 12.8 1.08 10.1c.98-1.18 2.52-1.93 3.98-1.93 1.49 0 2.42 1.04 3.65 1.04 1.2 0 1.93-1.04 3.65-1.04 1.3 0 2.67.71 3.65 1.93-3.2 1.76-2.68 6.33.49 7.98z" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden>
+          <path d="M3.6 2.3 13.4 12 3.6 21.7a1.9 1.9 0 0 1-.4-1.2V3.5c0-.45.15-.86.4-1.2z" fill="#34d399" />
+          <path d="M16.9 8.5 13.4 12l3.5 3.5 3.3-1.9c1.1-.65 1.1-2.25 0-2.9z" fill="#fbbf24" />
+          <path d="M3.6 2.3c.33-.45.95-.57 1.5-.26l11.8 6.46-3.5 3.5z" fill="#60a5fa" />
+          <path d="M13.4 12 3.6 21.7c.37.5 1 .6 1.5.3l11.8-6.5z" fill="#f87171" />
+        </svg>
+      )}
+      <span className="lp-badge-txt">
+        <span className="lp-badge-top">{top}</span>
+        <span className="lp-badge-name">{name}</span>
+      </span>
     </span>
   );
 }

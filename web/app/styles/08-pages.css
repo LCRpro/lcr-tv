@@ -2996,9 +2996,8 @@ mark {
 /* ================================================================= la vitrine
  *
  * La page publique, et la seule. Elle assume la nuit indigo quel que soit le
- * thème du visiteur : une vitrine garde son identité, elle ne suit pas les
- * réglages d'un système. Les couleurs sont donc écrites ici, pas prises aux
- * variables de thème qui basculeraient en clair sur un OS clair.
+ * thème du visiteur : une vitrine garde son identité. Les couleurs sont donc
+ * écrites ici, pas prises aux variables de thème qui basculeraient en clair.
  */
 .lp {
   --lp-bg: #0d0e16;
@@ -3050,106 +3049,83 @@ mark {
   align-items: center;
   gap: 22px;
 }
-.lp-topnav a {
-  color: var(--lp-dim);
+.lp-signin {
+  padding: 9px 20px;
+  border-radius: 999px;
+  background: var(--lp-accent);
+  color: var(--lp-bg);
   text-decoration: none;
   font-size: 14px;
-  font-weight: 600;
-}
-.lp-topnav a:hover {
-  color: var(--lp-ink);
-}
-.lp-signin {
-  padding: 9px 18px;
-  border: 1px solid var(--lp-line);
-  border-radius: 999px;
+  font-weight: 700;
 }
 .lp-signin:hover {
-  border-color: var(--lp-accent);
+  background: #a7adff;
 }
 
 /* ---- hero ---- */
 .lp-hero {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   text-align: center;
-  padding: clamp(40px, 9vw, 110px) clamp(18px, 5vw, 56px) clamp(60px, 10vw, 120px);
-  margin-top: -66px;
-  min-height: 78vh;
+  padding: clamp(28px, 6vw, 70px) clamp(18px, 5vw, 56px) 0;
   overflow: hidden;
 }
-.lp-mosaic {
-  position: absolute;
-  inset: -4%;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 6px;
-  opacity: 0.22;
-  filter: saturate(1.05);
-}
-.lp-mosaic img {
-  width: 100%;
-  aspect-ratio: 2 / 3;
-  object-fit: cover;
-  border-radius: 8px;
-}
-.lp-veil {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(90% 70% at 50% 38%, rgba(13, 14, 22, 0.35), rgba(13, 14, 22, 0.86) 70%, var(--lp-bg) 100%),
-    linear-gradient(180deg, rgba(13, 14, 22, 0.5), transparent 24%, transparent 72%, var(--lp-bg));
-}
-.lp-hero-body {
-  position: relative;
-  z-index: 2;
-  max-width: 760px;
-}
-.lp-hero-body h1 {
-  font-size: clamp(34px, 6.4vw, 66px);
+.lp-title {
+  font-size: clamp(36px, 7vw, 76px);
   font-weight: 800;
-  line-height: 1.04;
-  letter-spacing: -0.035em;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
   text-wrap: balance;
-  margin: 0 0 20px;
+  margin: 0 0 18px;
+  background: linear-gradient(180deg, #f1f2ff 0%, #aab0ff 52%, #7c84f0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.lp-lede {
-  font-size: clamp(15px, 2.2vw, 19px);
+.lp-disclaimer {
+  font-size: clamp(13px, 1.9vw, 16px);
   line-height: 1.5;
   color: var(--lp-dim);
-  max-width: 54ch;
-  margin: 0 auto 32px;
+  max-width: 56ch;
+  margin: 0 auto 30px;
 }
 
+/* ---- badges magasins ---- */
 .lp-stores {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   justify-content: center;
 }
-.lp-store {
+.lp-badge {
   display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 18px;
+  border: 1px solid #2c3040;
+  border-radius: 13px;
+  background: #000;
+  color: #fff;
+  min-width: 190px;
+}
+.lp-badge svg {
+  flex: 0 0 auto;
+}
+.lp-badge-txt {
+  display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1px;
-  padding: 11px 20px;
-  border: 1px solid var(--lp-line);
-  border-radius: 13px;
-  background: rgba(27, 30, 42, 0.55);
-  backdrop-filter: blur(6px);
-  min-width: 150px;
+  line-height: 1.1;
 }
-.lp-store-sub {
+.lp-badge-top {
   font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--lp-faint);
+  letter-spacing: 0.02em;
+  color: #c9ccd6;
 }
-.lp-store-name {
-  font-size: 16px;
+.lp-badge-name {
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -3159,49 +3135,64 @@ mark {
   color: var(--lp-faint);
 }
 
-/* ---- bandeau plateformes ---- */
-.lp-strip {
+/* ---- composition de téléphones ---- */
+.lp-devices {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  height: clamp(300px, 46vw, 440px);
+  margin: clamp(28px, 5vw, 56px) auto 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 10px 26px;
-  padding: 0 clamp(18px, 5vw, 56px) 8px;
 }
-.lp-strip-label {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--lp-faint);
+.lp-glow {
+  position: absolute;
+  top: 6%;
+  left: 50%;
+  width: 70%;
+  height: 70%;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(139, 147, 255, 0.4), transparent 72%);
+  filter: blur(24px);
+  z-index: 0;
 }
-.lp-strip ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 22px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.lp-device {
+  position: absolute;
+  top: 0;
+  width: clamp(190px, 26vw, 250px);
+  border-radius: 30px;
+  box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.85);
+  /* Les captures sont cadrées sur le téléphone, en haut à gauche ; on affiche
+     cette zone et on laisse le reste être rogné, pour que les trois cadres
+     aient la même silhouette. */
+  aspect-ratio: 242 / 420;
+  object-fit: cover;
+  object-position: left top;
 }
-.lp-strip li {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--lp-ink);
+.lp-device-main {
+  position: relative;
+  z-index: 3;
+  width: clamp(210px, 29vw, 280px);
 }
-.lp-strip li + li::before {
-  content: '·';
-  margin-right: 22px;
-  color: var(--lp-faint);
+.lp-device-left {
+  z-index: 2;
+  transform: translateX(-62%) translateY(34px) rotate(-9deg);
+  opacity: 0.96;
+}
+.lp-device-right {
+  z-index: 1;
+  transform: translateX(62%) translateY(34px) rotate(9deg);
+  opacity: 0.96;
 }
 
 /* ---- features ---- */
 .lp-features {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  max-width: 980px;
-  margin: clamp(48px, 9vw, 96px) auto 0;
+  max-width: 1040px;
+  margin: clamp(10px, 3vw, 28px) auto 0;
   padding: 0 clamp(18px, 5vw, 56px);
 }
 .lp-feature {
@@ -3223,54 +3214,55 @@ mark {
   margin: 0;
 }
 
-/* ---- comment ça marche ---- */
-.lp-steps {
-  max-width: 820px;
-  margin: clamp(48px, 9vw, 96px) auto 0;
+/* ---- faq ---- */
+.lp-faq {
+  max-width: 760px;
+  margin: clamp(56px, 10vw, 110px) auto 0;
   padding: 0 clamp(18px, 5vw, 56px);
 }
-.lp-steps h2 {
+.lp-faq h2 {
   font-size: clamp(24px, 4vw, 34px);
   font-weight: 800;
   letter-spacing: -0.03em;
   text-align: center;
-  margin: 0 0 32px;
+  margin: 0 0 28px;
 }
-.lp-steps ol {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 22px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.lp-steps li {
+.lp-faq-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
-.lp-step-n {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  background: var(--lp-accent);
-  color: var(--lp-bg);
-  font-weight: 800;
-  font-size: 18px;
+.lp-faq-item {
+  border-bottom: 1px solid var(--lp-line);
 }
-.lp-steps h4 {
+.lp-faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 18px 0;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  margin: 0 0 5px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
 }
-.lp-steps li p {
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--lp-dim);
+.lp-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.lp-faq-item summary::after {
+  content: '+';
+  color: var(--lp-accent);
+  font-weight: 800;
+  font-size: 20px;
+}
+.lp-faq-item[open] summary::after {
+  content: '–';
+}
+.lp-faq-item p {
   margin: 0;
+  padding: 0 0 20px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--lp-dim);
 }
 
 /* ---- footer ---- */
@@ -3280,7 +3272,7 @@ mark {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  max-width: 980px;
+  max-width: 1040px;
   margin: clamp(56px, 10vw, 110px) auto 0;
   padding: 28px clamp(18px, 5vw, 56px) 48px;
   border-top: 1px solid var(--lp-line);
@@ -3304,9 +3296,14 @@ mark {
   color: var(--lp-faint);
 }
 
-@media (max-width: 720px) {
-  .lp-features,
-  .lp-steps ol {
+@media (max-width: 760px) {
+  .lp-features {
     grid-template-columns: 1fr;
+  }
+  .lp-device-left {
+    transform: translateX(-52%) translateY(40px) rotate(-10deg);
+  }
+  .lp-device-right {
+    transform: translateX(52%) translateY(40px) rotate(10deg);
   }
 }
