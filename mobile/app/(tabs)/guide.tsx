@@ -20,7 +20,7 @@ import { Focusable } from '../../components/Focusable';
 export default function GuideScreen() {
   const router = useRouter();
   const { data, loading, error } = useAsync<Paginated<LiveChannel>>(
-    () => api.get('/api/live?limit=120'),
+    () => api.get('/api/live?limit=100'),
     [],
   );
 

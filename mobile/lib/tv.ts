@@ -12,7 +12,29 @@ import { Platform } from 'react-native';
  * faux et l'application ne change pas d'un pixel : la couche TV s'ajoute, elle
  * ne remplace rien.
  */
-export const IS_TV = Platform.isTV;
+/*
+ * Forçage du mode TV dans l'aperçu web, et nulle part ailleurs.
+ *
+ * Un téléviseur réel se reconnait a `Platform.isTV` ; sur le web ce drapeau est
+ * toujours faux, donc l'interface « 10 pieds » ne s'y voit jamais — or c'est le
+ * seul endroit ou on peut la relire sans flasher un appareil. On autorise donc
+ * un forçage, mais verrouille a double tour : uniquement sur le web, uniquement
+ * sur un hote local, et uniquement si l'URL porte `?tv=1`. En natif cette
+ * fonction rend la main tout de suite : la couche TV reste pilotee par le seul
+ * `Platform.isTV`, jamais par ce repli de test.
+ */
+function tvForcedForPreview(): boolean {
+  if (Platform.OS !== 'web') return false;
+  try {
+    const host = window.location.hostname;
+    const local = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
+    return local && /[?&]tv=1(?:&|$)/.test(window.location.search);
+  } catch {
+    return false;
+  }
+}
+
+export const IS_TV = Platform.isTV || tvForcedForPreview();
 
 /**
  * Facteur d'echelle des tailles.

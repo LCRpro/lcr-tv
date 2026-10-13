@@ -6,7 +6,7 @@
     "orientation": "default",
     "scheme": "iptvperso",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#121110",
+    "backgroundColor": "#0d0e16",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "fr.perso.iptv"
