@@ -783,4 +783,6 @@ export const DE: Record<string, string> = {
   'Aucune chaîne regardée pour l’instant': 'Noch kein Sender gesehen',
   'Aucun film regardé pour l’instant': 'Noch kein Film gesehen',
   'Aucune série regardée pour l’instant': 'Noch keine Serie gesehen',
+  'Créez votre compte. Vous brancherez vos chaînes et vos profils ensuite — chaque foyer apporte son propre abonnement.': 'Erstellen Sie Ihr Konto. Ihre Sender und Profile richten Sie danach ein — jeder Haushalt bringt sein eigenes Abo mit.',
+  'Juste un compte pour votre foyer. Vous ajouterez vos chaînes et vos profils une fois à l’intérieur.': 'Nur ein Konto für Ihren Haushalt. Sender und Profile fügen Sie hinzu, sobald Sie drin sind.',
 };

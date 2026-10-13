@@ -71,8 +71,10 @@ export default function SignupPage() {
         transport: 'cookie',
       });
       await refresh();
-      // Le compte est créé et connecté : reste à lui donner un abonnement.
-      router.replace('/abonnements');
+      // S'inscrire, c'est créer un compte, rien de plus : on entre dans
+      // l'application. L'abonnement et les profils se font ensuite, quand on
+      // veut, depuis le compte — ce n'est pas une étape de l'inscription.
+      router.replace('/');
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : t('Inscription impossible. Le backend répond-il ?'),
@@ -86,7 +88,7 @@ export default function SignupPage() {
     <AuthArt
       title={t('Trois écrans, et ça marche.')}
       text={t(
-        'Un compte, puis votre abonnement, puis qui regarde. Chaque compte apporte le sien — personne ne partage ses connexions.',
+        'Créez votre compte. Vous brancherez vos chaînes et vos profils ensuite — chaque foyer apporte son propre abonnement.',
       )}
     />
   );
@@ -115,19 +117,10 @@ export default function SignupPage() {
       {art}
 
       <form className="auth-form" onSubmit={onSubmit}>
-        <ol className="steps" aria-label={t('Étapes')}>
-          <li data-on>
-            <i>1</i> {t('Votre compte')}
-          </li>
-          <li>
-            <i>2</i> {t('Votre abonnement')}
-          </li>
-          <li>
-            <i>3</i> {t('Qui regarde')}
-          </li>
-        </ol>
-
         <h1>{t('Créer un compte')}</h1>
+        <p className="auth-lede">
+          {t('Juste un compte pour votre foyer. Vous ajouterez vos chaînes et vos profils une fois à l’intérieur.')}
+        </p>
 
         {error && <div className="notice notice-error">{error}</div>}
 
@@ -202,7 +195,7 @@ export default function SignupPage() {
           busy={busy}
           busyLabel={t('Création…')}
         >
-          {t('Créer mon compte → abonnement')}
+          {t('Créer mon compte')}
         </Button>
 
         <p className="auth-alt">

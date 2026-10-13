@@ -784,4 +784,6 @@ export const ES: Record<string, string> = {
   'Aucune chaîne regardée pour l’instant': 'Ningún canal visto todavía',
   'Aucun film regardé pour l’instant': 'Ninguna película vista todavía',
   'Aucune série regardée pour l’instant': 'Ninguna serie vista todavía',
+  'Créez votre compte. Vous brancherez vos chaînes et vos profils ensuite — chaque foyer apporte son propre abonnement.': 'Cree su cuenta. Conectará sus canales y sus perfiles después: cada hogar aporta su propia suscripción.',
+  'Juste un compte pour votre foyer. Vous ajouterez vos chaînes et vos profils une fois à l’intérieur.': 'Solo una cuenta para su hogar. Añadirá sus canales y perfiles una vez dentro.',
 };

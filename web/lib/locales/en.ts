@@ -790,4 +790,6 @@ export const EN: Record<string, string> = {
   'Aucune chaîne regardée pour l’instant': 'No channel watched yet',
   'Aucun film regardé pour l’instant': 'No film watched yet',
   'Aucune série regardée pour l’instant': 'No series watched yet',
+  'Créez votre compte. Vous brancherez vos chaînes et vos profils ensuite — chaque foyer apporte son propre abonnement.': 'Create your account. You\'ll connect your channels and set up your profiles afterward — each household brings its own subscription.',
+  'Juste un compte pour votre foyer. Vous ajouterez vos chaînes et vos profils une fois à l’intérieur.': 'Just an account for your household. You\'ll add your channels and profiles once you\'re inside.',
 };
