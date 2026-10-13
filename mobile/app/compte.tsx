@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { DeviceSession, HistoryEntry, ProviderView } from '@iptv/shared';
 import { api, API_URL } from '../lib/api';
@@ -57,6 +58,13 @@ export default function CompteScreen() {
           </View>
         </View>
       ) : null}
+
+      {/* Associer un téléviseur : on recopie le code qu'il affiche. */}
+      <Focusable onPress={() => router.push('/associer-tv')} style={cs.pairTv}>
+        <Ionicons name="tv-outline" size={20} color={colors.accent} />
+        <Text style={cs.pairTvText}>Associer une TV</Text>
+        <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+      </Focusable>
 
       <View style={cs.headActions}>
         <Focusable onPress={() => void switchProfile()} style={[cs.action, { flex: 1 }]}>
@@ -231,6 +239,25 @@ function maskHost(url: string): string {
 const cs = {
   head: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 14, marginBottom: 16 },
   name: { color: colors.text, fontSize: 20, fontWeight: '800' as const, letterSpacing: -0.4 },
+  pairTv: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 11,
+    paddingVertical: 14,
+    paddingHorizontal: 15,
+    borderRadius: radius.md,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: colors.accentLine,
+    marginBottom: 12,
+  },
+  pairTvText: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700' as const,
+    letterSpacing: -0.2,
+  },
   headActions: { flexDirection: 'row' as const, gap: 10, marginBottom: 24 },
   action: {
     paddingVertical: 12,
