@@ -182,6 +182,49 @@ export interface SignupPolicy {
   mode: 'open' | 'code' | 'closed';
 }
 
+// ---------------------------------------------------- association d'un téléviseur
+
+/**
+ * Le téléviseur démarre l'association : il n'a pas de session, il demande juste
+ * un code à afficher. `deviceLabel` nomme l'appareil dans « appareils connectés »
+ * une fois la session créée.
+ */
+export const tvPairStartSchema = z.object({
+  deviceLabel: z.string().max(120).optional(),
+});
+export interface TvPairStartResponse {
+  /** Le code lisible, à afficher et à saisir, mis en forme (ex. « K7P2-9QMX »). */
+  code: string;
+  /** Le secret que le téléviseur garde pour sonder : il n'est jamais réaffiché. */
+  deviceSecret: string;
+  /** L'URL que le QR code encode : la page du site où saisir le code. */
+  verificationUrl: string;
+  expiresInSec: number;
+  pollIntervalSec: number;
+}
+
+/** Le téléviseur sonde avec son secret jusqu'à ce que quelqu'un réclame le code. */
+export const tvPairPollSchema = z.object({
+  deviceSecret: z.string().min(10).max(400),
+});
+export type TvPairPollResponse =
+  | { status: 'pending' }
+  | { status: 'expired' }
+  /** La session du téléviseur : il la stocke et appelle ensuite `/auth/me`. */
+  | { status: 'approved'; token: string };
+
+/**
+ * L'utilisateur réclame le code depuis le site ou son application — déjà
+ * connecté. Le téléviseur hérite du profil actif du réclamant, ou de « qui
+ * regarde ? » si aucun n'est choisi.
+ */
+export const tvPairClaimSchema = z.object({
+  code: z.string().min(4).max(20),
+});
+export interface TvPairClaimResponse {
+  deviceLabel: string | null;
+}
+
 // ---------------------------------------------------------------- catalogue
 
 export const listQuerySchema = z.object({

@@ -17,6 +17,7 @@ import { profileRoutes } from './routes/profiles.js';
 import { providerRoutes } from './routes/providers.js';
 import { playRoutes } from './routes/play.js';
 import { adminRoutes } from './routes/admin.js';
+import { tvRoutes } from './routes/tv.js';
 
 /**
  * Une lecture genere des dizaines de requetes de segments par minute. Les
@@ -104,6 +105,7 @@ export async function buildServer() {
   await app.register(profileRoutes, { prefix: '/api/profiles' });
   await app.register(providerRoutes, { prefix: '/api/providers' });
   await app.register(playRoutes, { prefix: '/api/play' });
+  await app.register(tvRoutes, { prefix: '/api/tv' });
   await app.register(adminRoutes, { prefix: '/api/admin' });
 
   return app;

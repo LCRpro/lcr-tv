@@ -24,6 +24,10 @@ export const ERROR_CODES = [
   'UNPLAYABLE_IN_BROWSER',
   'SYNC_ALREADY_RUNNING',
   'RATE_LIMITED',
+  /** Association d'un téléviseur : code inconnu/expiré, déjà réclamé, déjà consommé. */
+  'PAIRING_NOT_FOUND',
+  'PAIRING_USED',
+  'PAIRING_CONSUMED',
   'INTERNAL',
 ] as const;
 

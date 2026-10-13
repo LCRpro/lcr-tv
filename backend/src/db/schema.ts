@@ -211,6 +211,44 @@ export const sessions = pgTable(
   ],
 );
 
+/**
+ * L'association d'un téléviseur.
+ *
+ * Un téléviseur ne se connecte pas au clavier : il demande un code au serveur,
+ * l'affiche (en clair et en QR), et sonde en attendant. L'utilisateur, lui,
+ * saisit ce code depuis le site ou son téléphone — déjà connecté, il rattache
+ * la TV à son compte ; sinon il se connecte d'abord, dans le même geste. Au
+ * sondage suivant, le téléviseur reçoit sa propre session et s'ouvre.
+ *
+ * Le jeton de session n'est jamais stocké ici : il n'est créé qu'au sondage
+ * qui suit la réclamation, et remis au téléviseur sur-le-champ. Cette table ne
+ * garde que le code, le haché du secret du téléviseur, et à qui l'associer.
+ */
+export const tvPairings = pgTable(
+  'tv_pairings',
+  {
+    id: serial().primaryKey(),
+    /** Le code court et lisible, saisi par l'utilisateur. Rangé en majuscules. */
+    code: text().notNull(),
+    /** HMAC du secret que seul le téléviseur connaît : il sonde avec, et nul
+     *  ne peut se faire passer pour lui sans le connaître. */
+    deviceSecretHash: text().notNull(),
+    /** Remplis à la réclamation : à qui, et sur quel profil, rattacher la TV. */
+    userId: integer().references(() => users.id, { onDelete: 'cascade' }),
+    profileId: integer().references(() => profiles.id, { onDelete: 'set null' }),
+    /** `pending` → `claimed` → `consumed`. */
+    status: text().notNull().default('pending'),
+    deviceLabel: text(),
+    userAgent: text(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: now(),
+  },
+  (t) => [
+    uniqueIndex('tv_pairings_code_idx').on(t.code),
+    uniqueIndex('tv_pairings_secret_idx').on(t.deviceSecretHash),
+  ],
+);
+
 // ----------------------------------------------------------------- catalogue
 
 export const categories = pgTable(
