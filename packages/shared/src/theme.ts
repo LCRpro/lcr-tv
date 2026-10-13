@@ -102,6 +102,42 @@ export const DARK: Palette = {
 };
 
 /**
+ * « Nuit indigo » — la charte du client mobile et téléviseur.
+ *
+ * Le web garde l'encre chaude de `DARK` ; l'application du salon, elle, assume
+ * une couleur. La règle ne change pas — l'affiche porte la teinte, la coquille
+ * porte le contraste — mais ici la coquille n'est plus neutre : le fond tire
+ * vers un bleu de nuit, et l'accent est un périvenche électrique. Il devient
+ * donc, lui, une vraie teinte (le bouton de lecture, la puce active, l'anneau
+ * de focus), là où `DARK` inversait seulement l'encre et le papier. Le rouge
+ * reste le direct, le laiton reste la note : ces deux-là ne bougent pas.
+ *
+ * `onAccent` redevient sombre, parce que le périvenche est clair : une encre
+ * foncée s'y lit mieux qu'un blanc qui tomberait sous le seuil.
+ */
+export const INDIGO: Palette = {
+  bg: '#0d0e16',
+  bgSoft: '#14161f',
+  elevated: '#1b1e2a',
+  hover: '#232738',
+  border: '#272b3a',
+  borderStrong: '#3c4257',
+  text: '#eef0f7',
+  dim: '#9aa0b5',
+  faint: '#686d84',
+  accent: '#8b93ff',
+  accentHover: '#a7adff',
+  accentSoft: 'rgba(139, 147, 255, 0.14)',
+  accentLine: 'rgba(139, 147, 255, 0.34)',
+  onAccent: '#0d0e16',
+  live: '#ff5a5f',
+  liveSoft: 'rgba(255, 90, 95, 0.16)',
+  gold: '#f3c969',
+  ok: '#54b98c',
+  warn: '#f0a93b',
+};
+
+/**
  * Ce qui se pose sur une image, et non sur le papier de l'application.
  *
  * Le fond n'est alors pas le thème mais le visuel, et l'encre reste claire

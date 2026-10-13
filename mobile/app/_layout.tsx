@@ -53,8 +53,8 @@ function Gate() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="profils" options={{ headerShown: false }} />
-      <Stack.Screen name="films" options={{ title: 'Films' }} />
-      <Stack.Screen name="series" options={{ title: 'Séries' }} />
+      <Stack.Screen name="compte" options={{ title: 'Compte' }} />
+      <Stack.Screen name="search" options={{ title: 'Recherche' }} />
       <Stack.Screen name="film/[id]" options={{ title: '' }} />
       <Stack.Screen name="serie/[id]" options={{ title: '' }} />
       {/* Le lecteur est une modale plein ecran : fermer rend la pile intacte. */}

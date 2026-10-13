@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { ProfileAvatar, ProfileColor } from '@iptv/shared';
 
@@ -9,6 +10,10 @@ import type { ProfileAvatar, ProfileColor } from '@iptv/shared';
  * embarque plutot que d'ajouter `react-native-svg` pour dix chemins. Le couple
  * couleur + motif reste le meme des deux cotes : c'est lui qui sert de repere,
  * pas le prenom ecrit dessous.
+ *
+ * Depuis la charte « Nuit indigo », la vignette est un degrade et non plus un
+ * aplat clair : posee sur un fond bleu de nuit, elle a besoin de profondeur, et
+ * le glyphe passe en clair. Chaque couleur est donc un couple clair -> sombre.
  */
 const ICONS: Record<ProfileAvatar, keyof typeof Ionicons.glyphMap> = {
   wave: 'water',
@@ -23,15 +28,14 @@ const ICONS: Record<ProfileAvatar, keyof typeof Ionicons.glyphMap> = {
   heart: 'heart',
 };
 
-/** Memes teintes que le web, a l'identique : un profil doit se reconnaitre d'un
- *  ecran a l'autre. */
-const TINTS: Record<ProfileColor, string> = {
-  cyan: '#22d3ee',
-  violet: '#a78bfa',
-  rose: '#fb7185',
-  amber: '#fbbf24',
-  emerald: '#4ade80',
-  blue: '#60a5fa',
+/** Memes teintes de repere que le web, declinees en degrade clair -> sombre. */
+const TINTS: Record<ProfileColor, [string, string]> = {
+  cyan: ['#3ad6ef', '#1b8fb0'],
+  violet: ['#a78bfa', '#6d4fc9'],
+  rose: ['#e06a86', '#b23a5a'],
+  amber: ['#fbbf24', '#c98a0a'],
+  emerald: ['#54b98c', '#2f7d5c'],
+  blue: ['#6d8cff', '#3f57c9'],
 };
 
 export function Avatar({
@@ -43,24 +47,25 @@ export function Avatar({
   color: ProfileColor;
   size?: number;
 }) {
+  const pair = TINTS[color] ?? TINTS.blue;
   return (
-    <View
+    <LinearGradient
+      colors={pair}
+      start={{ x: 0.15, y: 0 }}
+      end={{ x: 0.85, y: 1 }}
       style={{
         width: size,
         height: size,
-        borderRadius: size * 0.19,
-        backgroundColor: TINTS[color] ?? TINTS.cyan,
+        borderRadius: size * 0.24,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
       <Ionicons
         name={ICONS[avatar] ?? 'water'}
-        size={size * 0.5}
-        // Encre profonde et non blanche : les teintes sont claires, un glyphe
-        // blanc s'y effacerait.
-        color="rgba(6, 20, 26, 0.82)"
+        size={size * 0.46}
+        color="rgba(255, 255, 255, 0.94)"
       />
-    </View>
+    </LinearGradient>
   );
 }

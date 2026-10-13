@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { CatalogList } from '../components/CatalogList';
+import { CatalogList } from '../../components/CatalogList';
 
 export default function SeriesScreen() {
   const router = useRouter();

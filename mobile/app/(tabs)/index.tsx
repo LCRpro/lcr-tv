@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Image,
   RefreshControl,
@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { workTitle, type FavoriteEntry, type HomePayload, type Spotlight } from '@iptv/shared';
 import { api } from '../../lib/api';
@@ -95,10 +96,21 @@ export default function HomeScreen() {
     >
       <ErrorNotice error={error} />
 
-      {/* 1. Ce soir : la selection du jour, en grand. */}
+      {/* 1. Le hero : la selection du jour, plein ecran. Le reste de la
+          selection suit en rail, pour ne pas la perdre. */}
       {data?.spotlight.length ? (
-        <Row title="Ce soir">
-          {data.spotlight.map((pick) => (
+        <HomeHero
+          pick={data.spotlight[0]!}
+          onOpen={() => {
+            const p = data.spotlight[0]!;
+            router.push(p.kind === 'series' ? `/serie/${p.id}` : `/film/${p.id}`);
+          }}
+        />
+      ) : null}
+
+      {data && data.spotlight.length > 1 ? (
+        <Row title="Ce soir aussi">
+          {data.spotlight.slice(1).map((pick) => (
             <SpotCard
               key={`${pick.kind}-${pick.id}`}
               pick={pick}
@@ -254,6 +266,76 @@ export default function HomeScreen() {
  * une, et elle ne servait nulle part. Le titre se pose dessus, sur son propre
  * degrade, comme sur toutes les autres cartes depuis la refonte.
  */
+/**
+ * Le hero — l'image large du jour, plein ecran, et ce qu'elle annonce dessus.
+ *
+ * Il saigne hors du rembourrage de la page (marges negatives) pour toucher les
+ * bords et le haut, juste sous la barre. Le degrade le fond dans le bleu de
+ * nuit : le rail suivant parait ne du meme bloc. « Lecture » ouvre la fiche,
+ * ou vit le vrai choix de version ; l'etoile range l'oeuvre dans la liste du
+ * profil, du meme geste que partout.
+ */
+function HomeHero({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
+  const [listed, setListed] = useState(pick.isFavorite);
+  const itemType = pick.kind === 'series' ? 'series' : 'stream';
+
+  const toggle = () => {
+    const next = !listed;
+    setListed(next);
+    const call = next
+      ? api.post('/api/me/favorites', { itemType, itemId: pick.id })
+      : api.del(`/api/me/favorites/${itemType}/${pick.id}`);
+    void call.catch(() => setListed(!next));
+  };
+
+  return (
+    <Focusable onPress={onOpen} style={{ marginHorizontal: -16, marginTop: -16, marginBottom: 8 }}>
+      <View style={styles.heroWrap}>
+        <Image source={{ uri: pick.backdropUrl }} style={styles.heroBg} resizeMode="cover" />
+        <LinearGradient
+          colors={['rgba(13,14,22,0.15)', 'rgba(13,14,22,0)', 'rgba(13,14,22,0.6)', '#0d0e16']}
+          locations={[0, 0.32, 0.72, 1]}
+          style={styles.heroVeil}
+          pointerEvents="none"
+        />
+        <View style={styles.heroBody}>
+          <Text style={styles.heroTitle} numberOfLines={2}>
+            {workTitle(pick.name)}
+          </Text>
+          <View style={styles.heroMetaRow}>
+            {pick.rating != null && pick.rating > 0 ? (
+              <Text style={styles.heroStar}>★ {pick.rating.toFixed(1)}</Text>
+            ) : null}
+            {pick.year ? <Text style={styles.heroMeta}>{pick.year}</Text> : null}
+            {pick.genre ? <View style={styles.heroDot} /> : null}
+            {pick.genre ? (
+              <Text style={styles.heroMeta} numberOfLines={1}>
+                {pick.genre}
+              </Text>
+            ) : null}
+          </View>
+          <View style={styles.heroActions}>
+            <Focusable onPress={toggle} style={styles.heroRound}>
+              <Ionicons
+                name={listed ? 'checkmark' : 'add'}
+                size={24}
+                color={listed ? colors.accent : colors.text}
+              />
+            </Focusable>
+            <Focusable onPress={onOpen} style={styles.heroPlay}>
+              <Ionicons name="play" size={16} color={colors.onAccent} />
+              <Text style={styles.heroPlayText}>Lecture</Text>
+            </Focusable>
+            <Focusable onPress={onOpen} style={styles.heroRound}>
+              <Ionicons name="information-circle-outline" size={24} color={colors.text} />
+            </Focusable>
+          </View>
+        </View>
+      </View>
+    </Focusable>
+  );
+}
+
 function SpotCard({
   pick,
   width,

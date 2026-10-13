@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { FlatList, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { LiveChannel, Movie, SearchResults, SeriesSummary } from '@iptv/shared';
-import { api, qs } from '../../lib/api';
-import { useAsync, useDebounced } from '../../lib/hooks';
-import { colors, gridColumns, styles } from '../../lib/theme';
-import { Card, ChannelCard, Empty, ErrorNotice, Loading } from '../../components/ui';
-import { Focusable } from '../../components/Focusable';
+import { api, qs } from '../lib/api';
+import { useAsync, useDebounced } from '../lib/hooks';
+import { colors, gridColumns, styles } from '../lib/theme';
+import { Card, ChannelCard, Empty, ErrorNotice, Loading } from '../components/ui';
+import { Focusable } from '../components/Focusable';
 
 type Tab = 'movies' | 'series' | 'live';
 

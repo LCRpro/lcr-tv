@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { DARK, ON_ART, RADIUS } from '@iptv/shared';
+import { INDIGO, ON_ART, RADIUS } from '@iptv/shared';
 
 /*
  * La palette vient de `packages/shared/src/theme.ts`, comme celle du web.
@@ -13,10 +13,13 @@ import { DARK, ON_ART, RADIUS } from '@iptv/shared';
  * Le mobile est sombre, sans bascule : on regarde la télévision le soir, et le
  * catalogue est un mur d'affiches, qui se tient mieux sur du sombre.
  */
-export const colors = DARK;
+export const colors = INDIGO;
 
 /** Ce qui se pose sur un visuel : indépendant du thème, par construction. */
-export const onArt = ON_ART;
+/* La plaque des logos tire vers le bleu de nuit plutôt que vers le brun du
+   web : sur fond indigo, un aplat chaud jurerait. Le reste de `ON_ART` — encre
+   blanche, voile — ne dépend pas du thème. */
+export const onArt = { ...ON_ART, plaque: '#141620' };
 
 export const radius = RADIUS;
 
@@ -554,6 +557,176 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 22,
     marginBottom: 10,
+  },
+
+  // ------------------------------------------------- marque & navigation
+
+  /* Le carre « L » : la marque, en accent, posee partout ou il faut un repere
+     d'identite — picker, barre haute. */
+  brandDot: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandDotText: {
+    color: colors.onAccent,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+
+  /*
+   * La barre haute : logo, onglets, profil.
+   *
+   * C'est la convention du salon — on lit l'ecran de haut en bas, les sections
+   * se choisissent en haut, et le profil actif se reconnait a sa vignette dans
+   * le coin. Elle remplace la barre d'onglets du bas, qui tombait sous le pouce
+   * mais ne disait rien de qui regarde.
+   */
+  navBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    backgroundColor: colors.bg,
+  },
+  navLogo: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navLogoText: {
+    color: colors.onAccent,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  navTabs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    flex: 1,
+  },
+  navTab: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.faint,
+    letterSpacing: -0.2,
+  },
+  navTabOn: {
+    color: colors.text,
+    fontWeight: '700',
+  },
+
+  // ------------------------------------------------- le hero plein largeur
+
+  /*
+   * Le hero : une image large qui occupe le haut de l'accueil.
+   *
+   * La selection du jour, en grand, et non plus une tuile parmi d'autres. Le
+   * degrade la fond dans la page pour que les rails qui suivent paraissent nes
+   * du meme bloc. Le titre et les deux boutons se posent en bas, centres.
+   */
+  heroWrap: {
+    position: 'relative',
+    width: '100%',
+    aspectRatio: 3 / 4,
+    maxHeight: 520,
+  },
+  heroBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  heroVeil: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  heroBody: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 16,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+  },
+  heroTitle: {
+    color: onArt.ink,
+    fontSize: 30,
+    fontWeight: '800',
+    letterSpacing: -0.8,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.55)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 14,
+  },
+  heroMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    marginTop: 9,
+    marginBottom: 16,
+  },
+  heroMeta: {
+    color: '#e8e2da',
+    fontSize: 12.5,
+    fontWeight: '500',
+  },
+  heroStar: {
+    color: colors.gold,
+    fontSize: 12.5,
+    fontWeight: '800',
+  },
+  heroDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  heroActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  heroPlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 28,
+    paddingVertical: 13,
+    borderRadius: 13,
+  },
+  heroPlayText: {
+    color: colors.onAccent,
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  heroRound: {
+    width: 48,
+    height: 48,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(27,30,42,0.72)',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 });
 

@@ -1,0 +1,603 @@
+<title>LCR TV — Refonte</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
+<style>
+  /* ======= chartes ======= L'affiche porte toujours la couleur ; la charte
+     teinte le fond et donne un accent. Le rouge reste le direct, l'or la note. */
+  :root, :root[data-theme="indigo"] {
+    --bg: #0d0e16; --bg-soft: #14161f; --elevated: #1b1e2a; --raise: #232738;
+    --plaque: #141620; --border: #272b3a; --border-strong: #3c4257;
+    --text: #eef0f7; --dim: #9aa0b5; --faint: #686d84;
+    --accent: #8b93ff; --ink: #0d0e16; --live: #ff5a5f; --gold: #f3c969;
+    --stage-top: #1b1d31; --stage-mid: #0c0d16; --stage-bot: #08090f;
+  }
+  :root[data-theme="ambre"] {
+    --bg: #16130d; --bg-soft: #1e1a13; --elevated: #262019; --raise: #2f2820;
+    --plaque: #1a1510; --border: #342c21; --border-strong: #4b4030;
+    --text: #f4eee2; --dim: #b4a992; --faint: #7e735e;
+    --accent: #f0a93b; --ink: #17120a; --live: #e5523f; --gold: #f2c94c;
+    --stage-top: #2a2114; --stage-mid: #15110b; --stage-bot: #0e0b07;
+  }
+  :root[data-theme="emeraude"] {
+    --bg: #0a1310; --bg-soft: #0f1a16; --elevated: #15241e; --raise: #1b2d25;
+    --plaque: #0e1613; --border: #203329; --border-strong: #35543f;
+    --text: #e9f2ec; --dim: #93a89d; --faint: #5f7268;
+    --accent: #2fd08a; --ink: #04140d; --live: #ff6060; --gold: #e8c15f;
+    --stage-top: #10261d; --stage-mid: #0a1510; --stage-bot: #060d0a;
+  }
+  :root[data-theme="rubis"] {
+    --bg: #150d10; --bg-soft: #1d1317; --elevated: #26191e; --raise: #301e25;
+    --plaque: #1a1013; --border: #352128; --border-strong: #4e3139;
+    --text: #f6eaec; --dim: #b89aa0; --faint: #7e5f66;
+    --accent: #e8485f; --ink: #ffffff; --live: #ff7a6a; --gold: #e8bf5f;
+    --stage-top: #2a1419; --stage-mid: #150c0f; --stage-bot: #0d0709;
+  }
+  :root[data-theme="encre"] {
+    --bg: #121110; --bg-soft: #191817; --elevated: #201e1c; --raise: #262320;
+    --plaque: #1b1a18; --border: #2d2a27; --border-strong: #46423c;
+    --text: #f2efe9; --dim: #a49d93; --faint: #736c63;
+    --accent: #f2efe9; --ink: #121110; --live: #f0554f; --gold: #d9a441;
+    --stage-top: #1d1b19; --stage-mid: #0d0c0b; --stage-bot: #090807;
+  }
+  :root { --rose: #e06a86; --emerald: #54b98c; --font: 'Archivo', system-ui, -apple-system, sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(120% 80% at 50% -10%, var(--stage-top) 0%, var(--stage-mid) 60%, var(--stage-bot) 100%);
+    color: var(--text);
+    transition: background .3s ease;
+    font-family: var(--font);
+    min-height: 100vh;
+    padding: 28px 16px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  /* ---- en-tete de la page de maquette ---- */
+  .lead { text-align: center; margin-bottom: 22px; }
+  .lead .mark {
+    display: inline-flex; align-items: center; gap: 9px;
+    font-weight: 800; letter-spacing: -0.02em; font-size: 15px;
+    color: var(--text); margin-bottom: 14px;
+  }
+  .lead .mark i {
+    width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center;
+    background: var(--accent); color: var(--ink); font-size: 13px; font-weight: 800;
+    font-style: normal;
+  }
+  .lead h1 {
+    font-size: clamp(26px, 4.4vw, 40px); font-weight: 800; letter-spacing: -0.03em;
+    line-height: 1.04; text-wrap: balance; margin-bottom: 10px;
+  }
+  .lead p { color: var(--dim); font-size: 15px; max-width: 54ch; margin: 0 auto; line-height: 1.5; }
+
+  /* ---- selecteur d'ecran ---- */
+  .switch { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 24px 0 30px; }
+  .switch button {
+    appearance: none; border: 1px solid var(--border); background: var(--bg-soft);
+    color: var(--dim); font-family: var(--font); font-size: 13.5px; font-weight: 600;
+    padding: 9px 16px; border-radius: 999px; cursor: pointer; transition: all .16s ease;
+    letter-spacing: -0.01em;
+  }
+  .switch button:hover { color: var(--text); border-color: var(--border-strong); }
+  .switch button[aria-selected="true"] {
+    background: var(--accent); color: var(--ink); border-color: var(--accent);
+  }
+  .switch button b { font-weight: 800; }
+
+  /* ---- selecteur de charte ---- */
+  .palettes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin: 18px 0 2px; }
+  .palettes .pl-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-right: 4px; }
+  .palettes button {
+    appearance: none; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg-soft); color: var(--dim);
+    font-family: var(--font); font-size: 12.5px; font-weight: 600; padding: 7px 13px; border-radius: 999px;
+    transition: all .16s ease;
+  }
+  .palettes button i { width: 12px; height: 12px; border-radius: 50%; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+  .palettes button:hover { color: var(--text); border-color: var(--border-strong); }
+  .palettes button[aria-selected="true"] { color: var(--text); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
+  /* ---- scene : telephone + note ---- */
+  .scene { display: flex; gap: 40px; align-items: flex-start; justify-content: center; flex-wrap: wrap; }
+
+  .phone {
+    position: relative; width: 390px; height: 844px; flex: 0 0 auto;
+    background: #000; border-radius: 52px; padding: 6px;
+    box-shadow: 0 0 0 2px #2a2724, 0 40px 90px -30px rgba(0,0,0,.9), 0 0 0 11px #0b0a09;
+  }
+  .screen {
+    position: absolute; inset: 6px; border-radius: 46px; overflow: hidden;
+    background: var(--bg); display: none; flex-direction: column;
+  }
+  .screen[data-on] { display: flex; }
+  .notch {
+    position: absolute; top: 6px; left: 50%; transform: translateX(-50%);
+    width: 126px; height: 31px; background: #000; border-radius: 0 0 20px 20px; z-index: 50;
+  }
+  /* barre d'etat */
+  .sbar {
+    height: 50px; flex: 0 0 auto; display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 26px 8px; font-size: 14px; font-weight: 700; letter-spacing: 0.02em; z-index: 40;
+  }
+  .sbar .ic { display: inline-flex; gap: 6px; align-items: center; }
+  .sbar svg { display: block; }
+
+  .view { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; }
+  .view::-webkit-scrollbar { width: 0; }
+
+  /* ---- barre d'onglets haute ---- */
+  .nav {
+    position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 14px;
+    padding: 6px 16px 12px; background: linear-gradient(180deg, var(--bg) 60%, transparent);
+  }
+  .nav .logo {
+    width: 26px; height: 26px; border-radius: 7px; background: var(--accent); color: var(--ink);
+    display: grid; place-items: center; font-weight: 800; font-size: 15px; flex: 0 0 auto;
+  }
+  .nav .tabs { display: flex; gap: 15px; flex: 1 1 auto; overflow: hidden; }
+  .nav .tabs span { font-size: 15px; font-weight: 600; color: var(--faint); letter-spacing: -0.01em; white-space: nowrap; }
+  .nav .tabs span.on { color: var(--text); font-weight: 700; }
+  .nav .av {
+    width: 30px; height: 30px; border-radius: 9px; flex: 0 0 auto; display: grid; place-items: center;
+    font-weight: 800; font-size: 13px; color: #fff;
+  }
+
+  /* ---- hero ---- */
+  .hero { position: relative; height: 470px; margin-top: -58px; }
+  .hero .bg { position: absolute; inset: 0; background-size: cover; background-position: center 18%; }
+  .hero .veil {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(18,17,16,.35) 0%, rgba(18,17,16,0) 32%, rgba(18,17,16,.55) 72%, var(--bg) 99%),
+      linear-gradient(90deg, rgba(18,17,16,.45), transparent 60%);
+  }
+  .hero .body { position: absolute; left: 0; right: 0; bottom: 14px; padding: 0 20px; text-align: center; }
+  .hero h2 {
+    font-size: 30px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin-bottom: 9px;
+    text-shadow: 0 2px 18px rgba(0,0,0,.6);
+  }
+  .hero .meta {
+    display: flex; gap: 10px; justify-content: center; align-items: center;
+    font-size: 12.5px; color: #e8e2da; margin-bottom: 15px; font-weight: 500;
+  }
+  .hero .meta .star { color: var(--gold); font-weight: 800; }
+  .hero .meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--faint); }
+  .hero .actions { display: flex; gap: 10px; justify-content: center; align-items: center; }
+  .btn-play {
+    display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: var(--ink);
+    font-weight: 800; font-size: 15px; padding: 12px 30px; border-radius: 12px; letter-spacing: -0.01em;
+  }
+  .btn-round {
+    width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;
+    background: rgba(40,37,34,.72); backdrop-filter: blur(8px); border: 1px solid var(--border);
+    color: var(--text); font-size: 12px; font-weight: 600; text-align: center; line-height: 1.05;
+  }
+  .btn-round svg { display: block; }
+
+  /* ---- rails ---- */
+  .rail { padding: 20px 0 4px; }
+  .rail h3 {
+    font-size: 17px; font-weight: 800; letter-spacing: -0.02em; padding: 0 18px 11px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .rail h3 a { font-size: 12.5px; font-weight: 600; color: var(--dim); }
+  .track { display: flex; gap: 11px; overflow-x: auto; padding: 0 18px 6px; scroll-snap-type: x mandatory; }
+  .track::-webkit-scrollbar { height: 0; }
+  .poster {
+    flex: 0 0 auto; width: 118px; border-radius: 12px; overflow: hidden; position: relative;
+    background: var(--elevated); scroll-snap-align: start;
+  }
+  .poster img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
+  .poster .rate {
+    position: absolute; top: 7px; left: 7px; background: rgba(0,0,0,.72); color: var(--gold);
+    font-size: 10.5px; font-weight: 800; padding: 2px 6px; border-radius: 6px;
+  }
+  .poster .tag {
+    position: absolute; top: 7px; right: 7px; background: var(--live); color: #fff;
+    font-size: 8.5px; font-weight: 800; padding: 2px 6px; border-radius: 5px; letter-spacing: .04em;
+  }
+
+  /* reprendre : tuiles larges 16:9 */
+  .wide { flex: 0 0 auto; width: 230px; border-radius: 12px; overflow: hidden; position: relative; background: var(--elevated); scroll-snap-align: start; }
+  .wide .thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .wide .prog { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(0,0,0,.6); }
+  .wide .prog i { display: block; height: 100%; background: var(--live); }
+  .wide .lbl { position: absolute; left: 0; right: 0; bottom: 3px; padding: 22px 10px 8px; background: linear-gradient(transparent, rgba(0,0,0,.85)); font-size: 12.5px; font-weight: 700; }
+  .wide .play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,.5); backdrop-filter: blur(4px); display: grid; place-items: center; border: 1.5px solid rgba(255,255,255,.8); }
+
+  /* ---- profils : qui regarde ---- */
+  .who { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 28px 40px; }
+  .who h2 { font-size: 27px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 36px; }
+  .profiles { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 30px; justify-items: center; margin-bottom: 40px; }
+  .prof { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .prof .face {
+    width: 108px; height: 108px; border-radius: 26px; display: grid; place-items: center; position: relative;
+    font-size: 40px; font-weight: 800; color: #fff; box-shadow: 0 10px 30px -12px rgba(0,0,0,.8);
+  }
+  .prof .face .ic { position: absolute; bottom: -7px; right: -7px; width: 34px; height: 34px; border-radius: 11px; background: var(--bg); border: 1px solid var(--border); display: grid; place-items: center; }
+  .prof .nm { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+  .prof.add .face { background: transparent; border: 2px dashed var(--border-strong); color: var(--faint); font-size: 42px; font-weight: 300; }
+  .prof.add .nm { color: var(--dim); }
+  .who .manage { color: var(--dim); font-size: 14px; font-weight: 600; border: 1px solid var(--border); padding: 11px 24px; border-radius: 999px; }
+
+  /* ---- direct ---- */
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 14px; }
+  .chips::-webkit-scrollbar { height: 0; }
+  .chip { flex: 0 0 auto; font-size: 13px; font-weight: 600; padding: 8px 15px; border-radius: 999px; background: var(--bg-soft); border: 1px solid var(--border); color: var(--dim); white-space: nowrap; }
+  .chip.on { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 2px 16px 24px; }
+  .chan { border-radius: 13px; overflow: hidden; background: var(--bg-soft); }
+  .chan .media { position: relative; aspect-ratio: 16/9; background: var(--plaque); display: grid; place-items: center; overflow: hidden; }
+  .chan .media .back { position: absolute; inset: -30%; background-size: cover; background-position: center; filter: blur(20px) saturate(1.8); opacity: .5; }
+  .chan .media .scrim { position: absolute; inset: 0; background: radial-gradient(70% 70% at 50% 45%, transparent, rgba(27,26,24,.6)); }
+  .chan .media .logo { position: relative; max-width: 58%; max-height: 54%; object-fit: contain; filter: drop-shadow(0 0 1px rgba(255,255,255,.4)); }
+  .chan .num { position: absolute; top: 7px; left: 7px; z-index: 2; background: rgba(255,255,255,.14); color: #fff; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 5px; }
+  .chan .q { position: absolute; top: 7px; right: 7px; z-index: 2; background: rgba(0,0,0,.5); color: #fff; font-size: 8.5px; font-weight: 800; padding: 2px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+  .chan .elapsed { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255,255,255,.2); z-index: 2; }
+  .chan .elapsed i { display: block; height: 100%; background: var(--live); }
+  .chan .prog { padding: 9px 11px 11px; }
+  .chan .prog b { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chan .prog .line { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--faint); font-weight: 500; }
+  .chan .prog .line .rd { width: 5px; height: 5px; border-radius: 50%; background: var(--live); flex: 0 0 auto; }
+
+  /* ---- sources ---- */
+  .page-head { padding: 4px 18px 16px; }
+  .page-head h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; }
+  .page-head p { color: var(--dim); font-size: 13.5px; margin-top: 4px; }
+  .srcs { display: flex; flex-direction: column; gap: 11px; padding: 0 16px; }
+  .src { border: 1px solid var(--border); border-radius: 15px; background: var(--bg-soft); padding: 15px 16px; }
+  .src .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
+  .src .top .nm { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; display: flex; align-items: center; gap: 9px; }
+  .src .top .nm .kind { font-size: 10px; font-weight: 700; color: var(--dim); border: 1px solid var(--border); padding: 2px 7px; border-radius: 6px; letter-spacing: .03em; }
+  .toggle { width: 42px; height: 25px; border-radius: 999px; background: var(--border); position: relative; flex: 0 0 auto; }
+  .toggle.on { background: var(--emerald); }
+  .toggle i { position: absolute; top: 2px; left: 2px; width: 21px; height: 21px; border-radius: 50%; background: #fff; transition: left .18s; }
+  .toggle.on i { left: 19px; }
+  .src .host { font-size: 12px; color: var(--faint); font-family: ui-monospace, monospace; margin-bottom: 12px; }
+  .src .facts { display: flex; gap: 20px; }
+  .src .fact .k { font-size: 10px; font-weight: 700; letter-spacing: .05em; color: var(--faint); text-transform: uppercase; }
+  .src .fact .v { font-size: 13px; font-weight: 600; margin-top: 2px; }
+  .src .fact .v.ok { color: var(--emerald); }
+  .src .fact .v.live { color: var(--live); }
+  .add-src { margin: 16px; border: 1px dashed var(--border-strong); border-radius: 15px; padding: 16px; text-align: center; color: var(--dim); font-weight: 700; font-size: 15px; }
+
+  /* feuille type de source */
+  .sheet { margin: 6px 16px 24px; border: 1px solid var(--border); border-radius: 18px; background: var(--elevated); overflow: hidden; }
+  .sheet .sh-head { padding: 16px 18px 12px; }
+  .sheet .sh-head h4 { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
+  .sheet .sh-head p { font-size: 12px; color: var(--dim); margin-top: 4px; line-height: 1.45; }
+  .sheet .opt { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-top: 1px solid var(--border); }
+  .sheet .opt.on { background: var(--raise); }
+  .sheet .opt .t { font-size: 14.5px; font-weight: 700; letter-spacing: -0.01em; }
+  .sheet .opt.on .t::after { content: '✓'; color: var(--emerald); margin-left: 8px; font-weight: 800; }
+  .sheet .opt .s { font-size: 11.5px; color: var(--faint); margin-top: 2px; }
+  .sheet .opt .reco { font-size: 9.5px; font-weight: 800; color: var(--ink); background: var(--accent); padding: 3px 8px; border-radius: 6px; letter-spacing: .03em; }
+
+  /* ---- panneau note TV ---- */
+  .aside { width: 316px; flex: 0 0 auto; }
+  .aside .card { border: 1px solid var(--border); border-radius: 18px; background: var(--bg-soft); padding: 20px; margin-bottom: 16px; }
+  .aside .card h4 { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .aside .card h4 .b { width: 7px; height: 7px; border-radius: 2px; background: var(--accent); }
+  .aside .card p { font-size: 13.5px; color: var(--dim); line-height: 1.55; }
+  .aside .card p + p { margin-top: 10px; }
+  .aside .card b { color: var(--text); font-weight: 700; }
+  .aside ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .aside li { font-size: 13px; color: var(--dim); line-height: 1.4; padding-left: 20px; position: relative; }
+  .aside li::before { content: ''; position: absolute; left: 2px; top: 7px; width: 6px; height: 6px; border-radius: 2px; background: var(--border-strong); }
+  .aside li b { color: var(--text); }
+
+  @media (max-width: 760px) { .aside { width: 390px; } }
+</style>
+
+<div class="wrap">
+  <div class="lead">
+    <div class="mark"><i>L</i> LCR TV</div>
+    <h1>La refonte — choisissez la charte</h1>
+    <p>Cinq ambiances sur les mêmes écrans, vos vraies données. L'affiche porte toujours la couleur ; la charte teinte le fond et donne l'accent. Dites-moi laquelle et je code l'app dessus.</p>
+  </div>
+
+  <div class="palettes">
+    <span class="pl-label">Charte</span>
+    <button data-theme="indigo" aria-selected="true"><i style="background:#8b93ff"></i>Nuit indigo</button>
+    <button data-theme="ambre"><i style="background:#f0a93b"></i>Ambre</button>
+    <button data-theme="emeraude"><i style="background:#2fd08a"></i>Émeraude</button>
+    <button data-theme="rubis"><i style="background:#e8485f"></i>Rubis</button>
+    <button data-theme="encre"><i style="background:#e9e4da"></i>Encre (sobre)</button>
+  </div>
+
+  <div class="switch" role="tablist">
+    <button role="tab" data-go="who" aria-selected="true">Qui regarde ?</button>
+    <button role="tab" data-go="home">Accueil</button>
+    <button role="tab" data-go="direct">Direct</button>
+    <button role="tab" data-go="sources">Sources &amp; connecteurs</button>
+  </div>
+
+  <div class="scene">
+    <div class="phone">
+      <div class="notch"></div>
+
+      <!-- ============ QUI REGARDE ============ -->
+      <section class="screen" data-name="who" data-on>
+        <div class="sbar">
+          <span>14:14</span>
+          <span class="ic" data-statusicons></span>
+        </div>
+        <div class="who">
+          <h2>Qui regarde&nbsp;?</h2>
+          <div class="profiles">
+            <div class="prof">
+              <div class="face" style="background:linear-gradient(145deg,#e06a86,#b23a5a)">L
+                <span class="ic" data-ic="moon"></span>
+              </div>
+              <div class="nm">Liam</div>
+            </div>
+            <div class="prof">
+              <div class="face" style="background:linear-gradient(145deg,#54b98c,#2f7d5c)">R
+                <span class="ic" data-ic="wave"></span>
+              </div>
+              <div class="nm">Romane</div>
+            </div>
+            <div class="prof">
+              <div class="face" style="background:linear-gradient(145deg,#3d6ea8,#274b73)">+
+                <span class="ic" data-ic="kid"></span>
+              </div>
+              <div class="nm">Enfants</div>
+            </div>
+            <div class="prof add">
+              <div class="face">+</div>
+              <div class="nm">Ajouter</div>
+            </div>
+          </div>
+          <div class="manage">Gérer les profils</div>
+        </div>
+      </section>
+
+      <!-- ============ ACCUEIL ============ -->
+      <section class="screen" data-name="home">
+        <div class="sbar">
+          <span>14:14</span>
+          <span class="ic" data-statusicons></span>
+        </div>
+        <div class="view">
+          <div class="nav">
+            <div class="logo">L</div>
+            <div class="tabs">
+              <span class="on">Accueil</span><span>Films</span><span>Séries</span><span>Direct</span><span>Guide</span>
+            </div>
+            <div class="av" style="background:linear-gradient(145deg,#e06a86,#b23a5a)">L</div>
+          </div>
+
+          <div class="hero">
+            <div class="bg" data-img="hero"></div>
+            <div class="veil"></div>
+            <div class="body">
+              <h2>Interstellar</h2>
+              <div class="meta">
+                <span class="star">★ 8.5</span><span class="dot"></span>
+                <span>2014</span><span class="dot"></span><span>Science-Fiction</span><span class="dot"></span><span>2 h 49</span>
+              </div>
+              <div class="actions">
+                <span class="btn-round" data-ic="plus-sm">Ma liste</span>
+                <span class="btn-play"><span data-ic="play"></span> Lecture</span>
+                <span class="btn-round" data-ic="info-sm">Infos</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rail">
+            <h3>Reprendre</h3>
+            <div class="track">
+              <div class="wide"><img class="thumb" data-img="b_dune"><span class="play" data-ic="play-sm"></span><div class="lbl">Dune : Deuxième partie</div><div class="prog"><i style="width:62%"></i></div></div>
+              <div class="wide"><img class="thumb" data-img="b_topgun"><span class="play" data-ic="play-sm"></span><div class="lbl">Top Gun : Maverick</div><div class="prog"><i style="width:34%"></i></div></div>
+            </div>
+          </div>
+
+          <div class="rail">
+            <h3>Tendances cette semaine <a>Voir plus →</a></h3>
+            <div class="track">
+              <div class="poster"><span class="rate">8.3</span><img data-img="f_spiderverse"></div>
+              <div class="poster"><span class="rate">8.1</span><img data-img="f_dune2"></div>
+              <div class="poster"><span class="rate">8.2</span><img data-img="f_topgun"></div>
+              <div class="poster"><span class="rate">8.1</span><img data-img="f_joker"></div>
+              <div class="poster"><span class="rate">8.2</span><img data-img="f_gladiator"></div>
+              <div class="poster"><span class="rate">8.2</span><img data-img="f_endgame"></div>
+            </div>
+          </div>
+
+          <div class="rail">
+            <h3>Récemment ajoutés <a>Voir plus →</a></h3>
+            <div class="track">
+              <div class="poster"><span class="tag">NOUVEAU</span><img data-img="f_interstellar"></div>
+              <div class="poster"><span class="tag">NOUVEAU</span><img data-img="f_inception"></div>
+              <div class="poster"><span class="tag">NOUVEAU</span><img data-img="f_lotr3"></div>
+              <div class="poster"><span class="tag">NOUVEAU</span><img data-img="f_lotr1"></div>
+            </div>
+          </div>
+
+          <div class="rail">
+            <h3>Séries du moment <a>Voir plus →</a></h3>
+            <div class="track">
+              <div class="poster"><span class="rate">9.0</span><img data-img="s_breakingbad"></div>
+              <div class="poster"><span class="rate">8.7</span><img data-img="s_arcane"></div>
+              <div class="poster"><span class="rate">8.6</span><img data-img="s_stranger"></div>
+              <div class="poster"><span class="rate">8.5</span><img data-img="s_got"></div>
+              <div class="poster"><span class="rate">8.5</span><img data-img="s_peaky"></div>
+              <div class="poster"><span class="rate">8.4</span><img data-img="s_boys"></div>
+            </div>
+            <div style="height:20px"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ DIRECT ============ -->
+      <section class="screen" data-name="direct">
+        <div class="sbar">
+          <span>14:14</span>
+          <span class="ic" data-statusicons></span>
+        </div>
+        <div class="view">
+          <div class="nav">
+            <div class="logo">L</div>
+            <div class="tabs">
+              <span>Accueil</span><span>Films</span><span>Séries</span><span class="on">Direct</span><span>Guide</span>
+            </div>
+            <div class="av" style="background:linear-gradient(145deg,#e06a86,#b23a5a)">L</div>
+          </div>
+          <div class="chips">
+            <span class="chip">★ Mes chaînes</span>
+            <span class="chip on">Généralistes</span>
+            <span class="chip">Sport</span>
+            <span class="chip">Cinéma</span>
+            <span class="chip">Ligue 1+</span>
+            <span class="chip">Jeunesse</span>
+          </div>
+          <div class="grid">
+            <div class="chan"><div class="media"><div class="back" data-img="l_tf1"></div><div class="scrim"></div><span class="num">1</span><span class="q">FHD</span><img class="logo" data-img="l_tf1"><span class="elapsed"><i style="width:40%"></i></span></div><div class="prog"><b>Journal de 13h</b><div class="line"><span class="rd"></span>13:00 · Information</div></div></div>
+            <div class="chan"><div class="media"><div class="back" data-img="l_france2"></div><div class="scrim"></div><span class="num">2</span><span class="q">FHD</span><img class="logo" data-img="l_france2"><span class="elapsed"><i style="width:68%"></i></span></div><div class="prog"><b>Télématin</b><div class="line"><span class="rd"></span>06:30 · Magazine</div></div></div>
+            <div class="chan"><div class="media"><div class="back" data-img="l_m6"></div><div class="scrim"></div><span class="num">6</span><span class="q">FHD</span><img class="logo" data-img="l_m6"><span class="elapsed"><i style="width:22%"></i></span></div><div class="prog"><b>Le 12.45</b><div class="line"><span class="rd"></span>12:45 · Information</div></div></div>
+            <div class="chan"><div class="media"><div class="back" data-img="l_canal360"></div><div class="scrim"></div><span class="num">30</span><span class="q">FHD</span><img class="logo" data-img="l_canal360"><span class="elapsed"><i style="width:55%"></i></span></div><div class="prog"><b>Canal Sports Club</b><div class="line"><span class="rd"></span>14:00 · Sport</div></div></div>
+            <div class="chan"><div class="media"><div class="back" data-img="l_bein1"></div><div class="scrim"></div><span class="num">41</span><span class="q">FHD</span><img class="logo" data-img="l_bein1"><span class="elapsed"><i style="width:80%"></i></span></div><div class="prog"><b>Ligue 1 : avant-match</b><div class="line"><span class="rd"></span>13:30 · Football</div></div></div>
+            <div class="chan"><div class="media"><div class="back" data-img="l_ligue1"></div><div class="scrim"></div><span class="num">45</span><span class="q">FHD</span><img class="logo" data-img="l_ligue1"><span class="elapsed"><i style="width:12%"></i></span></div><div class="prog"><b>Multiplex Ligue 1</b><div class="line"><span class="rd"></span>15:00 · Football</div></div></div>
+            <div class="chan"><div class="media"><div class="back" data-img="l_bein2"></div><div class="scrim"></div><span class="num">42</span><span class="q">FHD</span><img class="logo" data-img="l_bein2"></div><div class="prog"><b>beIN SPORTS 2</b><div class="line"><span class="rd"></span>Programme indisponible</div></div></div>
+            <div class="chan"><div class="media"><div class="back" data-img="l_euro360"></div><div class="scrim"></div><span class="num">48</span><span class="q">FHD</span><img class="logo" data-img="l_euro360"></div><div class="prog"><b>Eurosport 360</b><div class="line"><span class="rd"></span>Programme indisponible</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SOURCES ============ -->
+      <section class="screen" data-name="sources">
+        <div class="sbar">
+          <span>14:14</span>
+          <span class="ic" data-statusicons></span>
+        </div>
+        <div class="view">
+          <div class="nav" style="padding-bottom:6px">
+            <div class="logo">L</div>
+            <div class="tabs"><span class="on" style="font-size:16px">Compte</span></div>
+            <div class="av" style="background:linear-gradient(145deg,#e06a86,#b23a5a)">L</div>
+          </div>
+          <div class="page-head">
+            <h2>Sources</h2>
+            <p>Les connecteurs alimentent le catalogue. Les profils, eux, se gèrent à part.</p>
+          </div>
+          <div class="srcs">
+            <div class="src">
+              <div class="top"><div class="nm">iptv 1 <span class="kind">PANEL</span></div><div class="toggle on"><i></i></div></div>
+              <div class="host">http://fs••••••••••.cc</div>
+              <div class="facts">
+                <div class="fact"><div class="k">Catalogue</div><div class="v">184 178 flux</div></div>
+                <div class="fact"><div class="k">État</div><div class="v ok">répond</div></div>
+                <div class="fact"><div class="k">Expire</div><div class="v">20/10/2026</div></div>
+              </div>
+            </div>
+            <div class="src">
+              <div class="top"><div class="nm">iptv 2 <span class="kind">PANEL</span></div><div class="toggle"><i></i></div></div>
+              <div class="host">http://fs••••••••••.cc</div>
+              <div class="facts">
+                <div class="fact"><div class="k">Catalogue</div><div class="v">184 178 flux</div></div>
+                <div class="fact"><div class="k">État</div><div class="v ok">répond</div></div>
+                <div class="fact"><div class="k">Note</div><div class="v" style="color:var(--dim)">même fournisseur</div></div>
+              </div>
+            </div>
+            <div class="src">
+              <div class="top"><div class="nm">Chaînes FR libres <span class="kind">M3U</span></div><div class="toggle on"><i></i></div></div>
+              <div class="host">https://exemple••••••.m3u</div>
+              <div class="facts">
+                <div class="fact"><div class="k">Catalogue</div><div class="v">544 chaînes</div></div>
+                <div class="fact"><div class="k">État</div><div class="v ok">synchronisé</div></div>
+                <div class="fact"><div class="k">Grille</div><div class="v" style="color:var(--dim)">XMLTV liée</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sheet">
+            <div class="sh-head">
+              <h4>Ajouter une source</h4>
+              <p>Un panel donne films, séries et connexions. Une playlist, les chaînes seulement.</p>
+            </div>
+            <div class="opt on">
+              <div><div class="t">Panel Xtream</div><div class="s">Hôte, identifiant, mot de passe — le plus complet</div></div>
+              <span class="reco">RECOMMANDÉ</span>
+            </div>
+            <div class="opt">
+              <div><div class="t">Playlist M3U — adresse</div><div class="s">Une URL .m3u</div></div>
+            </div>
+            <div class="opt">
+              <div><div class="t">Playlist M3U — identifiants</div><div class="s">Domaine, utilisateur, mot de passe</div></div>
+            </div>
+          </div>
+          <div style="height:16px"></div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="aside">
+      <div class="card">
+        <h4><span class="b"></span> Le modèle</h4>
+        <p><b>Compte</b> → plusieurs <b>connecteurs</b> (Xtream, M3U…) qui remplissent un seul catalogue → plusieurs <b>profils</b>, chacun avec ses favoris, sa progression, ses chaînes épinglées et sa langue.</p>
+        <p>Tout existe déjà côté serveur. La refonte ne touche qu'à l'app.</p>
+      </div>
+      <div class="card">
+        <h4><span class="b"></span> Sur Apple&nbsp;TV</h4>
+        <p>Même code, disposition 10 pieds : les rails défilent à la télécommande, le focus grossit la tuile et pose un halo — jamais une bordure qui décale la grille. Le hero occupe tout l'écran.</p>
+      </div>
+      <div class="card">
+        <h4><span class="b"></span> Ce qui change vraiment</h4>
+        <ul>
+          <li><b>Page « Qui regarde ? »</b> au lancement, avatars par profil.</li>
+          <li><b>Onglets en haut</b> façon salon, plus la tab bar du bas.</li>
+          <li><b>Grand hero</b> sur backdrop, pas une rangée de vignettes.</li>
+          <li><b>Écran Sources</b> pour gérer les connecteurs, séparé des profils.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  const IMG = /*__IMG__*/{};
+
+  // glyphes
+  const ICON = {
+    play: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    'play-sm': '<svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>',
+    'plus-sm': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    'info-sm': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.1" fill="currentColor" stroke="none"/></svg>',
+    moon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="#e06a86"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+    wave: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#54b98c" stroke-width="2.2" stroke-linecap="round"><path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/></svg>',
+    kid: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#3d6ea8"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0z"/></svg>',
+  };
+  document.querySelectorAll('[data-ic]').forEach(el => { el.innerHTML = ICON[el.dataset.ic] || ''; });
+
+  // barre d'etat iOS (reseau / wifi / batterie)
+  const STATUS = '<svg width="18" height="12" viewBox="0 0 18 12" fill="#f2efe9"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".4"/></svg>'
+    + '<svg width="17" height="12" viewBox="0 0 17 12" fill="#f2efe9"><path d="M8.5 2.5c2.6 0 5 1 6.8 2.7l-1.4 1.5A7.6 7.6 0 0 0 8.5 4.5 7.6 7.6 0 0 0 3.1 6.7L1.7 5.2A9.6 9.6 0 0 1 8.5 2.5zm0 3.4c1.5 0 2.9.6 3.9 1.6l-1.5 1.5a3.4 3.4 0 0 0-4.8 0L4.6 7.5a5.5 5.5 0 0 1 3.9-1.6zm0 3.3c.6 0 1.2.3 1.6.7L8.5 12 6.9 9.9c.4-.4 1-.7 1.6-.7z"/></svg>'
+    + '<svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x="1" y="1.5" width="21" height="10" rx="3" stroke="#f2efe9" stroke-opacity=".5"/><rect x="3" y="3.5" width="15" height="6" rx="1.5" fill="#f2efe9"/><rect x="23.5" y="4.5" width="1.6" height="4" rx=".8" fill="#f2efe9" fill-opacity=".5"/></svg>';
+  document.querySelectorAll('[data-statusicons]').forEach(el => { el.innerHTML = STATUS; });
+
+  // images -> src ou background
+  document.querySelectorAll('[data-img]').forEach(el => {
+    const src = IMG[el.dataset.img];
+    if (!src) return;
+    if (el.tagName === 'IMG') el.src = src;
+    else el.style.backgroundImage = `url("${src}")`;
+  });
+
+  // selecteur de charte
+  document.querySelectorAll('.palettes button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.documentElement.setAttribute('data-theme', btn.dataset.theme);
+      document.querySelectorAll('.palettes button').forEach(b => b.setAttribute('aria-selected', b === btn));
+    });
+  });
+
+  // selecteur d'ecran
+  const screens = document.querySelectorAll('.screen');
+  document.querySelectorAll('.switch button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.switch button').forEach(b => b.setAttribute('aria-selected', b === btn));
+      screens.forEach(s => { if (s.dataset.name === btn.dataset.go) s.setAttribute('data-on',''); else s.removeAttribute('data-on'); });
+    });
+  });
+</script>

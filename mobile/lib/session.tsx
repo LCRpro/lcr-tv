@@ -16,6 +16,8 @@ interface SessionState {
   profile: Profile | null;
   profiles: Profile[];
   selectProfile: (id: number) => Promise<void>;
+  /** Repose « qui regarde ? » : on quitte le profil sans se deconnecter. */
+  leaveProfile: () => Promise<void>;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -86,6 +88,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setProfile(await api.post<Profile>(`/api/profiles/${id}/select`));
   }, []);
 
+  const leaveProfile = useCallback(async () => {
+    try {
+      await api.post('/api/profiles/leave');
+    } finally {
+      // Meme si l'appel echoue, on repose la question cote app : c'est `profile
+      // === null` qui ramene le selecteur via le Gate.
+      setProfile(null);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.post('/api/auth/logout');
@@ -99,8 +111,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, profiles, loading, login, logout, refresh, selectProfile }),
-    [user, loading, login, logout, refresh],
+    () => ({ user, profile, profiles, loading, login, logout, refresh, selectProfile, leaveProfile }),
+    [user, profile, profiles, loading, login, logout, refresh, selectProfile, leaveProfile],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
