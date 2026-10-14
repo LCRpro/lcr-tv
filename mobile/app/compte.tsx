@@ -328,13 +328,22 @@ export default function CompteScreen() {
         <View style={cs.inner}>
           {profile ? (
             <View style={cs.hero}>
-              <Avatar avatar={profile.avatar} color={profile.color} size={56} />
+              <Avatar avatar={profile.avatar} color={profile.color} size={52} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={cs.name}>{profile.name}</Text>
-                <Text style={styles.dim} numberOfLines={1}>
+                <Text style={cs.name} numberOfLines={1}>
+                  {profile.name}
+                </Text>
+                <Text style={cs.heroEmail} numberOfLines={1}>
                   {user?.email}
                 </Text>
               </View>
+              <Focusable
+                onPress={() => router.push(`/profil/${profile.id}`)}
+                hitSlop={8}
+                style={cs.heroEdit}
+              >
+                <Ionicons name="create-outline" size={20} color={colors.dim} />
+              </Focusable>
             </View>
           ) : null}
 
@@ -604,8 +613,29 @@ function ProviderRow({ provider }: { provider: ProviderView }) {
 const cs = {
   content: { padding: 16, paddingBottom: 40 },
   inner: { width: '100%' as const, maxWidth: 900, alignSelf: 'center' as const },
-  hero: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 14, marginBottom: 20 },
-  name: { color: colors.text, fontFamily: 'Outfit', fontSize: 22, fontWeight: '800' as const, letterSpacing: -0.4 },
+  hero: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 14,
+    marginBottom: 18,
+    padding: 16,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+  },
+  name: { color: colors.text, fontFamily: 'Outfit', fontSize: 21, fontWeight: '700' as const, letterSpacing: -0.4 },
+  heroEmail: { color: colors.dim, fontFamily: 'Inter', fontSize: 13, marginTop: 3 },
+  heroEdit: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: colors.elevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
 
   columns: { flexDirection: 'row' as const, gap: 14, alignItems: 'flex-start' as const },
   column: { flex: 1, minWidth: 0 },

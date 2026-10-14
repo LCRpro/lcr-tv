@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { LiveChannel, Movie, SearchResults, SeriesSummary } from '@iptv/shared';
 import { api, qs } from '../lib/api';
 import { useAsync, useDebounced } from '../lib/hooks';
-import { colors, gridColumns, styles } from '../lib/theme';
-import { Card, ChannelCard, Empty, ErrorNotice, Loading } from './ui';
+import { colors, gridColumns, radius, styles } from '../lib/theme';
+import { Card, ChannelCard, ErrorNotice, Loading } from './ui';
 import { Focusable } from './Focusable';
 
 type Tab = 'movies' | 'series' | 'live';
@@ -66,63 +66,77 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
     }
   };
 
+  // En deçà de deux caractères, on ne cherche pas : l'écran invite plutôt qu'il
+  // ne montre des onglets vides. Les onglets n'apparaissent qu'une fois la
+  // recherche lancée, pour ne pas afficher « Films (0) » avant toute frappe.
+  const active = debounced.trim().length >= 2;
+
   return (
     <View style={[styles.screen, { flex: 1 }]}>
       <View style={sp.head}>
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="Titre de film, série ou chaîne…"
-          placeholderTextColor={colors.dim}
-          autoCapitalize="none"
-          autoCorrect={false}
-          autoFocus
-          value={term}
-          onChangeText={setTerm}
-        />
+        <View style={sp.field}>
+          <Ionicons name="search" size={18} color={colors.dim} />
+          <TextInput
+            style={sp.input}
+            placeholder="Films, séries, chaînes…"
+            placeholderTextColor={colors.faint}
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoFocus
+            value={term}
+            onChangeText={setTerm}
+            returnKeyType="search"
+          />
+          {term ? (
+            <Focusable onPress={() => setTerm('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={colors.faint} />
+            </Focusable>
+          ) : null}
+        </View>
         <Focusable onPress={onClose} hitSlop={8} style={sp.cancel}>
           <Text style={sp.cancelText}>Annuler</Text>
         </Focusable>
       </View>
 
-      <View style={[styles.row, { paddingHorizontal: 12, marginBottom: 8 }]}>
-        {(
-          [
-            ['movies', `Films (${data?.movies.length ?? 0})`],
-            ['series', `Séries (${data?.series.length ?? 0})`],
-            ['live', `Live (${data?.live.length ?? 0})`],
-          ] as const
-        ).map(([key, label]) => (
-          <Focusable key={key} onPress={() => setTab(key)}>
-            <Text
-              style={{
-                color: tab === key ? colors.text : colors.dim,
-                borderBottomWidth: 2,
-                borderBottomColor: tab === key ? colors.accent : 'transparent',
-                paddingBottom: 7,
-                paddingHorizontal: 2,
-                fontSize: 14,
-                fontWeight: tab === key ? '600' : '400',
-              }}
-            >
-              {label}
-            </Text>
-          </Focusable>
-        ))}
-      </View>
+      {active ? (
+        <View style={sp.tabs}>
+          {(
+            [
+              ['movies', 'Films', data?.movies.length ?? 0],
+              ['series', 'Séries', data?.series.length ?? 0],
+              ['live', 'Chaînes', data?.live.length ?? 0],
+            ] as const
+          ).map(([key, label, n]) => {
+            const on = tab === key;
+            return (
+              <Focusable key={key} onPress={() => setTab(key)} style={sp.tab}>
+                <Text style={[sp.tabText, on && sp.tabTextOn]}>{label}</Text>
+                <View style={[sp.tabCount, on && sp.tabCountOn]}>
+                  <Text style={[sp.tabCountText, on && sp.tabCountTextOn]}>{n}</Text>
+                </View>
+                {on ? <View style={sp.tabBar} /> : null}
+              </Focusable>
+            );
+          })}
+        </View>
+      ) : null}
 
       <ErrorNotice error={error} />
 
-      {debounced.trim().length < 2 ? (
-        <View style={sp.hint}>
-          <Ionicons name="search" size={30} color={colors.faint} />
-          <Empty>
-            Tapez au moins deux caractères. Les accents et les fautes de frappe sont tolérés.
-          </Empty>
-        </View>
+      {!active ? (
+        <EmptyState
+          icon="search"
+          title="Rechercher"
+          sub="Films, séries et chaînes. Les accents et les fautes de frappe sont tolérés."
+        />
       ) : loading ? (
         <Loading />
       ) : results.length === 0 ? (
-        <Empty>Aucun résultat dans cet onglet.</Empty>
+        <EmptyState
+          icon="file-tray-outline"
+          title="Aucun résultat"
+          sub={`Rien ne correspond à « ${debounced.trim()} » dans cet onglet.`}
+        />
       ) : (
         <FlatList
           data={gridData}
@@ -157,14 +171,100 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** L'état d'attente ou de vide : une icône encadrée, un titre, une phrase. */
+function EmptyState({
+  icon,
+  title,
+  sub,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <View style={sp.empty}>
+      <View style={sp.emptyIcon}>
+        <Ionicons name={icon} size={26} color={colors.dim} />
+      </View>
+      <Text style={sp.emptyTitle}>{title}</Text>
+      <Text style={sp.emptySub}>{sub}</Text>
+    </View>
+  );
+}
+
 const sp = {
   head: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 8,
+    gap: 10,
     padding: 12,
   },
-  cancel: { paddingHorizontal: 4, paddingVertical: 6 },
-  cancelText: { color: colors.accent, fontSize: 14, fontWeight: '600' as const },
-  hint: { flex: 1, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8, paddingBottom: 40 },
+  field: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 9,
+    height: 44,
+    paddingHorizontal: 13,
+    backgroundColor: colors.elevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+  },
+  input: { flex: 1, color: colors.text, fontFamily: 'Inter', fontSize: 15 },
+  cancel: { paddingHorizontal: 2, paddingVertical: 6 },
+  cancelText: { color: colors.accent, fontFamily: 'Outfit', fontSize: 14, fontWeight: '600' as const },
+
+  tabs: { flexDirection: 'row' as const, gap: 22, paddingHorizontal: 16, marginBottom: 8 },
+  tab: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 7, paddingBottom: 9 },
+  tabText: { color: colors.dim, fontFamily: 'Outfit', fontSize: 15, fontWeight: '600' as const },
+  tabTextOn: { color: colors.text },
+  tabCount: {
+    minWidth: 20,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: radius.pill,
+    backgroundColor: colors.bgSoft,
+    alignItems: 'center' as const,
+  },
+  tabCountOn: { backgroundColor: colors.accentSoft },
+  tabCountText: { color: colors.dim, fontFamily: 'Inter', fontSize: 11, fontWeight: '700' as const },
+  tabCountTextOn: { color: colors.accent },
+  tabBar: {
+    position: 'absolute' as const,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: colors.accent,
+  },
+
+  empty: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 12,
+    paddingHorizontal: 32,
+    paddingBottom: 48,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.lg,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  emptyTitle: { color: colors.text, fontFamily: 'Outfit', fontSize: 18, fontWeight: '700' as const },
+  emptySub: {
+    color: colors.dim,
+    fontFamily: 'Inter',
+    fontSize: 13.5,
+    lineHeight: 19,
+    textAlign: 'center' as const,
+    maxWidth: 300,
+  },
 };
