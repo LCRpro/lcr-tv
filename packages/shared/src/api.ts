@@ -32,6 +32,68 @@ export const PROFILE_AVATARS = [
 ] as const;
 export type ProfileAvatar = (typeof PROFILE_AVATARS)[number];
 
+/**
+ * Les avatars photographiques — des portraits d'animaux, en complément des
+ * icônes dessinées.
+ *
+ * Chaque valeur est un identifiant de fichier, servi sous le même nom par les
+ * deux clients (mobile `assets/avatars/<id>.jpg`, web `public/avatars/<id>.jpg`).
+ * Photographies issues de Pexels (licence libre, usage commercial autorisé,
+ * sans attribution). La liste s'étend en ajoutant un fichier et son identifiant.
+ */
+export const PROFILE_PHOTO_AVATARS = [
+  'cat-ginger',
+  'cat-tabby',
+  'cat-tuxedo',
+  'cat-blackwhite',
+  'cat-grey',
+  'dog-shiba',
+  'dog-cool',
+  'dog-pup',
+  'dog-puppy',
+  'dog-fluffy',
+  'fox',
+  'hyena',
+  'meerkat',
+  'deer',
+  'owl',
+  'owl-eagle',
+  'tiger',
+  'tiger-cub',
+  'lion',
+  'lion-roar',
+  'rabbit',
+] as const;
+export type ProfilePhotoAvatar = (typeof PROFILE_PHOTO_AVATARS)[number];
+
+/** Toute vignette : une icône dessinée, ou une photo d'animal. */
+export type AvatarId = ProfileAvatar | ProfilePhotoAvatar;
+
+/** Vrai si l'identifiant désigne une photo (et non une icône dessinée). */
+export function isPhotoAvatar(a: string): a is ProfilePhotoAvatar {
+  return (PROFILE_PHOTO_AVATARS as readonly string[]).includes(a);
+}
+
+/** Les familles d'avatars, pour les onglets du sélecteur de vignette. */
+export const AVATAR_GROUPS: ReadonlyArray<{ key: string; label: string; ids: readonly string[] }> = [
+  { key: 'icons', label: 'Icônes', ids: PROFILE_AVATARS },
+  {
+    key: 'cats',
+    label: 'Chats',
+    ids: ['cat-ginger', 'cat-tabby', 'cat-tuxedo', 'cat-blackwhite', 'cat-grey'],
+  },
+  {
+    key: 'dogs',
+    label: 'Chiens',
+    ids: ['dog-shiba', 'dog-cool', 'dog-pup', 'dog-puppy', 'dog-fluffy'],
+  },
+  {
+    key: 'wild',
+    label: 'Sauvages',
+    ids: ['fox', 'hyena', 'meerkat', 'deer', 'owl', 'owl-eagle', 'tiger', 'tiger-cub', 'lion', 'lion-roar', 'rabbit'],
+  },
+];
+
 export const PROFILE_COLORS = [
   'cyan',
   'violet',
@@ -52,7 +114,7 @@ export type ProfileColor = (typeof PROFILE_COLORS)[number];
 export interface Profile {
   id: number;
   name: string;
-  avatar: ProfileAvatar;
+  avatar: AvatarId;
   color: ProfileColor;
   isKid: boolean;
   canWatchAdult: boolean;
@@ -90,7 +152,9 @@ export const MAX_PROFILES = 6;
 
 export const profileInputSchema = z.object({
   name: z.string().trim().min(1).max(24),
-  avatar: z.enum(PROFILE_AVATARS).optional(),
+  avatar: z
+    .enum([...PROFILE_AVATARS, ...PROFILE_PHOTO_AVATARS] as [string, ...string[]])
+    .optional(),
   color: z.enum(PROFILE_COLORS).optional(),
   isKid: z.boolean().optional(),
   canWatchAdult: z.boolean().optional(),

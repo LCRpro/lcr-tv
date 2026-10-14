@@ -7,8 +7,8 @@ import {
   PROFILE_AVATARS,
   PROFILE_COLORS,
   languageTag,
+  type AvatarId,
   type Profile,
-  type ProfileAvatar,
   type ProfileColor,
 } from '@iptv/shared';
 import { api, ApiError } from '../../lib/api';
@@ -223,7 +223,7 @@ function ProfileDialog({
   onSaved: () => void | Promise<void>;
 }) {
   const [name, setName] = useState(profile?.name ?? '');
-  const [avatar, setAvatar] = useState<ProfileAvatar>(profile?.avatar ?? 'wave');
+  const [avatar, setAvatar] = useState<AvatarId>(profile?.avatar ?? 'wave');
   const [color, setColor] = useState<ProfileColor>(profile?.color ?? 'cyan');
   const [isKid, setIsKid] = useState(profile?.isKid ?? false);
   const [adult, setAdult] = useState(profile?.canWatchAdult ?? false);

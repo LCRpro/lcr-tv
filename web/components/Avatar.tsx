@@ -1,4 +1,4 @@
-import type { ProfileAvatar, ProfileColor } from '@iptv/shared';
+import { isPhotoAvatar, type AvatarId, type ProfileAvatar, type ProfileColor } from '@iptv/shared';
 
 /**
  * Vignette de profil : un dessin plein, pas une photo.
@@ -40,10 +40,29 @@ export function Avatar({
   color,
   size = 96,
 }: {
-  avatar: ProfileAvatar;
+  avatar: AvatarId;
   color: ProfileColor;
   size?: number;
 }) {
+  // Une photo d'animal : on l'affiche au même galbe que les vignettes dessinées.
+  // Un onError retombe sur une empreinte neutre si le fichier manque.
+  if (isPhotoAvatar(avatar)) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        className="avatar"
+        src={`/avatars/${avatar}.jpg`}
+        alt=""
+        width={size}
+        height={size}
+        style={{ width: size, height: size, borderRadius: size * 0.22, objectFit: 'cover', background: '#141824' }}
+        onError={(e) => {
+          e.currentTarget.style.visibility = 'hidden';
+        }}
+      />
+    );
+  }
+
   const [light, dark] = RAMPS[color] ?? RAMPS.cyan;
   // L'identifiant du dégradé doit être unique par couleur : deux <svg> partageant
   // un même id feraient toutes les vignettes prendre le premier dégradé rencontré.

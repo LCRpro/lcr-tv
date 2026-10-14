@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  PROFILE_AVATARS,
+  AVATAR_GROUPS,
   PROFILE_COLORS,
+  isPhotoAvatar,
+  type AvatarId,
   type ProfileAvatar,
   type ProfileColor,
 } from '@iptv/shared';
@@ -32,8 +34,16 @@ export default function ProfileEditor() {
   const existing = isNew ? null : (profiles.find((p) => p.id === Number(id)) ?? null);
 
   const [name, setName] = useState(existing?.name ?? '');
-  const [avatar, setAvatar] = useState<ProfileAvatar>(existing?.avatar ?? 'wave');
+  const [avatar, setAvatar] = useState<AvatarId>(existing?.avatar ?? 'wave');
   const [color, setColor] = useState<ProfileColor>(existing?.color ?? 'cyan');
+  // On ouvre la grille sur la famille de la vignette actuelle (une photo d'animal
+  // ramène sur sa catégorie, une icône sur « Icônes »).
+  const [group, setGroup] = useState<string>(() => {
+    const a = existing?.avatar;
+    if (a && isPhotoAvatar(a)) return AVATAR_GROUPS.find((g) => g.ids.includes(a))?.key ?? 'icons';
+    return 'icons';
+  });
+  const currentGroup = AVATAR_GROUPS.find((g) => g.key === group) ?? AVATAR_GROUPS[0]!;
   const [isKid, setIsKid] = useState(existing?.isKid ?? false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,22 +114,49 @@ export default function ProfileEditor() {
         autoCapitalize="words"
       />
 
-      {/* Vignette : des tuiles neutres ; seule la sélection prend l'accent. */}
+      {/* Vignette : des familles (icônes, chats, chiens, sauvages). Les icônes
+          restent des tuiles neutres ; les photos s'affichent telles quelles. */}
       <Text style={ps.label}>Vignette</Text>
+      <View style={ps.cats}>
+        {AVATAR_GROUPS.map((g) => {
+          const on = g.key === group;
+          return (
+            <Focusable key={g.key} onPress={() => setGroup(g.key)} style={[ps.cat, on && ps.catOn]}>
+              <Text style={[ps.catText, on && ps.catTextOn]}>{g.label}</Text>
+            </Focusable>
+          );
+        })}
+      </View>
       <View style={ps.grid}>
-        {PROFILE_AVATARS.map((a) => {
+        {currentGroup.ids.map((a) => {
           const on = avatar === a;
+          if (group === 'icons') {
+            return (
+              <Focusable
+                key={a}
+                onPress={() => setAvatar(a as AvatarId)}
+                style={[ps.tile, on && ps.tileOn]}
+              >
+                <Ionicons
+                  name={avatarGlyph(a as ProfileAvatar)}
+                  size={24}
+                  color={on ? colors.accent : colors.dim}
+                />
+              </Focusable>
+            );
+          }
           return (
             <Focusable
               key={a}
-              onPress={() => setAvatar(a)}
-              style={[ps.tile, on && ps.tileOn]}
+              onPress={() => setAvatar(a as AvatarId)}
+              style={[ps.photo, on && ps.photoOn]}
             >
-              <Ionicons
-                name={avatarGlyph(a)}
-                size={24}
-                color={on ? colors.accent : colors.dim}
-              />
+              <Avatar avatar={a as AvatarId} color={color} size={52} />
+              {on ? (
+                <View style={ps.photoCheck}>
+                  <Ionicons name="checkmark" size={12} color={colors.onAccent} />
+                </View>
+              ) : null}
             </Focusable>
           );
         })}
@@ -203,7 +240,22 @@ const ps = {
     marginBottom: 11,
   },
 
-  // Les vignettes : tuiles neutres, l'icône en sourdine ; la sélection s'allume.
+  // Les familles de vignettes, en onglets sobres.
+  cats: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8, marginBottom: 14 },
+  cat: {
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  catOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  catText: { color: colors.dim, fontFamily: 'Inter' as const, fontSize: 13, fontWeight: '600' as const },
+  catTextOn: { color: colors.accent },
+
+  // Les vignettes : tuiles neutres pour les icônes, photos telles quelles ;
+  // la sélection s'allume (bordure accent + coche sur les photos).
   grid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 10 },
   tile: {
     width: 52,
@@ -216,6 +268,26 @@ const ps = {
     justifyContent: 'center' as const,
   },
   tileOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+  photo: {
+    padding: 2,
+    borderRadius: radius.md + 2,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  photoOn: { borderColor: colors.accent },
+  photoCheck: {
+    position: 'absolute' as const,
+    right: -2,
+    bottom: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.accent,
+    borderWidth: 2,
+    borderColor: colors.bg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
 
   // Les couleurs : pastilles rondes, anneau net sur la sélection, sans halo.
   swatches: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 14 },

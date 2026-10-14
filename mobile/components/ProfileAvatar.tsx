@@ -1,7 +1,38 @@
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import type { ProfileAvatar, ProfileColor } from '@iptv/shared';
+import { isPhotoAvatar, type AvatarId, type ProfileAvatar, type ProfileColor } from '@iptv/shared';
+
+/*
+ * Les avatars photographiques, en dur.
+ *
+ * `require` veut un chemin littéral : on mappe donc chaque identifiant à son
+ * fichier, une fois. Ajouter une photo, c'est déposer un .jpg dans
+ * `assets/avatars` et l'ajouter ici comme dans `PROFILE_PHOTO_AVATARS`.
+ */
+const PHOTOS: Record<string, number> = {
+  'cat-ginger': require('../assets/avatars/cat-ginger.jpg'),
+  'cat-tabby': require('../assets/avatars/cat-tabby.jpg'),
+  'cat-tuxedo': require('../assets/avatars/cat-tuxedo.jpg'),
+  'cat-blackwhite': require('../assets/avatars/cat-blackwhite.jpg'),
+  'cat-grey': require('../assets/avatars/cat-grey.jpg'),
+  'dog-shiba': require('../assets/avatars/dog-shiba.jpg'),
+  'dog-cool': require('../assets/avatars/dog-cool.jpg'),
+  'dog-pup': require('../assets/avatars/dog-pup.jpg'),
+  'dog-puppy': require('../assets/avatars/dog-puppy.jpg'),
+  'dog-fluffy': require('../assets/avatars/dog-fluffy.jpg'),
+  fox: require('../assets/avatars/fox.jpg'),
+  hyena: require('../assets/avatars/hyena.jpg'),
+  meerkat: require('../assets/avatars/meerkat.jpg'),
+  deer: require('../assets/avatars/deer.jpg'),
+  owl: require('../assets/avatars/owl.jpg'),
+  'owl-eagle': require('../assets/avatars/owl-eagle.jpg'),
+  tiger: require('../assets/avatars/tiger.jpg'),
+  'tiger-cub': require('../assets/avatars/tiger-cub.jpg'),
+  lion: require('../assets/avatars/lion.jpg'),
+  'lion-roar': require('../assets/avatars/lion-roar.jpg'),
+  rabbit: require('../assets/avatars/rabbit.jpg'),
+};
 
 /*
  * Vignette de profil.
@@ -43,10 +74,40 @@ export function Avatar({
   color,
   size = 88,
 }: {
-  avatar: ProfileAvatar;
+  avatar: AvatarId;
   color: ProfileColor;
   size?: number;
 }) {
+  const radius = size * 0.24;
+
+  // Une photo : on l'affiche telle quelle, au même galbe que les vignettes.
+  if (isPhotoAvatar(avatar)) {
+    const src = PHOTOS[avatar];
+    if (src) {
+      return (
+        <Image
+          source={src}
+          style={{ width: size, height: size, borderRadius: radius, backgroundColor: '#141824' }}
+        />
+      );
+    }
+    // Avatar de secours : photo inconnue → une empreinte sur fond neutre.
+    return (
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: radius,
+          backgroundColor: '#141824',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Ionicons name="paw" size={size * 0.44} color="rgba(255,255,255,0.5)" />
+      </View>
+    );
+  }
+
   const pair = TINTS[color] ?? TINTS.blue;
   return (
     <LinearGradient
@@ -56,13 +117,13 @@ export function Avatar({
       style={{
         width: size,
         height: size,
-        borderRadius: size * 0.24,
+        borderRadius: radius,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
       <Ionicons
-        name={ICONS[avatar] ?? 'water'}
+        name={ICONS[avatar as ProfileAvatar] ?? 'water'}
         size={size * 0.46}
         color="rgba(255, 255, 255, 0.94)"
       />
