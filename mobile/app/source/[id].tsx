@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import type { ProviderView } from '@iptv/shared';
+import type { ProviderView, SyncStatus } from '@iptv/shared';
 import { api, ApiError } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import { useSession } from '../../lib/session';
@@ -41,8 +41,10 @@ export default function SourceEditor() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [epgUrl, setEpgUrl] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Les profils qui ont éteint cette source pour eux (modèle opt-out).
   const [muted, setMuted] = useState<Set<number>>(new Set());
@@ -55,6 +57,25 @@ export default function SourceEditor() {
     setBaseUrl(existing.baseUrl);
     setEpgUrl(existing.epgUrl ?? '');
   }, [existing?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Les identifiants en clair, pour les relire et les modifier. Ils ne partent
+  // que sur ce geste explicite — ouvrir sa propre source — et jamais avec la
+  // liste. Un panel seulement : une playlist n'en a pas.
+  useEffect(() => {
+    if (!existing || existing.kind !== 'xtream') return;
+    let alive = true;
+    api
+      .get<{ username: string; password: string }>(`/api/providers/${existing.id}/credentials`)
+      .then((c) => {
+        if (!alive) return;
+        setUsername(c.username);
+        setPassword(c.password);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [existing?.id, existing?.kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Qui, dans le foyer, s'est retiré de cette source — pour cocher les cases.
   useEffect(() => {
@@ -159,19 +180,35 @@ export default function SourceEditor() {
    */
   const syncNow = async () => {
     if (syncing) return;
-    setSyncing(true);
     setError(null);
+    setSyncStatus(null);
     try {
-      await api.post('/api/providers/sync');
-      setTimeout(() => {
-        providers.reload();
-        setSyncing(false);
-      }, 3000);
+      const st = await api.post<SyncStatus>('/api/providers/sync');
+      setSyncStatus(st);
+      setSyncing(true); // déclenche le suivi ci-dessous
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Synchronisation impossible.');
-      setSyncing(false);
     }
   };
+
+  // Tant qu'une synchro tourne, on suit sa progression et on recharge l'état à
+  // la fin — pour que les compteurs et la pastille reflètent la reprise.
+  useEffect(() => {
+    if (!syncing) return;
+    const timer = setInterval(() => {
+      api
+        .get<SyncStatus>('/api/providers/sync')
+        .then((st) => {
+          setSyncStatus(st);
+          if (!st.running) {
+            setSyncing(false);
+            providers.reload();
+          }
+        })
+        .catch(() => setSyncing(false));
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [syncing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
@@ -233,7 +270,7 @@ export default function SourceEditor() {
           <Text style={ss.label}>Nom d’utilisateur</Text>
           <TextInput
             style={styles.input}
-            placeholder={isNew ? 'Identifiant' : 'Laisser vide pour garder l’actuel'}
+            placeholder="Identifiant"
             placeholderTextColor={colors.dim}
             value={username}
             onChangeText={setUsername}
@@ -248,20 +285,33 @@ export default function SourceEditor() {
             maxLength={200}
           />
           <Text style={ss.label}>Mot de passe</Text>
-          <TextInput
-            style={styles.input}
-            placeholder={isNew ? 'Mot de passe' : 'Laisser vide pour garder l’actuel'}
-            placeholderTextColor={colors.dim}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="off"
-            textContentType="none"
-            importantForAutofill="no"
-            maxLength={200}
-          />
+          <View style={ss.pwRow}>
+            <TextInput
+              style={[styles.input, { flex: 1, paddingRight: 46 }]}
+              placeholder="Mot de passe"
+              placeholderTextColor={colors.dim}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              textContentType="none"
+              importantForAutofill="no"
+              maxLength={200}
+            />
+            <Focusable
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={8}
+              style={ss.eye}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color={colors.dim}
+              />
+            </Focusable>
+          </View>
         </>
       ) : (
         <>
@@ -299,9 +349,12 @@ export default function SourceEditor() {
           >
             <Ionicons name="sync" size={16} color={colors.accent} />
             <Text style={ss.syncText}>
-              {syncing ? 'Synchronisation lancée…' : 'Synchroniser maintenant'}
+              {syncing ? 'Synchronisation…' : 'Synchroniser maintenant'}
             </Text>
           </Focusable>
+          {syncStatus ? (
+            <Text style={ss.syncProgress}>{syncMessage(syncStatus)}</Text>
+          ) : null}
         </>
       ) : null}
 
@@ -356,6 +409,28 @@ export default function SourceEditor() {
       )}
     </ScrollView>
   );
+}
+
+/** Le message de progression sous le bouton de synchronisation. */
+const PHASE_LABEL: Record<string, string> = {
+  idle: 'Préparation',
+  categories: 'Catégories',
+  live: 'Chaînes',
+  vod: 'Films',
+  series: 'Séries',
+  done: 'Terminé',
+  failed: 'Échec',
+};
+
+function syncMessage(st: SyncStatus): string {
+  if (st.phase === 'failed') {
+    return `Échec : ${st.error ?? 'synchronisation interrompue'}`;
+  }
+  if (!st.running || st.phase === 'done') {
+    return `Synchronisé · ${st.counts.vod} films · ${st.counts.series} séries · ${st.counts.live} chaînes`;
+  }
+  const got = st.counts.vod + st.counts.series + st.counts.live;
+  return `Synchronisation… · ${PHASE_LABEL[st.phase] ?? st.phase}${got > 0 ? ` · ${got} reçus` : ''}`;
 }
 
 /** Un compteur du catalogue : le nombre en grand, son libellé dessous. */
@@ -452,6 +527,24 @@ const ss = {
     backgroundColor: colors.bgSoft,
   },
   syncText: { color: colors.accent, fontFamily: 'Outfit' as const, fontSize: 14, fontWeight: '700' as const },
+  syncProgress: {
+    color: colors.dim,
+    fontFamily: 'Inter' as const,
+    fontSize: 12.5,
+    textAlign: 'center' as const,
+    marginTop: 8,
+    lineHeight: 17,
+  },
+  pwRow: { position: 'relative' as const, justifyContent: 'center' as const },
+  eye: {
+    position: 'absolute' as const,
+    right: 6,
+    top: 0,
+    bottom: 0,
+    width: 38,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
   profList: {
     backgroundColor: colors.bgSoft,
     borderWidth: 1,
