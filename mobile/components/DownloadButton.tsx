@@ -38,9 +38,19 @@ export function DownloadButton({
   style?: StyleProp<ViewStyle>;
 }) {
   const dl = useDownload(kind, id);
-  if (!DOWNLOADS_OK) return null;
-
   const onPress = () => {
+    // Hors de l'app native, pas de stockage hors-ligne : le bouton reste visible
+    // mais explique où le téléchargement se fait, plutôt que de disparaître.
+    if (!DOWNLOADS_OK) {
+      confirmAction({
+        title: 'Téléchargement hors-ligne',
+        message: 'À regarder sans connexion : disponible depuis l’app mobile LCR TV.',
+        confirmLabel: 'Compris',
+        destructive: false,
+        onConfirm: () => {},
+      });
+      return;
+    }
     if (!dl || dl.status === 'error') {
       void startDownload({ kind, id, title, parentTitle, posterUrl });
     } else if (dl.status === 'done') {
