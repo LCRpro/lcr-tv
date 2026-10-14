@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../lib/theme';
 import { confirmAction } from '../lib/confirm';
+import { toast } from '../lib/toast';
 import {
   DOWNLOADS_OK,
   removeDownload,
@@ -42,13 +43,7 @@ export function DownloadButton({
     // Hors de l'app native, pas de stockage hors-ligne : le bouton reste visible
     // mais explique où le téléchargement se fait, plutôt que de disparaître.
     if (!DOWNLOADS_OK) {
-      confirmAction({
-        title: 'Téléchargement hors-ligne',
-        message: 'À regarder sans connexion : disponible depuis l’app mobile LCR TV.',
-        confirmLabel: 'Compris',
-        destructive: false,
-        onConfirm: () => {},
-      });
+      toast('Le téléchargement hors-ligne se fait depuis l’app mobile LCR TV.', 'info');
       return;
     }
     if (!dl || dl.status === 'error') {

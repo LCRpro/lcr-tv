@@ -49,16 +49,58 @@ export default function HomeScreen() {
   if (loading && !data) return <BrandSplash />;
 
   if (data?.catalogEmpty) {
+    const running = data.sync?.running ?? false;
+    const failed = data.sync?.phase === 'failed';
+    const retry = () => {
+      void api.post('/api/providers/sync').then(reload).catch(() => reload());
+    };
     return (
-      <View style={[styles.screen, { justifyContent: 'center', padding: 24 }]}>
-        <Text style={[styles.h1, { textAlign: 'center' }]}>
-          {data.sync?.running ? 'Synchronisation en cours' : 'Catalogue vide'}
+      <View style={[styles.screen, { justifyContent: 'center', padding: 24, gap: 10 }]}>
+        <Ionicons
+          name={failed ? 'alert-circle-outline' : running ? 'sync' : 'cloud-offline-outline'}
+          size={40}
+          color={failed ? colors.live : colors.dim}
+          style={{ alignSelf: 'center' }}
+        />
+        <Text style={[styles.h1, { textAlign: 'center', marginBottom: 0 }]}>
+          {failed
+            ? 'La synchronisation a échoué'
+            : running
+              ? 'Synchronisation en cours'
+              : 'Catalogue vide'}
         </Text>
-        <Text style={[styles.dim, { textAlign: 'center' }]}>
-          {data.sync?.running
-            ? `Étape : ${data.sync.phase}. ${data.sync.counts.vod} films récupérés jusqu’ici.`
-            : "Aucune synchronisation n'a encore rempli le catalogue. Prévenez l'administrateur."}
+        <Text style={[styles.dim, { textAlign: 'center', lineHeight: 20 }]}>
+          {failed
+            ? (data.sync?.error ??
+              'La source n’a pas pu être jointe. Vérifiez son adresse et ses identifiants, puis réessayez.')
+            : running
+              ? `Étape : ${data.sync!.phase} · ${data.sync!.counts.vod + data.sync!.counts.series + data.sync!.counts.live} éléments reçus jusqu’ici.`
+              : 'Aucune synchronisation n’a encore rempli le catalogue.'}
         </Text>
+        {!running ? (
+          <Focusable
+            onPress={retry}
+            style={({ pressed }) => [
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                alignSelf: 'center',
+                gap: 8,
+                marginTop: 6,
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderRadius: 10,
+                backgroundColor: colors.accent,
+              },
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Ionicons name="sync" size={16} color={colors.onAccent} />
+            <Text style={{ color: colors.onAccent, fontFamily: 'Outfit', fontSize: 15, fontWeight: '700' }}>
+              Réessayer
+            </Text>
+          </Focusable>
+        ) : null}
       </View>
     );
   }

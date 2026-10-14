@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { channelTitle, workTitle } from '@iptv/shared';
 import { api } from '../lib/api';
 import { confirmAction } from '../lib/confirm';
+import { toast } from '../lib/toast';
 import { colors, radius } from '../lib/theme';
 import {
   DOWNLOADS_OK,
@@ -79,13 +80,7 @@ function Sheet({ item, onClose }: { item: QuickItem; onClose: () => void }) {
 
   const download = () => {
     if (!DOWNLOADS_OK) {
-      confirmAction({
-        title: 'Téléchargement hors-ligne',
-        message: 'À regarder sans connexion : disponible depuis l’app mobile LCR TV.',
-        confirmLabel: 'Compris',
-        destructive: false,
-        onConfirm: () => {},
-      });
+      toast('Le téléchargement hors-ligne se fait depuis l’app mobile LCR TV.', 'info');
       return;
     }
     if (!dl || dl.status === 'error') {

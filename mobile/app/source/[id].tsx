@@ -7,6 +7,7 @@ import { api, ApiError } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import { useSession } from '../../lib/session';
 import { confirmAction } from '../../lib/confirm';
+import { toastError, toastOk } from '../../lib/toast';
 import { colors, radius, styles } from '../../lib/theme';
 import { Focusable } from '../../components/Focusable';
 import { Avatar } from '../../components/ProfileAvatar';
@@ -45,7 +46,6 @@ export default function SourceEditor() {
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
   // Les profils qui ont éteint cette source pour eux (modèle opt-out).
   const [muted, setMuted] = useState<Set<number>>(new Set());
 
@@ -110,7 +110,6 @@ export default function SourceEditor() {
   const save = async () => {
     if (!canSave) return;
     setBusy(true);
-    setError(null);
     try {
       if (isNew) {
         const body =
@@ -146,9 +145,10 @@ export default function SourceEditor() {
         await api.patch(`/api/providers/${existing!.id}`, patch);
       }
       void api.post('/api/providers/sync').catch(() => {});
+      toastOk(isNew ? 'Source ajoutée' : 'Source enregistrée');
       router.back();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Enregistrement impossible.');
+      toastError(err instanceof ApiError ? err.message : 'Enregistrement impossible.');
     } finally {
       setBusy(false);
     }
@@ -163,9 +163,10 @@ export default function SourceEditor() {
       onConfirm: async () => {
         try {
           await api.del(`/api/providers/${existing.id}`);
+          toastOk('Source supprimée');
           router.back();
         } catch (err) {
-          setError(err instanceof ApiError ? err.message : 'Suppression impossible.');
+          toastError(err instanceof ApiError ? err.message : 'Suppression impossible.');
         }
       },
     });
@@ -180,14 +181,13 @@ export default function SourceEditor() {
    */
   const syncNow = async () => {
     if (syncing) return;
-    setError(null);
     setSyncStatus(null);
     try {
       const st = await api.post<SyncStatus>('/api/providers/sync');
       setSyncStatus(st);
       setSyncing(true); // déclenche le suivi ci-dessous
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Synchronisation impossible.');
+      toastError(err instanceof ApiError ? err.message : 'Synchronisation impossible.');
     }
   };
 
@@ -235,12 +235,6 @@ export default function SourceEditor() {
       ) : (
         <Text style={ss.fixed}>{kind === 'm3u' ? 'Playlist M3U' : 'Panel Xtream'}</Text>
       )}
-
-      {error ? (
-        <View style={[styles.notice, styles.noticeError, { marginTop: 16 }]}>
-          <Text style={styles.text}>{error}</Text>
-        </View>
-      ) : null}
 
       <Text style={ss.label}>Nom</Text>
       <TextInput

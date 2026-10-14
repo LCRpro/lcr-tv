@@ -1,20 +1,33 @@
 import { Alert, Platform } from 'react-native';
 
 /**
- * Une confirmation qui marche partout.
+ * Une confirmation qui marche partout — et dans l'habillage de l'app.
  *
- * `Alert.alert` de React Native ne fait rien sur le web : la boîte ne s'ouvre
- * pas, et l'action confirmée n'est jamais lancée — c'est ce qui cassait la
- * déconnexion. On retombe donc sur `window.confirm` au navigateur, et on garde
- * l'alerte native sur l'appareil.
+ * Tant qu'un `FeedbackProvider` est monté, c'est lui qui affiche la boîte, aux
+ * couleurs de LCR TV plutôt que celle, grise, du navigateur ou du système. En
+ * repli (aucun provider), on retombe sur `window.confirm` au web et `Alert` sur
+ * l'appareil, pour qu'une confirmation ne soit jamais perdue.
  */
-export function confirmAction(opts: {
+export type ConfirmOpts = {
   title: string;
   message?: string;
   confirmLabel?: string;
   destructive?: boolean;
   onConfirm: () => void;
-}): void {
+};
+
+let handler: ((opts: ConfirmOpts) => void) | null = null;
+
+export function setConfirmHandler(h: ((opts: ConfirmOpts) => void) | null): void {
+  handler = h;
+}
+
+export function confirmAction(opts: ConfirmOpts): void {
+  if (handler) {
+    handler(opts);
+    return;
+  }
+
   const { title, message, confirmLabel = 'Confirmer', destructive = true, onConfirm } = opts;
 
   if (Platform.OS === 'web') {

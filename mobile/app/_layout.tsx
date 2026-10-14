@@ -15,6 +15,7 @@ import { AppBottomBar } from '../components/AppBottomBar';
 import { SearchPanel } from '../components/SearchPanel';
 import { BrandSplash } from '../components/BrandSplash';
 import { QuickActionsProvider } from '../components/QuickActions';
+import { FeedbackProvider } from '../components/Feedback';
 
 function Gate() {
   const { user, profile, loading, warming, warmupMessage } = useSession();
@@ -192,9 +193,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <SessionProvider>
-        <Gate />
-      </SessionProvider>
+      <FeedbackProvider>
+        <SessionProvider>
+          <Gate />
+        </SessionProvider>
+      </FeedbackProvider>
     </SafeAreaProvider>
   );
 }

@@ -16,6 +16,7 @@ import { api, ApiError } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import { useSession } from '../../lib/session';
 import { confirmAction } from '../../lib/confirm';
+import { toastError, toastOk } from '../../lib/toast';
 import { colors, radius, styles } from '../../lib/theme';
 import { Avatar, ColorSwatch, avatarGlyph } from '../../components/ProfileAvatar';
 import { Focusable } from '../../components/Focusable';
@@ -91,22 +92,21 @@ export default function ProfileEditor() {
   const syncAll = () => setLangFilters((prev) => ({ vod: prev.vod, series: [...prev.vod], live: [...prev.vod] }));
 
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const canSave = name.trim().length > 0 && !busy;
 
   const save = async () => {
     if (!canSave) return;
     setBusy(true);
-    setError(null);
     const body = { name: name.trim(), avatar, color, isKid, languageFilters: langFilters };
     try {
       if (isNew) await api.post('/api/profiles', body);
       else if (existing) await api.patch(`/api/profiles/${existing.id}`, body);
       await refresh();
+      toastOk(isNew ? 'Profil créé' : 'Profil enregistré');
       router.back();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Enregistrement impossible.');
+      toastError(err instanceof ApiError ? err.message : 'Enregistrement impossible.');
     } finally {
       setBusy(false);
     }
@@ -122,9 +122,10 @@ export default function ProfileEditor() {
         try {
           await api.del(`/api/profiles/${existing.id}`);
           await refresh();
+          toastOk('Profil supprimé');
           router.back();
         } catch (err) {
-          setError(err instanceof ApiError ? err.message : 'Suppression impossible.');
+          toastError(err instanceof ApiError ? err.message : 'Suppression impossible.');
         }
       },
     });
@@ -141,12 +142,6 @@ export default function ProfileEditor() {
           {name.trim() || 'Nouveau profil'}
         </Text>
       </View>
-
-      {error ? (
-        <View style={[styles.notice, styles.noticeError]}>
-          <Text style={styles.text}>{error}</Text>
-        </View>
-      ) : null}
 
       <Text style={ps.label}>Nom</Text>
       <TextInput
