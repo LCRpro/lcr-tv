@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   FlatList,
-  Image,
+  Modal,
+  Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   categoryIcon,
   languageRank,
@@ -21,7 +24,7 @@ import {
 } from '@iptv/shared';
 import { api, qs } from '../lib/api';
 import { useAsync, useDebounced } from '../lib/hooks';
-import { colors, gridColumns, onArt, styles } from '../lib/theme';
+import { colors, gridColumns, onArt, radius, styles } from '../lib/theme';
 import { cardTarget, TV_SAFE } from '../lib/tv';
 import { Card, ChannelCard, Empty, ErrorNotice, Loading } from './ui';
 import { Focusable } from './Focusable';
@@ -62,6 +65,7 @@ export function CatalogList({
    */
   const [categoryId, setCategoryId] = useState<number | 'favorites' | 'watched' | null>(null);
   const [term, setTerm] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
   const debounced = useDebounced(term);
 
   const [items, setItems] = useState<Item[]>([]);
@@ -161,6 +165,40 @@ export function CatalogList({
     }
   };
 
+  // Choisir une categorie ferme le panneau : un deuxieme geste pour fermer
+  // serait un geste de trop.
+  const pick = (value: number | 'favorites' | 'watched' | null) => {
+    setCategoryId(value);
+    setPickerOpen(false);
+  };
+
+  // La categorie du fournisseur en cours, s'il y en a une — sert a etiqueter le
+  // bouton qui ouvre le menu.
+  const activeCategory =
+    typeof categoryId === 'number'
+      ? categories.data?.items.find((c) => c.id === categoryId) ?? null
+      : null;
+
+  const triggerLabel =
+    categoryId === 'favorites'
+      ? favoriteLabel
+      : categoryId === 'watched'
+        ? watchedLabel
+        : activeCategory
+          ? splitLanguage(activeCategory.name).title
+          : 'Toutes les catégories';
+
+  const triggerMark =
+    categoryId === 'favorites' ? (
+      <IconStar filled color={colors.gold} />
+    ) : categoryId === 'watched' ? (
+      <IconClock />
+    ) : activeCategory ? (
+      <CategoryMark icon={categoryIcon(activeCategory.name, activeCategory.languageCode)} />
+    ) : (
+      <Ionicons name="apps" size={16} color={colors.dim} />
+    );
+
   return (
     <View style={styles.screen}>
       <View style={{ padding: 12, paddingBottom: 0 }}>
@@ -174,55 +212,77 @@ export function CatalogList({
         />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ flexGrow: 0 }}
-        contentContainerStyle={{ padding: 12, gap: 8 }}
+      {/* Un seul bouton plutot qu'une rangee qui fuit hors de l'ecran : il dit
+          la categorie en cours et ouvre la liste entiere d'un geste. */}
+      <View style={{ paddingHorizontal: 12, paddingTop: 12 }}>
+        <Focusable
+          onPress={() => setPickerOpen(true)}
+          style={({ pressed }) => [cat.trigger, pressed && { opacity: 0.8 }]}
+        >
+          <View style={cat.triggerMark}>{triggerMark}</View>
+          <Text style={cat.triggerText} numberOfLines={1}>
+            {triggerLabel}
+          </Text>
+          <Ionicons name="chevron-down" size={18} color={colors.dim} />
+        </Focusable>
+      </View>
+
+      <Modal
+        visible={pickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerOpen(false)}
       >
-        <Chip
-          label={`${favoriteLabel}${favoriteCount == null ? '' : ` (${favoriteCount})`}`}
-          mark={<IconStar filled color={colors.gold} />}
-          active={categoryId === 'favorites'}
-          onPress={() => setCategoryId((c) => (c === 'favorites' ? null : 'favorites'))}
-        />
-        <Chip
-          label={`${watchedLabel}${watchedCount == null ? '' : ` (${watchedCount})`}`}
-          mark={<IconClock />}
-          active={categoryId === 'watched'}
-          onPress={() => setCategoryId((c) => (c === 'watched' ? null : 'watched'))}
-        />
-        <Chip label="Toutes" active={categoryId === null} onPress={() => setCategoryId(null)} />
-        {/* Les categories arrivent triees « francais d'abord » par le serveur.
-            Un simple repere marque la coupure : sans lui, la rangee repart a
-            « Afrique » apres dix-sept entrees francaises sans qu'on comprenne. */}
-        {categories.data?.items.map((c, i, all) => {
-          // `categoryIcon` et non `splitLanguage` : une categorie sans langue —
-          // « LA LIGA », « IMDB TOP 500 » — recoit un repere de theme plutot que
-          // rien, sans quoi elle detonne au milieu d'une rangee a drapeaux.
-          const mark = categoryIcon(c.name, c.languageCode);
-          const startsOthers =
-            i > 0 &&
-            languageRank(all[i - 1]!.name, all[i - 1]!.languageCode) === 0 &&
-            languageRank(c.name, c.languageCode) !== 0;
-          return (
-            <View key={c.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {startsOthers && <Text style={styles.faint}>AUTRES LANGUES</Text>}
-              <Chip
-                // Le serveur ne donne un logo que si les chaines de la categorie
-                // le partagent vraiment : AHL, NHL, Apple TV. Sinon le drapeau.
-                logoUrl={c.logoUrl ?? null}
-                mark={<CategoryMark icon={mark} />}
-                label={`${splitLanguage(c.name).title} (${c.count})`}
-                active={categoryId === c.id}
-                onPress={() => setCategoryId((cur) => (cur === c.id ? null : c.id))}
-                pinned={c.isFavorite}
-                onTogglePin={() => void togglePin(c)}
+        {/* Le voile ferme ; la feuille, posee par-dessus, retient les touches. */}
+        <View style={cat.modalRoot}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPickerOpen(false)} />
+          <View style={cat.sheet}>
+            <View style={cat.handle} />
+            <Text style={cat.sheetTitle}>Catégorie</Text>
+            <ScrollView style={{ maxHeight: 440 }} contentContainerStyle={{ paddingBottom: 8 }}>
+              <OptionRow
+                label={`${favoriteLabel}${favoriteCount == null ? '' : ` (${favoriteCount})`}`}
+                mark={<IconStar filled color={colors.gold} />}
+                active={categoryId === 'favorites'}
+                onPress={() => pick('favorites')}
               />
-            </View>
-          );
-        })}
-      </ScrollView>
+              <OptionRow
+                label={`${watchedLabel}${watchedCount == null ? '' : ` (${watchedCount})`}`}
+                mark={<IconClock />}
+                active={categoryId === 'watched'}
+                onPress={() => pick('watched')}
+              />
+              <OptionRow
+                label="Toutes les catégories"
+                mark={<Ionicons name="apps" size={16} color={colors.dim} />}
+                active={categoryId === null}
+                onPress={() => pick(null)}
+              />
+              {/* Les categories arrivent triees « francais d'abord » par le serveur ;
+                  un intitule marque la bascule vers les autres langues. */}
+              {categories.data?.items.map((c, i, all) => {
+                const startsOthers =
+                  i > 0 &&
+                  languageRank(all[i - 1]!.name, all[i - 1]!.languageCode) === 0 &&
+                  languageRank(c.name, c.languageCode) !== 0;
+                return (
+                  <View key={c.id}>
+                    {startsOthers ? <Text style={cat.divider}>AUTRES LANGUES</Text> : null}
+                    <OptionRow
+                      label={`${splitLanguage(c.name).title} (${c.count})`}
+                      mark={<CategoryMark icon={categoryIcon(c.name, c.languageCode)} />}
+                      active={categoryId === c.id}
+                      onPress={() => pick(c.id)}
+                      pinned={c.isFavorite}
+                      onTogglePin={() => void togglePin(c)}
+                    />
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       <ErrorNotice error={first.error} />
 
@@ -286,56 +346,109 @@ export function CatalogList({
   );
 }
 
-function Chip({
+/**
+ * Une ligne du menu des categories.
+ *
+ * L'icone a gauche — drapeau, theme ou globe — puis le nom ; a droite, l'etoile
+ * qui epingle (sur les categories du fournisseur seulement) et la coche de la
+ * selection courante. La ligne active se teinte d'accent, pour qu'on la retrouve
+ * d'un coup d'oeil en rouvrant le menu.
+ */
+function OptionRow({
   label,
   mark,
-  logoUrl,
   active,
   pinned,
   onPress,
   onTogglePin,
 }: {
   label: string;
-  /** Marque dessinee — drapeau, theme ou globe — affichee a defaut de logo. */
   mark?: ReactNode;
-  logoUrl?: string | null;
   active: boolean;
   pinned?: boolean;
   onPress: () => void;
-  /** Absent sur les puces qui ne sont pas des categories du fournisseur. */
   onTogglePin?: () => void;
 }) {
-  // Les logos du fournisseur meurent souvent : on retombe alors sur l'icone,
-  // sinon la puce perdrait son repere et se desalignerait dans la rangee.
-  const [broken, setBroken] = useState(false);
-  const showLogo = Boolean(logoUrl) && !broken;
-
   return (
     <Focusable
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.chip,
-        { flexDirection: 'row', alignItems: 'center', gap: 6 },
-        active && styles.chipActive,
-        pressed && { opacity: 0.7 },
-      ]}
+      style={({ pressed }) => [cat.row, active && cat.rowActive, pressed && { opacity: 0.7 }]}
     >
-      {showLogo ? (
-        <Image
-          source={{ uri: logoUrl! }}
-          style={{ width: 16, height: 16 }}
-          resizeMode="contain"
-          onError={() => setBroken(true)}
-        />
-      ) : (
-        mark ?? null
-      )}
-      <Text style={[styles.chipText, active && styles.chipActiveText]}>{label}</Text>
+      <View style={cat.rowMark}>{mark ?? null}</View>
+      <Text style={[cat.rowText, active && cat.rowTextActive]} numberOfLines={1}>
+        {label}
+      </Text>
+      <View style={{ flex: 1 }} />
       {onTogglePin ? (
-        <Focusable onPress={onTogglePin} hitSlop={8}>
-          <IconStar filled={Boolean(pinned)} size={13} />
+        <Focusable onPress={onTogglePin} hitSlop={8} style={{ padding: 4 }}>
+          <IconStar filled={Boolean(pinned)} size={15} color={pinned ? colors.gold : colors.faint} />
         </Focusable>
       ) : null}
+      {active ? <Ionicons name="checkmark" size={18} color={colors.accent} /> : null}
     </Focusable>
   );
 }
+
+const cat = StyleSheet.create({
+  trigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingVertical: 11,
+    paddingHorizontal: 13,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  triggerMark: { width: 18, alignItems: 'center' },
+  triggerText: { flex: 1, color: colors.text, fontSize: 14.5, fontWeight: '700', letterSpacing: -0.2 },
+  modalRoot: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' },
+  sheet: {
+    backgroundColor: colors.elevated,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 24,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginBottom: 12,
+  },
+  sheetTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: radius.md,
+  },
+  rowActive: { backgroundColor: colors.accentSoft },
+  rowMark: { width: 20, alignItems: 'center' },
+  rowText: { color: colors.dim, fontSize: 14.5, fontWeight: '600' },
+  rowTextActive: { color: colors.text, fontWeight: '700' },
+  divider: {
+    color: colors.faint,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginTop: 10,
+    marginBottom: 4,
+    paddingHorizontal: 10,
+  },
+});

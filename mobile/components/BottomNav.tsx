@@ -21,7 +21,6 @@ const TABS: Record<
   films: { label: 'Films', icon: 'film-outline', iconOn: 'film' },
   series: { label: 'Séries', icon: 'albums-outline', iconOn: 'albums' },
   live: { label: 'Direct', icon: 'tv-outline', iconOn: 'tv' },
-  guide: { label: 'Guide', icon: 'calendar-outline', iconOn: 'calendar' },
 };
 
 interface TabBarProps {

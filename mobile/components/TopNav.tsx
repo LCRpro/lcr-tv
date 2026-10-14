@@ -24,7 +24,6 @@ const LABELS: Record<string, string> = {
   films: 'Films',
   series: 'Séries',
   live: 'Direct',
-  guide: 'Guide',
 };
 
 /**

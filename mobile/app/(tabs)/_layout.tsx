@@ -7,7 +7,7 @@ import { BrandBar } from '../../components/BrandBar';
 import { BottomNav } from '../../components/BottomNav';
 
 /**
- * Cinq sections : Accueil, Films, Séries, Direct, Guide.
+ * Quatre sections : Accueil, Films, Séries, Direct.
  *
  * Deux barres encadrent les écrans. En haut, l'identité et les deux gestes de
  * côté — recherche et compte — portés par `BrandBar`. En bas, les sections
@@ -33,7 +33,6 @@ export default function TabsLayout() {
         <Tabs.Screen name="films" options={{ title: 'Films' }} />
         <Tabs.Screen name="series" options={{ title: 'Séries' }} />
         <Tabs.Screen name="live" options={{ title: 'Direct' }} />
-        <Tabs.Screen name="guide" options={{ title: 'Guide' }} />
       </Tabs>
     );
   }
@@ -52,7 +51,6 @@ export default function TabsLayout() {
         <Tabs.Screen name="films" options={{ title: 'Films' }} />
         <Tabs.Screen name="series" options={{ title: 'Séries' }} />
         <Tabs.Screen name="live" options={{ title: 'Direct' }} />
-        <Tabs.Screen name="guide" options={{ title: 'Guide' }} />
       </Tabs>
     </View>
   );
