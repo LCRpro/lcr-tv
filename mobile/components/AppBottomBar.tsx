@@ -70,9 +70,8 @@ export function AppBottomBar() {
 const bn = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    // Même fond que les écrans : la barre ne doit pas trancher. Un filet suffit
-    // à la séparer du contenu qui défile dessous.
-    backgroundColor: colors.bg,
+    // Un ton plus clair que le fond : la barre se détache du contenu.
+    backgroundColor: colors.elevated,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: 9,

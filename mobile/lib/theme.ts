@@ -593,7 +593,10 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 12,
-    backgroundColor: colors.bg,
+    // Un ton plus clair que le fond : la barre se détache nettement du contenu.
+    backgroundColor: colors.elevated,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   navLogo: {
     width: 30,
