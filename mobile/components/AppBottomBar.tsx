@@ -77,7 +77,13 @@ const bn = StyleSheet.create({
     paddingTop: 9,
     paddingHorizontal: 6,
   },
-  item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingVertical: 2 },
-  label: { fontSize: 10.5, fontWeight: '600', color: colors.faint, letterSpacing: -0.1 },
+  item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 2 },
+  label: {
+    fontFamily: 'Outfit',
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.faint,
+    letterSpacing: 0,
+  },
   labelOn: { color: colors.accent, fontWeight: '700' },
 });

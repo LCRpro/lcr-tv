@@ -171,7 +171,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** L'état d'attente ou de vide : une icône encadrée, un titre, une phrase. */
+/** L'état d'attente ou de vide : une petite icône, un titre, une phrase. */
 function EmptyState({
   icon,
   title,
@@ -183,9 +183,7 @@ function EmptyState({
 }) {
   return (
     <View style={sp.empty}>
-      <View style={sp.emptyIcon}>
-        <Ionicons name={icon} size={26} color={colors.dim} />
-      </View>
+      <Ionicons name={icon} size={22} color={colors.faint} />
       <Text style={sp.emptyTitle}>{title}</Text>
       <Text style={sp.emptySub}>{sub}</Text>
     </View>
@@ -240,25 +238,17 @@ const sp = {
     backgroundColor: colors.accent,
   },
 
+  // L'état vide respire sans s'imposer : une petite icône, pas de gros bloc
+  // décoratif, et l'ensemble posé un peu au-dessus du centre optique.
   empty: {
     flex: 1,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    gap: 12,
-    paddingHorizontal: 32,
-    paddingBottom: 48,
+    gap: 9,
+    paddingHorizontal: 40,
+    paddingBottom: 96,
   },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.lg,
-    backgroundColor: colors.bgSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-  },
-  emptyTitle: { color: colors.text, fontFamily: 'Outfit', fontSize: 18, fontWeight: '700' as const },
+  emptyTitle: { color: colors.text, fontFamily: 'Outfit', fontSize: 17, fontWeight: '700' as const, marginTop: 2 },
   emptySub: {
     color: colors.dim,
     fontFamily: 'Inter',

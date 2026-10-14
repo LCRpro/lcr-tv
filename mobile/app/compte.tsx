@@ -349,11 +349,15 @@ export default function CompteScreen() {
 
           {wide ? (
             <View style={cs.columns}>
-              <View style={cs.column}>{left.map((c, i) => wrap(c, `l${i}`))}</View>
-              <View style={cs.column}>{right.map((c, i) => wrap(c, `r${i}`))}</View>
+              <View style={cs.column}>
+                <Group items={left} />
+              </View>
+              <View style={cs.column}>
+                <Group items={right} />
+              </View>
             </View>
           ) : (
-            <View>{stacked.map((c, i) => wrap(c, `s${i}`))}</View>
+            <Group items={stacked} />
           )}
 
           <Text style={[styles.faint, { textAlign: 'center', marginTop: 8 }]}>Serveur · {API_URL}</Text>
@@ -364,11 +368,6 @@ export default function CompteScreen() {
         </View>
       </ScrollView>
   );
-}
-
-/** Une clé stable sur un élément déjà construit, sans le reconstruire. */
-function wrap(node: ReactNode, key: string): ReactNode {
-  return <View key={key}>{node}</View>;
 }
 
 // --------------------------------------------------------- briques d'interface
@@ -397,30 +396,44 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   return (
-    <View style={cs.section}>
-      <View style={cs.card}>
-        <Focusable
-          onPress={() => setOpen((o) => !o)}
-          style={({ pressed }) => [cs.accHeader, pressed && { opacity: 0.7 }]}
-        >
-          <View style={cs.accIcon}>
-            <Ionicons name={icon} size={18} color={colors.accent} />
-          </View>
-          <Text style={cs.accTitle}>{title}</Text>
-          <View style={{ flex: 1 }} />
-          {count != null ? <Text style={cs.accCount}>{count}</Text> : null}
-          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.faint} />
-        </Focusable>
-        {open ? (
-          <>
-            <Divider />
-            <View style={cs.accBody}>
-              {subtitle ? <Text style={cs.sectionSub}>{subtitle}</Text> : null}
-              {children}
-            </View>
-          </>
-        ) : null}
-      </View>
+    <View>
+      <Focusable
+        onPress={() => setOpen((o) => !o)}
+        style={({ pressed }) => [cs.accHeader, pressed && { opacity: 0.6 }]}
+      >
+        <Ionicons name={icon} size={20} color={open ? colors.accent : colors.dim} />
+        <Text style={cs.accTitle}>{title}</Text>
+        <View style={{ flex: 1 }} />
+        {count != null ? <Text style={cs.accCount}>{count}</Text> : null}
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={17} color={colors.faint} />
+      </Focusable>
+      {open ? (
+        <View style={cs.accBody}>
+          {subtitle ? <Text style={cs.sectionSub}>{subtitle}</Text> : null}
+          {children}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Un groupe de sections, dans une seule surface discrète.
+ *
+ * Plutôt que sept cartes identiques empilées, un conteneur unique où les
+ * sections se séparent d'un filet : la page redevient une liste de réglages,
+ * pas une collection de blocs.
+ */
+function Group({ items }: { items: ReactNode[] }) {
+  const list = items.filter(Boolean);
+  return (
+    <View style={cs.group}>
+      {list.map((node, i) => (
+        <View key={i}>
+          {i > 0 ? <View style={cs.groupLine} /> : null}
+          {node}
+        </View>
+      ))}
     </View>
   );
 }
@@ -596,9 +609,7 @@ function ProviderRow({ provider }: { provider: ProviderView }) {
       onPress={() => router.push(`/source/${provider.id}`)}
       style={({ pressed }) => [cs.row, pressed && { opacity: 0.7 }]}
     >
-      <View style={cs.accIcon}>
-        <Ionicons name="server-outline" size={16} color={colors.accent} />
-      </View>
+      <Ionicons name="server-outline" size={20} color={colors.dim} />
       <Text style={cs.rowLabel} numberOfLines={1}>
         {provider.name}
       </Text>
@@ -613,72 +624,57 @@ function ProviderRow({ provider }: { provider: ProviderView }) {
 const cs = {
   content: { padding: 16, paddingBottom: 40 },
   inner: { width: '100%' as const, maxWidth: 900, alignSelf: 'center' as const },
+  // Le profil, posé à même le fond : pas de carte autour, elle n'apportait rien.
   hero: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 14,
-    marginBottom: 18,
-    padding: 16,
-    backgroundColor: colors.bgSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
+    marginTop: 4,
+    marginBottom: 22,
+    paddingHorizontal: 2,
   },
-  name: { color: colors.text, fontFamily: 'Outfit', fontSize: 21, fontWeight: '700' as const, letterSpacing: -0.4 },
-  heroEmail: { color: colors.dim, fontFamily: 'Inter', fontSize: 13, marginTop: 3 },
-  heroEdit: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    backgroundColor: colors.elevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-  },
+  name: { color: colors.text, fontFamily: 'Outfit', fontSize: 22, fontWeight: '700' as const, letterSpacing: -0.4 },
+  heroEmail: { color: colors.dim, fontFamily: 'Inter', fontSize: 13.5, marginTop: 2 },
+  heroEdit: { padding: 8 },
 
   columns: { flexDirection: 'row' as const, gap: 14, alignItems: 'flex-start' as const },
   column: { flex: 1, minWidth: 0 },
 
-  section: { marginBottom: 12 },
   sectionSub: {
     color: colors.faint,
+    fontFamily: 'Inter' as const,
     fontSize: 12.5,
-    paddingHorizontal: 14,
-    paddingTop: 11,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 2,
     lineHeight: 17,
   },
-  card: {
+  // Une seule surface pour toute la liste ; les sections se séparent d'un filet.
+  group: {
     backgroundColor: colors.bgSoft,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     overflow: 'hidden' as const,
   },
+  groupLine: { height: 1, backgroundColor: colors.border },
   accHeader: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 11,
-    paddingHorizontal: 14,
-    paddingVertical: 15,
-  },
-  accIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: colors.accentSoft,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
+    gap: 13,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   accTitle: { color: colors.text, fontFamily: 'Outfit', fontSize: 15.5, fontWeight: '700' as const, letterSpacing: -0.2 },
   accCount: {
     color: colors.faint,
+    fontFamily: 'Inter' as const,
     fontSize: 13,
-    marginRight: 4,
+    marginRight: 6,
     fontVariant: ['tabular-nums' as const],
   },
   accBody: { paddingBottom: 6 },
-  divider: { height: 1, backgroundColor: colors.border },
+  divider: { height: 1, backgroundColor: colors.border, marginLeft: 16 },
 
   row: {
     flexDirection: 'row' as const,

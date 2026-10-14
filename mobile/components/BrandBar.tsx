@@ -35,17 +35,19 @@ export function BrandBar({ onSearch }: { onSearch?: () => void }) {
 
       <View style={{ flex: 1 }} />
 
-      <Focusable onPress={() => (onSearch ? onSearch() : router.push('/search'))} hitSlop={8}>
-        <View style={{ padding: 4 }}>
-          <Ionicons name="search" size={21} color={colors.dim} />
-        </View>
-      </Focusable>
-
-      <Focusable onPress={() => router.push('/compte')} hitSlop={6}>
-        <View style={[styles.navLogo, { backgroundColor: colors.elevated }]}>
-          <Ionicons name="settings-outline" size={18} color={colors.dim} />
-        </View>
-      </Focusable>
+      {/* Deux gestes, traités pareil : mêmes dimensions, même encre, bien alignés. */}
+      <View style={bs.actions}>
+        <Focusable
+          onPress={() => (onSearch ? onSearch() : router.push('/search'))}
+          hitSlop={8}
+          style={bs.iconBtn}
+        >
+          <Ionicons name="search" size={22} color={colors.dim} />
+        </Focusable>
+        <Focusable onPress={() => router.push('/compte')} hitSlop={8} style={bs.iconBtn}>
+          <Ionicons name="settings-outline" size={22} color={colors.dim} />
+        </Focusable>
+      </View>
     </View>
   );
 }
@@ -59,4 +61,6 @@ const bs = StyleSheet.create({
     letterSpacing: 0.2,
     marginLeft: 8,
   },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  iconBtn: { padding: 6 },
 });
