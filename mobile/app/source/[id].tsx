@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { ProviderView } from '@iptv/shared';
 import { api, ApiError } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
+import { useSession } from '../../lib/session';
 import { confirmAction } from '../../lib/confirm';
 import { colors, radius, styles } from '../../lib/theme';
 import { Focusable } from '../../components/Focusable';
+import { Avatar } from '../../components/ProfileAvatar';
 
 type Kind = 'xtream' | 'm3u';
 
@@ -23,6 +26,7 @@ export default function SourceEditor() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const isNew = id === 'new';
+  const { profiles } = useSession();
 
   // En modification, on retrouve la source dans la liste du compte.
   const providers = useAsync<{ items: ProviderView[] }>(
@@ -40,6 +44,8 @@ export default function SourceEditor() {
   const [active, setActive] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Les profils qui ont éteint cette source pour eux (modèle opt-out).
+  const [muted, setMuted] = useState<Set<number>>(new Set());
 
   // Préremplir quand la source existante est chargée.
   useEffect(() => {
@@ -50,6 +56,33 @@ export default function SourceEditor() {
     setEpgUrl(existing.epgUrl ?? '');
     setActive(existing.isActive);
   }, [existing?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Qui, dans le foyer, s'est retiré de cette source — pour cocher les cases.
+  useEffect(() => {
+    if (!existing) return;
+    let alive = true;
+    api
+      .get<{ mutedProfileIds: number[] }>(`/api/providers/${existing.id}/profile-access`)
+      .then((r) => {
+        if (alive) setMuted(new Set(r.mutedProfileIds));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [existing?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleProfile = (profileId: number) => {
+    if (!existing) return;
+    const willUse = muted.has(profileId); // muté aujourd'hui → on le réactive
+    const next = new Set(muted);
+    if (willUse) next.delete(profileId);
+    else next.add(profileId);
+    setMuted(next);
+    void api
+      .post(`/api/providers/${existing.id}/profile-access`, { profileId, enabled: willUse })
+      .catch(() => {});
+  };
 
   const credsOk = isNew ? kind === 'm3u' || (username.trim().length > 0 && password.length > 0) : true;
   const canSave = name.trim().length > 0 && baseUrl.trim().length > 0 && credsOk && !busy;
@@ -230,6 +263,37 @@ export default function SourceEditor() {
         />
       </View>
 
+      {existing && profiles.length > 0 ? (
+        <>
+          <Text style={ss.label}>Profils qui l’utilisent</Text>
+          <Text style={[styles.dim, { marginTop: -4, marginBottom: 10, lineHeight: 18 }]}>
+            Décochez un profil pour lui cacher cette source.
+          </Text>
+          <View style={ss.profList}>
+            {profiles.map((p) => {
+              const uses = active && !muted.has(p.id);
+              return (
+                <Focusable
+                  key={p.id}
+                  onPress={() => toggleProfile(p.id)}
+                  disabled={!active}
+                  style={({ pressed }) => [ss.profRow, pressed && { opacity: 0.7 }]}
+                >
+                  <Avatar avatar={p.avatar} color={p.color} size={32} />
+                  <Text style={[ss.profName, !active && { color: colors.dim }]} numberOfLines={1}>
+                    {p.name}
+                  </Text>
+                  <View style={{ flex: 1 }} />
+                  <View style={[ss.check, uses && ss.checkOn]}>
+                    {uses ? <Ionicons name="checkmark" size={16} color={colors.onAccent} /> : null}
+                  </View>
+                </Focusable>
+              );
+            })}
+          </View>
+        </>
+      ) : null}
+
       <Focusable
         onPress={() => void save()}
         disabled={!canSave}
@@ -285,6 +349,31 @@ const ss = {
     paddingVertical: 4,
   },
   activeTitle: { color: colors.text, fontSize: 15, fontWeight: '700' as const, letterSpacing: -0.2 },
+  profList: {
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    overflow: 'hidden' as const,
+  },
+  profRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  profName: { color: colors.text, fontSize: 15, fontWeight: '600' as const },
+  check: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: colors.borderStrong,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  checkOn: { backgroundColor: colors.accent, borderColor: colors.accent },
   save: {
     backgroundColor: colors.accent,
     borderRadius: radius.md,

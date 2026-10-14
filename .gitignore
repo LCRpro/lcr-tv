@@ -1,5 +1,8 @@
 node_modules/
 dist/
+# Exports web de prévisualisation (expo export), jamais versionnés.
+mobile/dist-preview/
+mobile/dist-all/
 .next/
 .next-build/
 .expo/

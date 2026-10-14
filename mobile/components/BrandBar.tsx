@@ -3,8 +3,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useSegments } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, styles } from '../lib/theme';
-import { useSession } from '../lib/session';
-import { Avatar } from './ProfileAvatar';
 import { Focusable } from './Focusable';
 
 /**
@@ -20,7 +18,6 @@ export function BrandBar({ onSearch }: { onSearch?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const segments = useSegments();
-  const { profile } = useSession();
 
   // Retour visible dès qu'on n'est pas sur un onglet (donc sur un écran empilé).
   const showBack = Boolean(segments[0]) && segments[0] !== '(tabs)';
@@ -46,13 +43,9 @@ export function BrandBar({ onSearch }: { onSearch?: () => void }) {
       </Focusable>
 
       <Focusable onPress={() => router.push('/compte')} hitSlop={6}>
-        {profile ? (
-          <Avatar avatar={profile.avatar} color={profile.color} size={32} />
-        ) : (
-          <View style={[styles.navLogo, { backgroundColor: colors.elevated }]}>
-            <Ionicons name="person" size={17} color={colors.dim} />
-          </View>
-        )}
+        <View style={[styles.navLogo, { backgroundColor: colors.elevated }]}>
+          <Ionicons name="settings-outline" size={18} color={colors.dim} />
+        </View>
       </Focusable>
     </View>
   );

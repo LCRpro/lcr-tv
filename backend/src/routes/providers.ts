@@ -7,6 +7,7 @@ import {
   getActiveProviders,
   listProviders,
   providerCredentials,
+  providerMutedProfiles,
   setProviderActive,
   setProviderEnabledForProfile,
   testProvider,
@@ -94,6 +95,22 @@ export const providerRoutes: FastifyPluginAsync = async (app) => {
     const { enabled } = z.object({ enabled: z.boolean() }).parse(req.body ?? {});
     const v = viewerOf(req);
     await setProviderEnabledForProfile(v.id, v.profileId, id, enabled);
+    return { ok: true };
+  });
+
+  // Quels profils du foyer ont éteint cette source (pour l'éditeur de source).
+  app.get('/:id/profile-access', async (req) => {
+    const { id } = idParams.parse(req.params);
+    return { mutedProfileIds: await providerMutedProfiles(ctx(req).user.id, id) };
+  });
+
+  // Régler l'accès d'un profil précis à une source, depuis l'éditeur.
+  app.post('/:id/profile-access', async (req) => {
+    const { id } = idParams.parse(req.params);
+    const { profileId, enabled } = z
+      .object({ profileId: z.coerce.number().int().positive(), enabled: z.boolean() })
+      .parse(req.body ?? {});
+    await setProviderEnabledForProfile(ctx(req).user.id, profileId, id, enabled);
     return { ok: true };
   });
 

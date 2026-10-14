@@ -496,6 +496,20 @@ function TagsManager() {
 
   return (
     <View>
+      {/* Mes favoris : le rayon de l'étoile, au même endroit que les étiquettes. */}
+      <Focusable
+        onPress={() => router.push('/favoris')}
+        style={({ pressed }) => [cs.row, pressed && { opacity: 0.7 }]}
+      >
+        <Ionicons name="star" size={18} color={colors.gold} />
+        <Text style={cs.rowLabel} numberOfLines={1}>
+          Mes favoris
+        </Text>
+        <View style={{ flex: 1 }} />
+        <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+      </Focusable>
+      <Divider />
+
       <View style={cs.tagCreate}>
         <TextInput
           style={[styles.input, { flex: 1 }]}

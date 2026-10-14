@@ -2,7 +2,7 @@ import { and, desc, eq, sql as raw } from 'drizzle-orm';
 import type { ProviderTestResult, ProviderView } from '@iptv/shared';
 import { db } from '../db/client.js';
 import { forgetCatalogCache } from './catalog-cache.js';
-import { profileProviderMutes, providers, type Provider } from '../db/schema.js';
+import { profileProviderMutes, profiles, providers, type Provider } from '../db/schema.js';
 import { decryptSecret, encryptSecret } from '../lib/crypto.js';
 import { AppError, badRequest, notFound } from '../lib/errors.js';
 import { mask } from '../lib/redact.js';
@@ -145,14 +145,38 @@ export async function listProviders(
  * liste des sources que *ce* profil a éteintes. Activer retire l'exception,
  * désactiver l'ajoute. Le catalogue du profil change : on oublie son cache.
  */
+/** La source est partagée par le foyer : quels profils l'ont éteinte ? */
+export async function providerMutedProfiles(
+  userId: number,
+  providerId: number,
+): Promise<number[]> {
+  await getProvider(providerId, userId);
+  const rows = await db
+    .select({ profileId: profileProviderMutes.profileId })
+    .from(profileProviderMutes)
+    .where(eq(profileProviderMutes.providerId, providerId));
+  return rows.map((r) => r.profileId);
+}
+
+/** Le profil visé appartient-il bien au foyer ? Sinon on ne touche à rien. */
+async function ownProfileOrThrow(userId: number, profileId: number): Promise<void> {
+  const [row] = await db
+    .select({ id: profiles.id })
+    .from(profiles)
+    .where(and(eq(profiles.id, profileId), eq(profiles.userId, userId)))
+    .limit(1);
+  if (!row) throw notFound('Profil introuvable.');
+}
+
 export async function setProviderEnabledForProfile(
   userId: number,
   profileId: number,
   providerId: number,
   enabled: boolean,
 ): Promise<void> {
-  // La source doit appartenir au foyer : sinon « introuvable », on n'en dit pas plus.
+  // La source et le profil doivent appartenir au foyer : sinon « introuvable ».
   await getProvider(providerId, userId);
+  await ownProfileOrThrow(userId, profileId);
 
   if (enabled) {
     await db

@@ -102,6 +102,7 @@ function Gate() {
           <Stack.Screen name="film/[id]" />
           <Stack.Screen name="serie/[id]" />
           <Stack.Screen name="tag/[id]" />
+          <Stack.Screen name="favoris" />
           <Stack.Screen
             name="player"
             options={{ presentation: 'fullScreenModal', animation: 'fade' }}
