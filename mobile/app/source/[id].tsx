@@ -42,6 +42,7 @@ export default function SourceEditor() {
   const [password, setPassword] = useState('');
   const [epgUrl, setEpgUrl] = useState('');
   const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Les profils qui ont éteint cette source pour eux (modèle opt-out).
   const [muted, setMuted] = useState<Set<number>>(new Set());
@@ -149,6 +150,29 @@ export default function SourceEditor() {
     });
   };
 
+  /**
+   * Relance la synchronisation du catalogue, à la demande.
+   *
+   * Elle tourne pour tous les abonnements du compte et dure plusieurs minutes :
+   * le serveur répond aussitôt (202), on confirme juste qu'elle est lancée, puis
+   * on recharge l'état de la source une fois pour refléter la reprise.
+   */
+  const syncNow = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setError(null);
+    try {
+      await api.post('/api/providers/sync');
+      setTimeout(() => {
+        providers.reload();
+        setSyncing(false);
+      }, 3000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Synchronisation impossible.');
+      setSyncing(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
       <Text style={[styles.h1, { marginBottom: 4 }]}>
@@ -215,6 +239,12 @@ export default function SourceEditor() {
             onChangeText={setUsername}
             autoCapitalize="none"
             autoCorrect={false}
+            // Ce ne sont pas les identifiants d'un site : on écarte le
+            // gestionnaire de mots de passe du navigateur (pas d'autofill, pas
+            // de « Gérer les mots de passe »).
+            autoComplete="off"
+            textContentType="none"
+            importantForAutofill="no"
             maxLength={200}
           />
           <Text style={ss.label}>Mot de passe</Text>
@@ -227,6 +257,9 @@ export default function SourceEditor() {
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="off"
+            textContentType="none"
+            importantForAutofill="no"
             maxLength={200}
           />
         </>
@@ -259,6 +292,16 @@ export default function SourceEditor() {
             <View style={[ss.dot, { backgroundColor: sourceState(existing).color }]} />
             <Text style={ss.statusText}>{sourceState(existing).text}</Text>
           </View>
+          <Focusable
+            onPress={() => void syncNow()}
+            disabled={syncing}
+            style={({ pressed }) => [ss.syncBtn, (syncing || pressed) && { opacity: 0.6 }]}
+          >
+            <Ionicons name="sync" size={16} color={colors.accent} />
+            <Text style={ss.syncText}>
+              {syncing ? 'Synchronisation lancée…' : 'Synchroniser maintenant'}
+            </Text>
+          </Focusable>
         </>
       ) : null}
 
@@ -396,6 +439,19 @@ const ss = {
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
   statusText: { color: colors.dim, fontSize: 13, fontWeight: '600' as const },
+  syncBtn: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: 8,
+    marginTop: 14,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSoft,
+  },
+  syncText: { color: colors.accent, fontFamily: 'Outfit' as const, fontSize: 14, fontWeight: '700' as const },
   profList: {
     backgroundColor: colors.bgSoft,
     borderWidth: 1,
