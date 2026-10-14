@@ -76,7 +76,7 @@ export default function FilmScreen() {
           blurRadius={data.backdropUrl ? 0 : 30}
         />
         <LinearGradient
-          colors={['rgba(13,14,22,0.2)', 'rgba(13,14,22,0)', 'rgba(13,14,22,0.7)', colors.bg]}
+          colors={['rgba(8,10,18,0.2)', 'rgba(8,10,18,0)', 'rgba(8,10,18,0.7)', colors.bg]}
           locations={[0, 0.35, 0.78, 1]}
           style={fiche.heroVeil}
           pointerEvents="none"

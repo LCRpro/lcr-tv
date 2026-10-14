@@ -53,21 +53,24 @@ export const fiche = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: 23,
-    fontWeight: '800',
+    fontFamily: 'Outfit',
+    fontSize: 24,
+    fontWeight: '700',
     letterSpacing: -0.5,
-    lineHeight: 27,
+    lineHeight: 28,
   },
   meta: {
     color: colors.dim,
+    fontFamily: 'Inter',
     fontSize: 13,
     marginTop: 6,
     fontWeight: '500',
   },
   rating: {
     color: colors.gold,
+    fontFamily: 'Outfit',
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     marginTop: 8,
   },
   actions: {
@@ -88,8 +91,9 @@ export const fiche = StyleSheet.create({
   },
   playText: {
     color: colors.onAccent,
+    fontFamily: 'Outfit',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.2,
   },
   round: {

@@ -605,7 +605,7 @@ const cs = {
   content: { padding: 16, paddingBottom: 40 },
   inner: { width: '100%' as const, maxWidth: 900, alignSelf: 'center' as const },
   hero: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 14, marginBottom: 20 },
-  name: { color: colors.text, fontSize: 22, fontWeight: '800' as const, letterSpacing: -0.4 },
+  name: { color: colors.text, fontFamily: 'Outfit', fontSize: 22, fontWeight: '800' as const, letterSpacing: -0.4 },
 
   columns: { flexDirection: 'row' as const, gap: 14, alignItems: 'flex-start' as const },
   column: { flex: 1, minWidth: 0 },
@@ -640,7 +640,7 @@ const cs = {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
-  accTitle: { color: colors.text, fontSize: 15.5, fontWeight: '700' as const, letterSpacing: -0.2 },
+  accTitle: { color: colors.text, fontFamily: 'Outfit', fontSize: 15.5, fontWeight: '700' as const, letterSpacing: -0.2 },
   accCount: {
     color: colors.faint,
     fontSize: 13,

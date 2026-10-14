@@ -269,11 +269,11 @@ function HeroSlide({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
         <Image source={{ uri: pick.backdropUrl }} style={styles.heroBg} resizeMode="cover" />
         <LinearGradient
           colors={[
-            'rgba(13,14,22,0.1)',
-            'rgba(13,14,22,0)',
-            'rgba(13,14,22,0.55)',
-            'rgba(13,14,22,0.92)',
-            '#0d0e16',
+            'rgba(8,10,18,0.1)',
+            'rgba(8,10,18,0)',
+            'rgba(8,10,18,0.55)',
+            'rgba(8,10,18,0.92)',
+            colors.bg,
           ]}
           locations={[0, 0.3, 0.62, 0.86, 1]}
           style={styles.heroVeil}
