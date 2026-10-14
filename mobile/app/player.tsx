@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { GestureResponderEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import {
@@ -227,6 +229,83 @@ export default function PlayerScreen() {
     [itemId, router],
   );
 
+  // -------------------------------------------------------- commandes maison
+
+  /*
+   * Les commandes ne sont plus celles du système : elles portent la charte.
+   *
+   * On suit l'état du lecteur à la volée (quelques fois par seconde, assez pour
+   * une barre fluide sans peser), et les commandes s'effacent seules après un
+   * court répit — sauf en pause, où l'on garde tout sous les yeux. Toucher
+   * l'image les rappelle ou les cache.
+   */
+  const [controls, setControls] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [scrubbing, setScrubbing] = useState(false);
+  const [trackW, setTrackW] = useState(0);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const poke = useCallback(() => {
+    setControls(true);
+    if (hideTimer.current) clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => {
+      if (player.playing) setControls(false);
+    }, 3800);
+  }, [player]);
+
+  useEffect(() => {
+    poke();
+    const id = setInterval(() => {
+      setPlaying(player.playing);
+      if (!scrubbing) setPosition(player.currentTime || 0);
+      const d = player.duration;
+      if (Number.isFinite(d) && d > 0) setDuration(d);
+    }, 250);
+    return () => {
+      clearInterval(id);
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+    };
+  }, [player, scrubbing, poke]);
+
+  const togglePlay = useCallback(() => {
+    if (player.playing) player.pause();
+    else player.play();
+    poke();
+  }, [player, poke]);
+
+  const seekBy = useCallback(
+    (delta: number) => {
+      const d = player.duration || 0;
+      const next = Math.max(0, Math.min(d || Infinity, (player.currentTime || 0) + delta));
+      player.currentTime = next;
+      setPosition(next);
+      poke();
+    },
+    [player, poke],
+  );
+
+  const seekToRatio = useCallback(
+    (ratio: number) => {
+      const d = player.duration || 0;
+      if (d <= 0) return;
+      const t = Math.max(0, Math.min(d, ratio * d));
+      setPosition(t);
+      player.currentTime = t;
+    },
+    [player],
+  );
+
+  const scrub = useCallback(
+    (e: GestureResponderEvent) => {
+      if (trackW <= 0) return;
+      const x = e.nativeEvent.locationX;
+      seekToRatio(x / trackW);
+    },
+    [trackW, seekToRatio],
+  );
+
   // ----------------------------------------------------------------- rendu
 
   if (error) {
@@ -249,91 +328,177 @@ export default function PlayerScreen() {
   const variants = channel?.variants ?? [];
   const now = channel?.now ?? null;
 
+  const pct = duration > 0 ? Math.min(1, position / duration) : 0;
+  const remaining = duration > 0 ? Math.max(0, duration - position) : 0;
+
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <VideoView
         style={{ flex: 1 }}
         player={player}
-        nativeControls
+        nativeControls={false}
         allowsPictureInPicture
-        fullscreenOptions={{ enable: true }}
         contentFit="contain"
       />
 
-      {/* Bandeau d'information. Les commandes de lecture restent celles du
-          systeme : elles sont deja au bon endroit et repondent au doigt. */}
-      <View style={overlay.bar} pointerEvents="box-none">
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Focusable onPress={() => router.back()} hitSlop={14}>
-            <Text style={{ color: '#fff', fontSize: 16 }}>← Retour</Text>
-          </Focusable>
+      {/* Toucher l'image rappelle ou masque les commandes. */}
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={() => (controls ? setControls(false) : poke())}
+      />
 
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={overlay.title} numberOfLines={1}>
-              {tag ? `${tag.flag} ` : ''}
-              {heading || 'Lecture'}
-            </Text>
-            {isLive && now ? (
-              <Text style={overlay.sub} numberOfLines={1}>
-                {formatClock(now.startAt)} · {now.title}
-              </Text>
-            ) : null}
-          </View>
-
-          {quality ? (
-            <View style={overlay.tag}>
-              <Text style={overlay.tagText}>{quality}</Text>
-            </View>
-          ) : null}
-
-          {isLive ? (
-            <View style={overlay.live}>
-              <View style={overlay.liveDot} />
-              <Text style={overlay.liveText}>Direct</Text>
-            </View>
-          ) : null}
-        </View>
-
-        {variants.length > 1 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8, paddingTop: 10 }}
+      {controls ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          {/* Haut : fermer, titre, qualité, direct, déclinaisons. */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.72)', 'transparent']}
+            style={cx.top}
+            pointerEvents="box-none"
           >
-            {variants.map((variant) => {
-              const label =
-                variant.quality ?? splitChannelQuality(variant.name).quality ?? 'Standard';
-              const active = variant.id === itemId;
-              return (
-                <Focusable
-                  key={variant.id}
-                  onPress={() => void switchVariant(variant)}
-                  style={[overlay.chip, active && overlay.chipActive]}
-                >
-                  <Text style={[overlay.chipText, active && overlay.chipActiveText]}>{label}</Text>
+            <View style={cx.topRow}>
+              <Focusable onPress={() => router.back()} hitSlop={10} style={cx.round}>
+                <Ionicons name="chevron-down" size={24} color="#fff" />
+              </Focusable>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={cx.title} numberOfLines={1}>
+                  {tag ? `${tag.flag} ` : ''}
+                  {heading || 'Lecture'}
+                </Text>
+                {isLive && now ? (
+                  <Text style={cx.sub} numberOfLines={1}>
+                    {formatClock(now.startAt)} · {now.title}
+                  </Text>
+                ) : null}
+              </View>
+              {quality ? (
+                <View style={overlay.tag}>
+                  <Text style={overlay.tagText}>{quality}</Text>
+                </View>
+              ) : null}
+              {isLive ? (
+                <View style={overlay.live}>
+                  <View style={overlay.liveDot} />
+                  <Text style={overlay.liveText}>Direct</Text>
+                </View>
+              ) : null}
+            </View>
+
+            {variants.length > 1 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8, paddingTop: 12 }}
+              >
+                {variants.map((variant) => {
+                  const label =
+                    variant.quality ?? splitChannelQuality(variant.name).quality ?? 'Standard';
+                  const active = variant.id === itemId;
+                  return (
+                    <Focusable
+                      key={variant.id}
+                      onPress={() => void switchVariant(variant)}
+                      style={[overlay.chip, active && overlay.chipActive]}
+                    >
+                      <Text style={[overlay.chipText, active && overlay.chipActiveText]}>
+                        {label}
+                      </Text>
+                    </Focusable>
+                  );
+                })}
+              </ScrollView>
+            ) : null}
+          </LinearGradient>
+
+          {/* Centre : -10 s, lecture/pause, +10 s (le saut n'a de sens qu'en VOD). */}
+          {session ? (
+            <View style={cx.center} pointerEvents="box-none">
+              {!isLive ? (
+                <Focusable onPress={() => seekBy(-10)} style={cx.seek}>
+                  <Ionicons name="play-back" size={22} color="#fff" />
+                  <Text style={cx.seekN}>10</Text>
                 </Focusable>
-              );
-            })}
-          </ScrollView>
-        ) : null}
-      </View>
+              ) : null}
+              <Focusable onPress={togglePlay} style={cx.play}>
+                <Ionicons
+                  name={playing ? 'pause' : 'play'}
+                  size={32}
+                  color={colors.onAccent}
+                  style={playing ? undefined : { marginLeft: 3 }}
+                />
+              </Focusable>
+              {!isLive ? (
+                <Focusable onPress={() => seekBy(10)} style={cx.seek}>
+                  <Ionicons name="play-forward" size={22} color="#fff" />
+                  <Text style={cx.seekN}>10</Text>
+                </Focusable>
+              ) : null}
+            </View>
+          ) : null}
+
+          {/* Bas : barre de progression (VOD) ou mention directe. */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={cx.bottom}
+            pointerEvents="box-none"
+          >
+            {!isLive && duration > 0 ? (
+              <>
+                <View style={cx.timeRow}>
+                  <Text style={cx.time}>{fmt(position)}</Text>
+                  <Text style={cx.time}>-{fmt(remaining)}</Text>
+                </View>
+                <View
+                  style={cx.track}
+                  onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
+                  onStartShouldSetResponder={() => true}
+                  onMoveShouldSetResponder={() => true}
+                  onResponderGrant={(e) => {
+                    setScrubbing(true);
+                    scrub(e);
+                  }}
+                  onResponderMove={scrub}
+                  onResponderRelease={(e) => {
+                    scrub(e);
+                    setScrubbing(false);
+                    poke();
+                  }}
+                  onResponderTerminate={() => {
+                    setScrubbing(false);
+                    poke();
+                  }}
+                >
+                  <View style={cx.trackBg} />
+                  <View style={[cx.trackFill, { width: `${pct * 100}%` }]} />
+                  <View style={[cx.thumb, { left: `${pct * 100}%` }]} />
+                </View>
+              </>
+            ) : isLive ? (
+              <View style={cx.liveBar}>
+                <View style={overlay.liveDot} />
+                <Text style={cx.liveNow}>En direct</Text>
+              </View>
+            ) : null}
+          </LinearGradient>
+        </View>
+      ) : null}
 
       {!session && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: 0,
-            right: 0,
-            justifyContent: 'center',
-          }}
-        >
+        <View style={[StyleSheet.absoluteFill, { justifyContent: 'center' }]}>
           <Loading label="Ouverture…" />
         </View>
       )}
     </View>
   );
+}
+
+/** mm:ss, ou h:mm:ss au-delà de l'heure. */
+function fmt(s: number): string {
+  const t = Math.max(0, Math.floor(s));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const sec = t % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return h > 0 ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
 }
 
 const overlay = {
@@ -383,6 +548,63 @@ const overlay = {
   chipActiveText: { color: colors.onAccent },
   chipText: { color: '#fff', fontSize: 12.5, fontWeight: '600' as const },
 };
+
+/*
+ * Les commandes maison, sobres : un voile en haut et en bas pour que le texte
+ * tienne sur l'image, le bleu de la marque réservé au seul bouton de lecture
+ * (l'action principale), le reste en blanc translucide. Pas de halo ni de néon.
+ */
+const cx = StyleSheet.create({
+  top: { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 16, paddingHorizontal: 14, paddingBottom: 26 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  round: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: { color: '#fff', fontFamily: 'Outfit', fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
+  sub: { color: 'rgba(255,255,255,0.72)', fontFamily: 'Inter', fontSize: 12.5, marginTop: 2 },
+  center: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 40,
+  },
+  seek: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seekN: { color: '#fff', fontFamily: 'Outfit', fontSize: 10, fontWeight: '700', marginTop: 1 },
+  play: {
+    width: 74,
+    height: 74,
+    borderRadius: 37,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 34, paddingBottom: 22 },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  time: { color: 'rgba(255,255,255,0.85)', fontFamily: 'Inter', fontSize: 12, fontVariant: ['tabular-nums'] },
+  track: { height: 26, justifyContent: 'center' },
+  trackBg: { position: 'absolute', left: 0, right: 0, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.25)' },
+  trackFill: { position: 'absolute', left: 0, height: 4, borderRadius: 2, backgroundColor: colors.accent },
+  thumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: '#fff', marginLeft: -7, top: 6 },
+  liveBar: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  liveNow: { color: '#fff', fontFamily: 'Outfit', fontSize: 13, fontWeight: '700' },
+});
 
 function PlayerError({ error }: { error: ApiError }) {
   if (error.code === 'SLOT_LIMIT_REACHED') {
