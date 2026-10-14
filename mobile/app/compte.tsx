@@ -7,6 +7,7 @@ import { api, API_URL } from '../lib/api';
 import { useAsync } from '../lib/hooks';
 import { useSession } from '../lib/session';
 import { confirmAction } from '../lib/confirm';
+import { DOWNLOADS_OK, removeDownload, useDownloads } from '../lib/downloads';
 import { colors, radius, styles } from '../lib/theme';
 import { Empty, ErrorNotice, Loading } from '../components/ui';
 import { Avatar } from '../components/ProfileAvatar';
@@ -29,6 +30,7 @@ export default function CompteScreen() {
   const providers = useAsync<{ items: ProviderView[] }>(() => api.get('/api/providers'), []);
   const history = useAsync<{ items: HistoryEntry[] }>(() => api.get('/api/me/history?limit=20'), []);
   const sessions = useAsync<{ items: DeviceSession[] }>(() => api.get('/api/me/sessions'), []);
+  const downloads = useDownloads();
 
   // Au retour sur le compte — après avoir ajouté une source, par exemple — on
   // relit la liste pour qu'elle reflète ce qui vient de changer.
@@ -193,6 +195,70 @@ export default function CompteScreen() {
     </Section>
   );
 
+  const downloadsCard = (
+    <Section
+      title="Téléchargements"
+      icon="download-outline"
+      count={DOWNLOADS_OK ? downloads.length : undefined}
+      subtitle="À regarder hors-ligne. Touchez la flèche sur un film ou un épisode pour le prendre."
+    >
+      {!DOWNLOADS_OK ? (
+        <View style={{ paddingVertical: 14 }}>
+          <Text style={styles.dim}>Le téléchargement hors-ligne se fait depuis l’app mobile.</Text>
+        </View>
+      ) : downloads.length === 0 ? (
+        <Empty>Rien de téléchargé pour l’instant.</Empty>
+      ) : (
+        downloads.map((d, i) => (
+          <View key={d.key}>
+            {i > 0 ? <Divider /> : null}
+            <View style={cs.deviceRow}>
+              <Ionicons
+                name={d.kind === 'episode' ? 'tv-outline' : 'film-outline'}
+                size={20}
+                color={colors.dim}
+              />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={cs.rowLabel} numberOfLines={1}>
+                  {d.title}
+                </Text>
+                <Text style={styles.dim} numberOfLines={1}>
+                  {d.status === 'downloading'
+                    ? `Téléchargement · ${Math.round((d.progress || 0) * 100)} %`
+                    : d.status === 'error'
+                      ? 'Échec du téléchargement'
+                      : 'Prêt · disponible hors-ligne'}
+                </Text>
+              </View>
+              {d.status === 'done' ? (
+                <Focusable
+                  onPress={() =>
+                    router.push({
+                      pathname: '/player',
+                      params: {
+                        itemType: d.kind === 'movie' ? 'stream' : 'episode',
+                        itemId: String(d.id),
+                        label: d.title,
+                        localUri: d.localUri,
+                      },
+                    })
+                  }
+                  hitSlop={8}
+                  style={{ padding: 4 }}
+                >
+                  <Ionicons name="play-circle" size={24} color={colors.accent} />
+                </Focusable>
+              ) : null}
+              <Focusable onPress={() => void removeDownload(d.key)} hitSlop={8} style={{ padding: 4 }}>
+                <Ionicons name="trash-outline" size={18} color={colors.faint} />
+              </Focusable>
+            </View>
+          </View>
+        ))
+      )}
+    </Section>
+  );
+
   const historyCard = (
     <Section
       title="Historique"
@@ -247,8 +313,16 @@ export default function CompteScreen() {
   // Deux colonnes dès qu'il y a la place ; sinon une seule, dans l'ordre utile.
   const wide = width >= 760;
   const left = [compteCard, profilesCard, tagsCard, historyCard];
-  const right = [devicesCard, sourcesCard];
-  const stacked = [compteCard, profilesCard, tagsCard, sourcesCard, devicesCard, historyCard];
+  const right = [downloadsCard, devicesCard, sourcesCard];
+  const stacked = [
+    compteCard,
+    profilesCard,
+    tagsCard,
+    downloadsCard,
+    sourcesCard,
+    devicesCard,
+    historyCard,
+  ];
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>

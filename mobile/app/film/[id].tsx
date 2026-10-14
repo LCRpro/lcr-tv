@@ -12,6 +12,7 @@ import { VariantPicker, VariantSummary } from '../../components/VariantPicker';
 import { Focusable } from '../../components/Focusable';
 import { fiche } from '../../components/fiche';
 import { TagPicker } from '../../components/TagPicker';
+import { DownloadButton } from '../../components/DownloadButton';
 
 export default function FilmScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -123,6 +124,13 @@ export default function FilmScreen() {
           <Focusable onPress={() => setTagOpen(true)} style={fiche.round}>
             <Ionicons name="pricetag-outline" size={22} color={colors.text} />
           </Focusable>
+          <DownloadButton
+            kind="movie"
+            id={movieId}
+            title={title}
+            posterUrl={data.iconUrl ?? null}
+            style={fiche.round}
+          />
         </View>
 
         {tagOpen ? (

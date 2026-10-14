@@ -12,6 +12,7 @@ import { VariantPicker } from '../../components/VariantPicker';
 import { Focusable } from '../../components/Focusable';
 import { fiche } from '../../components/fiche';
 import { TagPicker } from '../../components/TagPicker';
+import { DownloadButton } from '../../components/DownloadButton';
 
 export default function SerieScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -234,6 +235,15 @@ export default function SerieScreen() {
                       </View>
                     )}
                   </View>
+                  <DownloadButton
+                    kind="episode"
+                    id={ep.id}
+                    title={`${title} — E${pad(ep.episodeNum)}`}
+                    parentTitle={title}
+                    posterUrl={ep.stillUrl ?? null}
+                    size={20}
+                    style={{ padding: 8, alignSelf: 'center' }}
+                  />
                 </Focusable>
               );
             })}

@@ -23,9 +23,16 @@ const PROGRESS_INTERVAL_MS = 10_000;
 
 export default function PlayerScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ itemType: string; itemId: string; label?: string }>();
+  const params = useLocalSearchParams<{
+    itemType: string;
+    itemId: string;
+    label?: string;
+    localUri?: string;
+  }>();
   const itemType = params.itemType === 'episode' ? 'episode' : 'stream';
   const itemId = Number(params.itemId);
+  // Lecture hors-ligne : un fichier déjà sur l'appareil, sans serveur ni créneau.
+  const localUri = typeof params.localUri === 'string' && params.localUri ? params.localUri : null;
 
   const [session, setSession] = useState<PlayResponse | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -56,6 +63,13 @@ export default function PlayerScreen() {
      * a qui inspecte le trafic de l'application. Acceptable pour un cercle de
      * proches ; sinon passer `mode: 'proxy'` ici et perdre ce gain.
      */
+    // Hors-ligne : pas de session serveur, pas de créneau — on lit le fichier.
+    if (localUri) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
     api
       .post<PlayResponse>(`/api/play/${itemType}/${itemId}`, { mode: 'direct' })
       .then((res) => {
@@ -70,7 +84,14 @@ export default function PlayerScreen() {
     return () => {
       cancelled = true;
     };
-  }, [itemType, itemId, attempt]);
+  }, [itemType, itemId, attempt, localUri]);
+
+  // Lecture d'un fichier local : on le monte directement, sans attendre de session.
+  useEffect(() => {
+    if (!localUri) return;
+    player.replace({ uri: localUri });
+    player.play();
+  }, [localUri, player]);
 
   // --------------------------------------------------------- fiche de chaine
 
