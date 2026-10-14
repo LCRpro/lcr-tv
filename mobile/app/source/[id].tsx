@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { ProviderView } from '@iptv/shared';
@@ -41,7 +41,6 @@ export default function SourceEditor() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [epgUrl, setEpgUrl] = useState('');
-  const [active, setActive] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Les profils qui ont éteint cette source pour eux (modèle opt-out).
@@ -54,7 +53,6 @@ export default function SourceEditor() {
     setName(existing.name);
     setBaseUrl(existing.baseUrl);
     setEpgUrl(existing.epgUrl ?? '');
-    setActive(existing.isActive);
   }, [existing?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Qui, dans le foyer, s'est retiré de cette source — pour cocher les cases.
@@ -101,14 +99,14 @@ export default function SourceEditor() {
                 baseUrl: baseUrl.trim(),
                 username: username.trim(),
                 password,
-                isActive: active,
+                isActive: true,
               }
             : {
                 kind,
                 name: name.trim(),
                 baseUrl: baseUrl.trim(),
                 epgUrl: epgUrl.trim() || undefined,
-                isActive: active,
+                isActive: true,
               };
         await api.post('/api/providers', body);
       } else {
@@ -116,7 +114,6 @@ export default function SourceEditor() {
         const patch: Record<string, unknown> = {
           name: name.trim(),
           baseUrl: baseUrl.trim(),
-          isActive: active,
         };
         if (kind === 'xtream') {
           if (username.trim()) patch.username = username.trim();
@@ -250,37 +247,38 @@ export default function SourceEditor() {
         </>
       )}
 
-      <View style={ss.activeRow}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={ss.activeTitle}>Active sur le compte</Text>
-          <Text style={styles.dim}>Éteinte, aucune profil ne peut l’utiliser.</Text>
-        </View>
-        <Switch
-          value={active}
-          onValueChange={setActive}
-          trackColor={{ true: colors.accent, false: colors.border }}
-          thumbColor="#fff"
-        />
-      </View>
+      {existing ? (
+        <>
+          <Text style={ss.label}>Catalogue récupéré</Text>
+          <View style={ss.stats}>
+            <Stat n={existing.catalogue.vod} label="Films" />
+            <Stat n={existing.catalogue.series} label="Séries" />
+            <Stat n={existing.catalogue.live} label="Chaînes" />
+          </View>
+          <View style={ss.statusLine}>
+            <View style={[ss.dot, { backgroundColor: sourceState(existing).color }]} />
+            <Text style={ss.statusText}>{sourceState(existing).text}</Text>
+          </View>
+        </>
+      ) : null}
 
       {existing && profiles.length > 0 ? (
         <>
           <Text style={ss.label}>Profils qui l’utilisent</Text>
           <Text style={[styles.dim, { marginTop: -4, marginBottom: 10, lineHeight: 18 }]}>
-            Décochez un profil pour lui cacher cette source.
+            Aucun profil coché : la source n’est utilisée nulle part.
           </Text>
           <View style={ss.profList}>
             {profiles.map((p) => {
-              const uses = active && !muted.has(p.id);
+              const uses = !muted.has(p.id);
               return (
                 <Focusable
                   key={p.id}
                   onPress={() => toggleProfile(p.id)}
-                  disabled={!active}
                   style={({ pressed }) => [ss.profRow, pressed && { opacity: 0.7 }]}
                 >
                   <Avatar avatar={p.avatar} color={p.color} size={32} />
-                  <Text style={[ss.profName, !active && { color: colors.dim }]} numberOfLines={1}>
+                  <Text style={ss.profName} numberOfLines={1}>
                     {p.name}
                   </Text>
                   <View style={{ flex: 1 }} />
@@ -317,6 +315,33 @@ export default function SourceEditor() {
   );
 }
 
+/** Un compteur du catalogue : le nombre en grand, son libellé dessous. */
+function Stat({ n, label }: { n: number; label: string }) {
+  return (
+    <View style={ss.stat}>
+      <Text style={ss.statN}>{n.toLocaleString('fr-FR')}</Text>
+      <Text style={ss.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+/**
+ * L'état d'une source, en une pastille et un mot.
+ *
+ * Le panel renvoie son propre statut (actif, expiré) ; une playlist n'en a pas,
+ * on s'en tient alors à la dernière synchro. Jamais synchronisée, c'est que le
+ * catalogue n'est pas encore descendu.
+ */
+function sourceState(p: ProviderView): { text: string; color: string } {
+  const synced = p.lastSyncAt
+    ? `synchronisée le ${new Date(p.lastSyncAt).toLocaleDateString('fr-FR')}`
+    : 'pas encore synchronisée';
+  if (p.status && /expir/i.test(p.status)) return { text: `Expirée · ${synced}`, color: colors.live };
+  if (p.status && !/active/i.test(p.status)) return { text: `${p.status} · ${synced}`, color: colors.warn };
+  if (!p.lastSyncAt) return { text: 'En attente de synchronisation', color: colors.warn };
+  return { text: `Active · ${synced}`, color: colors.ok };
+}
+
 const ss = {
   label: {
     color: colors.dim,
@@ -341,14 +366,36 @@ const ss = {
   segBtnOn: { backgroundColor: colors.accent },
   segText: { color: colors.dim, fontSize: 14, fontWeight: '700' as const },
   segTextOn: { color: colors.onAccent },
-  activeRow: {
+  stats: {
+    flexDirection: 'row' as const,
+    gap: 10,
+  },
+  stat: {
+    flex: 1,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingVertical: 14,
+    alignItems: 'center' as const,
+  },
+  statN: { color: colors.text, fontSize: 22, fontWeight: '800' as const, letterSpacing: -0.5 },
+  statLabel: {
+    color: colors.dim,
+    fontSize: 11,
+    fontWeight: '700' as const,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase' as const,
+    marginTop: 3,
+  },
+  statusLine: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 12,
-    marginTop: 24,
-    paddingVertical: 4,
+    gap: 8,
+    marginTop: 11,
   },
-  activeTitle: { color: colors.text, fontSize: 15, fontWeight: '700' as const, letterSpacing: -0.2 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  statusText: { color: colors.dim, fontSize: 13, fontWeight: '600' as const },
   profList: {
     backgroundColor: colors.bgSoft,
     borderWidth: 1,
