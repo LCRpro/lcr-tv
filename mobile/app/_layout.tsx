@@ -86,7 +86,7 @@ function Gate() {
           <Stack.Screen name="profils" options={{ headerShown: false }} />
           <Stack.Screen name="compte" options={{ headerShown: false }} />
           <Stack.Screen name="profil/[id]" options={{ title: 'Profil' }} />
-          <Stack.Screen name="source/new" options={{ title: 'Ajouter une source' }} />
+          <Stack.Screen name="source/[id]" options={{ title: 'Source' }} />
           <Stack.Screen name="associer-tv" options={{ title: 'Associer une TV' }} />
           <Stack.Screen name="search" options={{ title: 'Recherche' }} />
           <Stack.Screen name="film/[id]" options={{ title: '' }} />

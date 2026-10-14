@@ -561,6 +561,7 @@ function TagsManager() {
  * d'echec, on recharge — l'etat affiche redevient celui de la base.
  */
 function ProviderRow({ provider, onChanged }: { provider: ProviderView; onChanged: () => void }) {
+  const router = useRouter();
   // La source peut être éteinte au niveau du compte (réglé au web) : alors le
   // profil ne peut rien y faire. Sinon, il choisit de l'utiliser ou non.
   const accountOff = !provider.isActive;
@@ -586,12 +587,16 @@ function ProviderRow({ provider, onChanged }: { provider: ProviderView; onChange
   return (
     <View style={cs.provRow}>
       <View style={cs.srcTop}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
+        <Focusable
+          onPress={() => router.push(`/source/${provider.id}`)}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}
+        >
           <Text style={cs.srcName} numberOfLines={1}>
             {provider.name}
           </Text>
           <Text style={cs.kind}>{provider.kind === 'm3u' ? 'M3U' : 'PANEL'}</Text>
-        </View>
+          <Ionicons name="chevron-forward" size={15} color={colors.faint} />
+        </Focusable>
         <Focusable onPress={() => void toggle()} disabled={busy || accountOff}>
           <View style={[cs.toggle, active && cs.toggleOn, accountOff && { opacity: 0.4 }]}>
             <View style={[cs.knob, active && cs.knobOn]} />
