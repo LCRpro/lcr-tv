@@ -11,6 +11,7 @@ import { Button, ErrorNotice, Loading, formatDuration } from '../../components/u
 import { VariantPicker, VariantSummary } from '../../components/VariantPicker';
 import { Focusable } from '../../components/Focusable';
 import { fiche } from '../../components/fiche';
+import { TagPicker } from '../../components/TagPicker';
 
 export default function FilmScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,6 +23,7 @@ export default function FilmScreen() {
     [movieId],
   );
   const [busy, setBusy] = useState(false);
+  const [tagOpen, setTagOpen] = useState(false);
 
   // Declinaison choisie. On repart de celle de l'URL a chaque changement de
   // fiche, sinon on garderait le choix fait sur le film precedent.
@@ -118,7 +120,14 @@ export default function FilmScreen() {
               color={data.isFavorite ? colors.accent : colors.text}
             />
           </Focusable>
+          <Focusable onPress={() => setTagOpen(true)} style={fiche.round}>
+            <Ionicons name="pricetag-outline" size={22} color={colors.text} />
+          </Focusable>
         </View>
+
+        {tagOpen ? (
+          <TagPicker itemType="stream" itemId={movieId} onClose={() => setTagOpen(false)} />
+        ) : null}
 
         {resumeAt > 0 ? (
           <Button

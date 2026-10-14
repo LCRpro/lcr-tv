@@ -11,6 +11,7 @@ import { Empty, ErrorNotice, Loading, formatDuration, pad } from '../../componen
 import { VariantPicker } from '../../components/VariantPicker';
 import { Focusable } from '../../components/Focusable';
 import { fiche } from '../../components/fiche';
+import { TagPicker } from '../../components/TagPicker';
 
 export default function SerieScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +31,7 @@ export default function SerieScreen() {
   );
   const [season, setSeason] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [tagOpen, setTagOpen] = useState(false);
 
   useEffect(() => {
     if (!data || season !== null) return;
@@ -139,7 +141,14 @@ export default function SerieScreen() {
               color={data.isFavorite ? colors.accent : colors.text}
             />
           </Focusable>
+          <Focusable onPress={() => setTagOpen(true)} style={fiche.round}>
+            <Ionicons name="pricetag-outline" size={22} color={colors.text} />
+          </Focusable>
         </View>
+
+        {tagOpen ? (
+          <TagPicker itemType="series" itemId={activeId} onClose={() => setTagOpen(false)} />
+        ) : null}
 
         <VariantPicker variants={data.variants} selectedId={activeId} onSelect={setActiveId} />
 

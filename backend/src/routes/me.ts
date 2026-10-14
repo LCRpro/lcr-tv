@@ -6,8 +6,20 @@ import {
   itemTypeSchema,
   progressSchema,
   seenSchema,
+  tagCreateSchema,
+  tagIdParams,
+  tagItemSchema,
+  tagsForItemQuery,
 } from '@iptv/shared';
 import { ctx, viewerOf } from '../plugins/auth.js';
+import {
+  addTagItem,
+  createTag,
+  deleteTag,
+  listTags,
+  removeTagItem,
+  tagsForItem,
+} from '../services/tags.js';
 import {
   listUserSessions,
   revokeOtherSessions,
@@ -18,6 +30,8 @@ import { killSlot, listActiveSlots, slotUsage } from '../services/slots.js';
 import {
   listFavorites,
   listHistory,
+  listSeries,
+  listStreams,
   toggleFavoriteCategory,
   type Viewer,
 } from '../services/catalog.js';
@@ -46,6 +60,12 @@ const historyQuery = z.object({
 
 const categoryParams = z.object({
   categoryId: z.coerce.number().int().positive(),
+});
+
+const tagItemRouteParams = z.object({
+  tagId: z.coerce.number().int().positive(),
+  itemType: z.enum(['stream', 'series']),
+  itemId: z.coerce.number().int().positive(),
 });
 
 const favoritesQuery = z.object({
@@ -91,6 +111,58 @@ export const meRoutes: FastifyPluginAsync = async (app) => {
     const { categoryId } = categoryParams.parse(req.params);
     await toggleFavoriteCategory(ctx(req).user.id, categoryId, false);
     return { ok: true };
+  });
+
+  // --------------------------------------------------------------- étiquettes
+  //
+  // Les rayonnages du profil. `GET /tags` liste ses étiquettes ; avec un couple
+  // itemType/itemId, il dit en plus lesquelles contiennent ce contenu (pour
+  // cocher le sélecteur). `.../contents` rend tout ce qu'une étiquette range,
+  // tous types confondus — c'est ce que montre le compte.
+
+  app.get('/tags', async (req) => {
+    const { itemType, itemId } = tagsForItemQuery.parse(req.query);
+    const { profileId } = viewerOf(req);
+    if (itemType && itemId != null) {
+      return { items: await tagsForItem(profileId, itemType, itemId) };
+    }
+    return { items: await listTags(profileId) };
+  });
+
+  app.post('/tags', async (req) => {
+    const { name } = tagCreateSchema.parse(req.body);
+    return createTag(viewerOf(req).profileId, name);
+  });
+
+  app.delete('/tags/:tagId', async (req) => {
+    const { tagId } = tagIdParams.parse(req.params);
+    await deleteTag(viewerOf(req).profileId, tagId);
+    return { ok: true };
+  });
+
+  app.post('/tags/:tagId/items', async (req) => {
+    const { tagId } = tagIdParams.parse(req.params);
+    const { itemType, itemId } = tagItemSchema.parse(req.body);
+    await addTagItem(viewerOf(req).profileId, tagId, itemType, itemId);
+    return { ok: true };
+  });
+
+  app.delete('/tags/:tagId/items/:itemType/:itemId', async (req) => {
+    const { tagId, itemType, itemId } = tagItemRouteParams.parse(req.params);
+    await removeTagItem(viewerOf(req).profileId, tagId, itemType, itemId);
+    return { ok: true };
+  });
+
+  app.get('/tags/:tagId/contents', async (req) => {
+    const { tagId } = tagIdParams.parse(req.params);
+    const viewer = viewerOf(req);
+    const base = { tagId, sort: 'name' as const, limit: 200, offset: 0 };
+    const [movies, live, series] = await Promise.all([
+      listStreams('vod', base, viewer),
+      listStreams('live', base, viewer),
+      listSeries(base, viewer),
+    ]);
+    return { live: live.items, movies: movies.items, series: series.items };
   });
 
   // --------------------------------------------------- progression / historique

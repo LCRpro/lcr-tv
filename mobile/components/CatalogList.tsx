@@ -20,6 +20,7 @@ import {
   type Movie,
   type Paginated,
   type SeriesSummary,
+  type Tag,
 } from '@iptv/shared';
 import { api, qs } from '../lib/api';
 import { useAsync } from '../lib/hooks';
@@ -28,6 +29,7 @@ import { cardTarget, TV_SAFE } from '../lib/tv';
 import { Card, ChannelCard, Empty, ErrorNotice, Loading } from './ui';
 import { Focusable } from './Focusable';
 import { CategoryMark, IconClock, IconStar } from './marks';
+import { TagPicker } from './TagPicker';
 
 type Item = Movie | SeriesSummary | LiveChannel;
 
@@ -64,6 +66,10 @@ export function CatalogList({
    */
   const [categoryId, setCategoryId] = useState<number | 'favorites' | 'watched' | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  // La chaine qu'on est en train d'etiqueter (les chaines n'ont pas de fiche).
+  const [tagTarget, setTagTarget] = useState<number | null>(null);
+  // Filtre par etiquette : exclusif du filtre par categorie, l'un efface l'autre.
+  const [tagId, setTagId] = useState<number | null>(null);
 
   const [items, setItems] = useState<Item[]>([]);
   const [total, setTotal] = useState(0);
@@ -76,18 +82,22 @@ export function CatalogList({
     [categoryType],
   );
 
+  // Les etiquettes du profil, proposees en tete du menu de filtre.
+  const tags = useAsync<{ items: Tag[] }>(() => api.get('/api/me/tags'), []);
+
   const query = useCallback(
     (nextOffset: number) =>
       api.get<Paginated<Item>>(
         `${endpoint}${qs({
           categoryId: typeof categoryId === 'number' ? categoryId : undefined,
+          tagId: tagId ?? undefined,
           favorites: categoryId === 'favorites' ? true : undefined,
           watched: categoryId === 'watched' ? true : undefined,
           limit: PAGE_SIZE,
           offset: nextOffset,
         })}`,
       ),
-    [endpoint, categoryId],
+    [endpoint, categoryId, tagId],
   );
 
   const first = useAsync<Paginated<Item>>(() => query(0), [query]);
@@ -162,11 +172,21 @@ export function CatalogList({
   };
 
   // Choisir une categorie ferme le panneau : un deuxieme geste pour fermer
-  // serait un geste de trop.
+  // serait un geste de trop. Choisir une categorie efface l'etiquette, et
+  // l'inverse : les deux filtres ne se cumulent pas.
   const pick = (value: number | 'favorites' | 'watched' | null) => {
     setCategoryId(value);
+    setTagId(null);
     setPickerOpen(false);
   };
+
+  const pickTag = (id: number) => {
+    setTagId(id);
+    setCategoryId(null);
+    setPickerOpen(false);
+  };
+
+  const activeTag = tagId != null ? tags.data?.items.find((t) => t.id === tagId) ?? null : null;
 
   // La categorie du fournisseur en cours, s'il y en a une — sert a etiqueter le
   // bouton qui ouvre le menu.
@@ -175,8 +195,9 @@ export function CatalogList({
       ? categories.data?.items.find((c) => c.id === categoryId) ?? null
       : null;
 
-  const triggerLabel =
-    categoryId === 'favorites'
+  const triggerLabel = activeTag
+    ? activeTag.name
+    : categoryId === 'favorites'
       ? favoriteLabel
       : categoryId === 'watched'
         ? watchedLabel
@@ -184,16 +205,17 @@ export function CatalogList({
           ? splitLanguage(activeCategory.name).title
           : 'Toutes les catégories';
 
-  const triggerMark =
-    categoryId === 'favorites' ? (
-      <IconStar filled color={colors.gold} />
-    ) : categoryId === 'watched' ? (
-      <IconClock />
-    ) : activeCategory ? (
-      <CategoryMark icon={categoryIcon(activeCategory.name, activeCategory.languageCode)} />
-    ) : (
-      <Ionicons name="apps" size={16} color={colors.dim} />
-    );
+  const triggerMark = activeTag ? (
+    <Ionicons name="pricetag" size={15} color={colors.accent} />
+  ) : categoryId === 'favorites' ? (
+    <IconStar filled color={colors.gold} />
+  ) : categoryId === 'watched' ? (
+    <IconClock />
+  ) : activeCategory ? (
+    <CategoryMark icon={categoryIcon(activeCategory.name, activeCategory.languageCode)} />
+  ) : (
+    <Ionicons name="apps" size={16} color={colors.dim} />
+  );
 
   // Les affiches gardent toutes la meme largeur. Une FlatList etire l'element
   // seul d'une derniere rangee incomplete sur toute la ligne ; on comble donc
@@ -250,9 +272,28 @@ export function CatalogList({
               <OptionRow
                 label="Toutes les catégories"
                 mark={<Ionicons name="apps" size={16} color={colors.dim} />}
-                active={categoryId === null}
+                active={categoryId === null && tagId === null}
                 onPress={() => pick(null)}
               />
+
+              {/* Les etiquettes du profil, avant les categories du fournisseur :
+                  ce sont ses rayons a lui, on les met a portee. */}
+              {tags.data?.items.length ? (
+                <>
+                  <Text style={cat.divider}>MES ÉTIQUETTES</Text>
+                  {tags.data.items.map((t) => (
+                    <OptionRow
+                      key={`tag-${t.id}`}
+                      label={`${t.name} (${t.count})`}
+                      mark={<Ionicons name="pricetag" size={15} color={colors.accent} />}
+                      active={tagId === t.id}
+                      onPress={() => pickTag(t.id)}
+                    />
+                  ))}
+                  <Text style={cat.divider}>CATÉGORIES</Text>
+                </>
+              ) : null}
+
               {/* Les categories arrivent triees « francais d'abord » par le serveur ;
                   un intitule marque la bascule vers les autres langues. */}
               {categories.data?.items.map((c, i, all) => {
@@ -324,6 +365,26 @@ export function CatalogList({
                   <IconStar filled={Boolean(item.isFavorite)} color={item.isFavorite ? colors.gold : onArt.ink} />
                 </Focusable>
               )}
+              {item.type === 'live' && (
+                <Focusable
+                  onPress={() => setTagTarget(item.id)}
+                  hitSlop={8}
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    left: 6,
+                    zIndex: 3,
+                    width: 30,
+                    height: 30,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(27,26,24,0.72)',
+                  }}
+                >
+                  <Ionicons name="pricetag-outline" size={16} color={onArt.ink} />
+                </Focusable>
+              )}
               {item.type === 'live' ? (
                 <ChannelCard channel={item} stretch onPress={() => onSelect(item)} />
               ) : (
@@ -340,6 +401,10 @@ export function CatalogList({
           )}
         />
       )}
+
+      {tagTarget != null ? (
+        <TagPicker itemType="stream" itemId={tagTarget} onClose={() => setTagTarget(null)} />
+      ) : null}
     </View>
   );
 }

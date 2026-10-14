@@ -229,6 +229,8 @@ export interface TvPairClaimResponse {
 
 export const listQuerySchema = z.object({
   categoryId: z.coerce.number().int().positive().optional(),
+  /** Restreint la section au contenu d'une étiquette du profil, de ce type. */
+  tagId: z.coerce.number().int().positive().optional(),
   q: z.string().trim().max(120).optional(),
   // `fr` par defaut : sur un catalogue a 24 000 chaines dont une centaine
   // interessent vraiment, un tri alphabetique brut enterre le francais entre
@@ -393,6 +395,34 @@ export const favoriteSchema = z.object({
 
 export const favoriteCategorySchema = z.object({
   categoryId: z.coerce.number().int().positive(),
+});
+
+// --------------------------------------------------------------- étiquettes
+
+/** Le nom d'une étiquette : court, il tient sur une puce et dans un menu. */
+export const tagCreateSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+});
+
+/** Le contenu qu'on range dans une étiquette : un film ou une chaîne, ou une série. */
+export const tagItemSchema = z.object({
+  itemType: z.enum(['stream', 'series']),
+  itemId: z.coerce.number().int().positive(),
+});
+
+export const tagItemParams = z.object({
+  itemType: z.enum(['stream', 'series']),
+  itemId: z.coerce.number().int().positive(),
+});
+
+/** Interroger les étiquettes au sujet d'un contenu : lesquelles le contiennent. */
+export const tagsForItemQuery = z.object({
+  itemType: z.enum(['stream', 'series']).optional(),
+  itemId: z.coerce.number().int().positive().optional(),
+});
+
+export const tagIdParams = z.object({
+  tagId: z.coerce.number().int().positive(),
 });
 
 /**

@@ -69,6 +69,7 @@ function Gate() {
       <Stack.Screen name="search" options={{ title: 'Recherche' }} />
       <Stack.Screen name="film/[id]" options={{ title: '' }} />
       <Stack.Screen name="serie/[id]" options={{ title: '' }} />
+      <Stack.Screen name="tag/[id]" options={{ title: 'Étiquette' }} />
       {/* Le lecteur est une modale plein ecran : fermer rend la pile intacte. */}
       <Stack.Screen
         name="player"

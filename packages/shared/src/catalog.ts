@@ -4,6 +4,20 @@ export type ItemType = 'stream' | 'series' | 'episode';
 /** Type d'un enregistrement de la table streams. */
 export type StreamType = 'live' | 'vod';
 
+/**
+ * Une étiquette du profil.
+ *
+ * Créée à la main, elle traverse les types : son contenu peut mêler films,
+ * séries et chaînes. `count` les totalise tous ; `contains` n'apparaît que
+ * lorsqu'on interroge l'étiquette au sujet d'un contenu précis.
+ */
+export interface Tag {
+  id: number;
+  name: string;
+  count: number;
+  contains?: boolean;
+}
+
 export interface Category {
   id: number;
   type: CategoryType;

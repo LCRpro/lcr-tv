@@ -574,6 +574,55 @@ export const favoriteCategories = pgTable(
   ],
 );
 
+/**
+ * Les etiquettes du profil — ses propres rayonnages.
+ *
+ * La ou la categorie vient du fournisseur et ne range qu'un type a la fois,
+ * l'etiquette est creee par le profil et traverse les types : une meme
+ * « Sport » peut contenir des chaines, des films et des series. Chaque section
+ * n'en montre que ce qui la concerne ; le compte, lui, montre tout le rayon.
+ */
+export const tags = pgTable(
+  'tags',
+  {
+    id: serial().primaryKey(),
+    profileId: integer()
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    createdAt: now(),
+  },
+  (t) => [
+    // Deux etiquettes de meme nom pour un profil n'auraient aucun sens, et la
+    // casse ne doit pas les distinguer : « Sport » et « sport » sont une seule.
+    uniqueIndex('tags_profile_name_idx').on(t.profileId, sql`lower(${t.name})`),
+    index('tags_profile_idx').on(t.profileId, t.createdAt),
+  ],
+);
+
+/**
+ * Ce qu'une etiquette contient.
+ *
+ * `item_type` vaut `stream` (un film ou une chaine, que son propre type
+ * distingue) ou `series`. On garde l'id tel quel : filtrer une section par
+ * etiquette recoupe simplement ce type avec le contenu de l'etiquette.
+ */
+export const tagItems = pgTable(
+  'tag_items',
+  {
+    tagId: integer()
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' }),
+    itemType: itemType().notNull(),
+    itemId: integer().notNull(),
+    createdAt: now(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.tagId, t.itemType, t.itemId] }),
+    index('tag_items_tag_idx').on(t.tagId, t.createdAt),
+  ],
+);
+
 export const watchProgress = pgTable(
   'watch_progress',
   {

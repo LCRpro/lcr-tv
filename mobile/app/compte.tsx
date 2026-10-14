@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import type { DeviceSession, HistoryEntry, ProviderView } from '@iptv/shared';
+import type { DeviceSession, HistoryEntry, ProviderView, Tag } from '@iptv/shared';
 import { api, API_URL } from '../lib/api';
 import { useAsync } from '../lib/hooks';
 import { useSession } from '../lib/session';
@@ -74,6 +74,11 @@ export default function CompteScreen() {
           <Text style={cs.actionText}>Se déconnecter</Text>
         </Focusable>
       </View>
+
+      {/* ----------------------------------------------------- Étiquettes */}
+      <TagsManager />
+
+      <View style={styles.separator} />
 
       {/* ------------------------------------------------------- Sources */}
       <Text style={styles.h2}>Sources</Text>
@@ -153,6 +158,101 @@ export default function CompteScreen() {
       </Text>
       <View style={{ height: 24 }} />
     </ScrollView>
+  );
+}
+
+/**
+ * Le gestionnaire d'étiquettes.
+ *
+ * On y crée ses rayons, on les supprime, et on ouvre chacun pour voir tout ce
+ * qu'il range — films, séries et chaînes mêlés. Les étiquettes elles-mêmes se
+ * posent sur les contenus, depuis leur fiche ou leur vignette ; ici c'est la
+ * vue d'ensemble, le seul endroit qui réunit les trois types.
+ */
+function TagsManager() {
+  const router = useRouter();
+  const tags = useAsync<{ items: Tag[] }>(() => api.get('/api/me/tags'), []);
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const create = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || busy) return;
+    setBusy(true);
+    try {
+      await api.post('/api/me/tags', { name: trimmed });
+      setName('');
+      tags.reload();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = (tag: Tag) => {
+    Alert.alert('Supprimer cette étiquette ?', `« ${tag.name} » et son contenu seront retirés.`, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: () => void api.del(`/api/me/tags/${tag.id}`).then(() => tags.reload()),
+      },
+    ]);
+  };
+
+  return (
+    <View>
+      <Text style={styles.h2}>Étiquettes</Text>
+      <Text style={[styles.dim, { marginBottom: 12, marginTop: -4 }]}>
+        Vos rayons perso. Rangez-y films, séries et chaînes, puis ouvrez-en un pour tout revoir.
+      </Text>
+
+      <View style={cs.tagCreate}>
+        <TextInput
+          style={[styles.input, { flex: 1 }]}
+          placeholder="Nouvelle étiquette…"
+          placeholderTextColor={colors.dim}
+          value={name}
+          onChangeText={setName}
+          onSubmitEditing={() => void create()}
+          returnKeyType="done"
+          maxLength={40}
+        />
+        <Focusable
+          onPress={() => void create()}
+          disabled={busy || name.trim().length === 0}
+          style={[cs.tagAdd, name.trim().length === 0 && { opacity: 0.4 }]}
+        >
+          <Ionicons name="add" size={24} color={colors.onAccent} />
+        </Focusable>
+      </View>
+
+      <ErrorNotice error={tags.error} />
+      {tags.loading && !tags.data ? (
+        <Loading />
+      ) : !tags.data?.items.length ? (
+        <Empty>Aucune étiquette. Créez-en une ci-dessus.</Empty>
+      ) : (
+        tags.data.items.map((tag) => (
+          <Focusable
+            key={tag.id}
+            onPress={() => router.push(`/tag/${tag.id}?name=${encodeURIComponent(tag.name)}`)}
+            style={cs.tagRow}
+          >
+            <Ionicons name="pricetag" size={18} color={colors.accent} />
+            <Text style={cs.tagName} numberOfLines={1}>
+              {tag.name}
+            </Text>
+            <Text style={cs.tagCount}>
+              {tag.count} {tag.count > 1 ? 'éléments' : 'élément'}
+            </Text>
+            <Focusable onPress={() => remove(tag)} hitSlop={8} style={{ padding: 4 }}>
+              <Ionicons name="trash-outline" size={18} color={colors.faint} />
+            </Focusable>
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Focusable>
+        ))
+      )}
+    </View>
   );
 }
 
@@ -259,6 +359,29 @@ const cs = {
     letterSpacing: -0.2,
   },
   headActions: { flexDirection: 'row' as const, gap: 10, marginBottom: 24 },
+  tagCreate: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 12 },
+  tagAdd: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.accent,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  tagRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 11,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 9,
+  },
+  tagName: { color: colors.text, fontSize: 15, fontWeight: '700' as const, letterSpacing: -0.2, maxWidth: '45%' as const },
+  tagCount: { flex: 1, color: colors.faint, fontSize: 12.5 },
   action: {
     paddingVertical: 12,
     borderRadius: radius.md,

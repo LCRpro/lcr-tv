@@ -879,6 +879,8 @@ function watchState(row: {
 
 export interface ListParams {
   categoryId?: number | undefined;
+  /** Restreint la section au contenu d'une étiquette du profil, de ce type. */
+  tagId?: number | undefined;
   q?: string | undefined;
   /** Restreint aux favoris de l'utilisateur, pagination et compteur compris. */
   favorites?: boolean | undefined;
@@ -1204,6 +1206,22 @@ export async function listStreams(
         and seen.type = streams.type and seen.group_key = streams.group_key
     )`);
   }
+  /*
+   * Filtre par etiquette : meme regle de groupe que le favori. L'etiquette ne
+   * range qu'un `stream` (film ou chaine) ; le type de la section — `vod` ou
+   * `live` — fait le tri entre les deux, donc « Sport » en Direct ne montre que
+   * les chaines, et le meme « Sport » en Films ne montre que les films.
+   */
+  if (params.tagId) {
+    extra.push(raw`exists (
+      select 1 from tag_items ti
+      join tags t on t.id = ti.tag_id
+      join streams tg on tg.id = ti.item_id
+      where ti.tag_id = ${params.tagId} and t.profile_id = ${viewer.profileId}
+        and ti.item_type = 'stream'
+        and tg.type = streams.type and tg.group_key = streams.group_key
+    )`);
+  }
   const where = visible(viewer, extra);
 
   const [rows, [countRow]] = await Promise.all([
@@ -1299,6 +1317,17 @@ export async function listSeries(
       join series seen on seen.id = ep.series_id
       where w.profile_id = ${viewer.profileId} and w.item_type = 'episode'
         and seen.work_key = series.work_key
+    )`);
+  }
+  // Filtre par etiquette : meme regle de groupe que le favori (ici `work_key`).
+  if (params.tagId) {
+    parts.push(raw`exists (
+      select 1 from tag_items ti
+      join tags t on t.id = ti.tag_id
+      join series tg on tg.id = ti.item_id
+      where ti.tag_id = ${params.tagId} and t.profile_id = ${viewer.profileId}
+        and ti.item_type = 'series'
+        and tg.work_key = series.work_key
     )`);
   }
   const where = and(...parts)!;
