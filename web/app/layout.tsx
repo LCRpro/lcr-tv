@@ -1,27 +1,32 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
-import { Archivo, Noto_Color_Emoji } from 'next/font/google';
+import { Outfit, Inter, Noto_Color_Emoji } from 'next/font/google';
 import './globals.css';
 import { SessionProvider } from '../lib/session';
 import { PlayerProvider } from '../lib/player';
 import { LocaleProvider } from '../lib/i18n';
 
 /*
- * Une seule famille.
+ * Deux familles, selon la charte LCR TV.
  *
- * Archivo prend tout — titres, libelles, chiffres, tableaux, colonnes. Une
- * grotesque un peu large, aux chiffres tabulaires et aux diacritiques nettes,
- * ce qui compte dans une interface francaise dense. Les titres s'en
- * distinguent par la taille et la graisse, jusqu'a 800.
- *
- * L'antique des titres (Fraunces) a ete essayee et retiree : le contraste se
- * voulait editorial, il a ete lu comme un decalage.
+ * Outfit porte les titres et les éléments d'interface qui demandent du
+ * caractère — géométrique, affirmée, elle répond aux formes du logo. Inter
+ * prend le texte courant, les descriptions et les informations : très lisible
+ * dans une interface française dense, elle complète Outfit sans surcharger.
+ * (Archivo, famille unique précédente, a été retirée au profit de ce duo.)
  */
-const ui = Archivo({
+const titleFont = Outfit({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['500', '600', '700', '800'],
   display: 'swap',
-  variable: '--font-ui',
+  variable: '--font-title-src',
+});
+
+const bodyFont = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-body-src',
 });
 
 /*
@@ -44,7 +49,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr" className={`${ui.variable} ${emoji.variable}`}>
+    <html lang="fr" className={`${titleFont.variable} ${bodyFont.variable} ${emoji.variable}`}>
       {/*
         Les extensions de navigateur (ColorZilla, gestionnaires de mots de passe,
         traducteurs) ajoutent leurs propres attributs sur <body> avant que React
