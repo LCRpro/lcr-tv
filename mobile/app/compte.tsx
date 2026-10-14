@@ -54,7 +54,7 @@ export default function CompteScreen() {
   // ------------------------------------------------------------- les cartes
 
   const compteCard = (
-    <Section title="Compte">
+    <Section title="Compte" icon="person-outline" defaultOpen>
       <LinkRow icon="people-outline" label="Changer de profil" onPress={() => void switchProfile()} />
       <Divider />
       <LinkRow
@@ -68,13 +68,22 @@ export default function CompteScreen() {
   );
 
   const tagsCard = (
-    <Section title="Étiquettes" subtitle="Vos rayons perso : films, séries et chaînes mêlés.">
+    <Section
+      title="Étiquettes"
+      icon="pricetag-outline"
+      subtitle="Vos rayons perso : films, séries et chaînes mêlés."
+    >
       <TagsManager />
     </Section>
   );
 
   const sourcesCard = (
-    <Section title="Sources" subtitle="Les connecteurs remplissent le catalogue. Ils se créent au web.">
+    <Section
+      title="Sources"
+      icon="server-outline"
+      count={providers.data?.items.length}
+      subtitle="Les connecteurs remplissent le catalogue. Ils se créent au web."
+    >
       <ErrorNotice error={providers.error} />
       {providers.loading && !providers.data ? (
         <Loading />
@@ -92,7 +101,7 @@ export default function CompteScreen() {
   );
 
   const devicesCard = (
-    <Section title="Appareils">
+    <Section title="Appareils" icon="tv-outline" count={sessions.data?.items.length}>
       <LinkRow
         icon="tv-outline"
         iconColor={colors.accent}
@@ -137,7 +146,7 @@ export default function CompteScreen() {
   );
 
   const historyCard = (
-    <Section title="Historique">
+    <Section title="Historique" icon="time-outline" count={history.data?.items.length}>
       {history.loading ? (
         <Loading />
       ) : !history.data?.items.length ? (
@@ -228,21 +237,54 @@ function wrap(node: ReactNode, key: string): ReactNode {
 
 // --------------------------------------------------------- briques d'interface
 
-/** Une catégorie : un titre, un sous-titre facultatif, et sa carte de rangées. */
+/**
+ * Une catégorie repliable — un dropdown.
+ *
+ * On ne voit que l'en-tête : son icône, son nom, un compteur, et le chevron. Le
+ * contenu n'apparaît qu'au clic, pour que la page reste une courte liste de
+ * rayons qu'on ouvre à la demande.
+ */
 function Section({
   title,
   subtitle,
+  icon,
+  count,
+  defaultOpen,
   children,
 }: {
   title: string;
   subtitle?: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  count?: number;
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
   return (
     <View style={cs.section}>
-      <Text style={cs.sectionTitle}>{title}</Text>
-      {subtitle ? <Text style={cs.sectionSub}>{subtitle}</Text> : null}
-      <View style={cs.card}>{children}</View>
+      <View style={cs.card}>
+        <Focusable
+          onPress={() => setOpen((o) => !o)}
+          style={({ pressed }) => [cs.accHeader, pressed && { opacity: 0.7 }]}
+        >
+          <View style={cs.accIcon}>
+            <Ionicons name={icon} size={18} color={colors.accent} />
+          </View>
+          <Text style={cs.accTitle}>{title}</Text>
+          <View style={{ flex: 1 }} />
+          {count != null ? <Text style={cs.accCount}>{count}</Text> : null}
+          <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={colors.faint} />
+        </Focusable>
+        {open ? (
+          <>
+            <Divider />
+            <View style={cs.accBody}>
+              {subtitle ? <Text style={cs.sectionSub}>{subtitle}</Text> : null}
+              {children}
+            </View>
+          </>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -472,32 +514,52 @@ const cs = {
   columns: { flexDirection: 'row' as const, gap: 14, alignItems: 'flex-start' as const },
   column: { flex: 1, minWidth: 0 },
 
-  section: { marginBottom: 18 },
-  sectionTitle: {
-    color: colors.dim,
-    fontSize: 12,
-    fontWeight: '700' as const,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase' as const,
-    marginBottom: 7,
-    marginLeft: 2,
+  section: { marginBottom: 12 },
+  sectionSub: {
+    color: colors.faint,
+    fontSize: 12.5,
+    paddingHorizontal: 14,
+    paddingTop: 11,
+    lineHeight: 17,
   },
-  sectionSub: { color: colors.faint, fontSize: 12.5, marginBottom: 9, marginLeft: 2, lineHeight: 17 },
   card: {
     backgroundColor: colors.bgSoft,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
-    paddingHorizontal: 14,
-    paddingVertical: 2,
+    overflow: 'hidden' as const,
   },
-  divider: { height: 1, backgroundColor: colors.border, marginHorizontal: -14 },
+  accHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 11,
+    paddingHorizontal: 14,
+    paddingVertical: 15,
+  },
+  accIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.accentSoft,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  accTitle: { color: colors.text, fontSize: 15.5, fontWeight: '700' as const, letterSpacing: -0.2 },
+  accCount: {
+    color: colors.faint,
+    fontSize: 13,
+    marginRight: 4,
+    fontVariant: ['tabular-nums' as const],
+  },
+  accBody: { paddingBottom: 6 },
+  divider: { height: 1, backgroundColor: colors.border },
 
   row: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 11,
     paddingVertical: 14,
+    paddingHorizontal: 14,
   },
   rowLabel: { color: colors.text, fontSize: 15, fontWeight: '600' as const, letterSpacing: -0.2 },
   rowValue: { color: colors.faint, fontSize: 13 },
@@ -506,6 +568,7 @@ const cs = {
     alignItems: 'center' as const,
     gap: 11,
     paddingVertical: 12,
+    paddingHorizontal: 14,
   },
 
   tagCreate: {
@@ -513,6 +576,7 @@ const cs = {
     alignItems: 'center' as const,
     gap: 8,
     paddingVertical: 12,
+    paddingHorizontal: 14,
   },
   tagAdd: {
     width: 48,
@@ -523,7 +587,7 @@ const cs = {
     justifyContent: 'center' as const,
   },
 
-  provRow: { paddingVertical: 13 },
+  provRow: { paddingVertical: 13, paddingHorizontal: 14 },
   srcTop: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
