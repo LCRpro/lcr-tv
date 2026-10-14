@@ -9,6 +9,7 @@ import { ConnectionBadge } from '../../components/ConnectionBadge';
 import { QuickSearch } from '../../components/QuickSearch';
 import { Boot } from '../../components/ui';
 import { Avatar } from '../../components/Avatar';
+import { BrandMark } from '../../components/BrandMark';
 import { NavProgress } from '../../components/NavProgress';
 
 /**
@@ -96,30 +97,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </button>
 
         <Link className="brand" href="/" aria-label="LCR TV — accueil">
-          <svg className="brand-mark" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true">
-            <defs>
-              <linearGradient
-                id="brandNav"
-                x1="8"
-                y1="6"
-                x2="40"
-                y2="42"
-                gradientUnits="userSpaceOnUse"
-              >
-                <stop offset="0" stopColor="#19b2f0" />
-                <stop offset="0.5" stopColor="#2f6bf2" />
-                <stop offset="1" stopColor="#7a35ec" />
-              </linearGradient>
-            </defs>
-            <polygon
-              points="15,9 15,39 41,24"
-              fill="url(#brandNav)"
-              stroke="url(#brandNav)"
-              strokeWidth="8"
-              strokeLinejoin="round"
-            />
-            <polygon points="23,18 23,30 33,24" fill="#080a12" />
-          </svg>
+          <BrandMark size={26} />
           <span className="brand-word">LCR TV</span>
         </Link>
 

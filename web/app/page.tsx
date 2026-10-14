@@ -7,6 +7,7 @@
  */
 
 import Link from 'next/link';
+import { BrandMark } from '../components/BrandMark';
 
 /**
  * La vitrine — la seule page publique du web.
@@ -59,9 +60,7 @@ export default function Landing() {
     <main className="lp">
       <header className="lp-top">
         <span className="lp-brand">
-          <i className="lp-mark" aria-hidden>
-            L
-          </i>
+          <BrandMark size={22} />
           LCR TV
         </span>
         <nav className="lp-topnav">
@@ -124,9 +123,7 @@ export default function Landing() {
       {/* ------------------------------------------------------------- footer */}
       <footer className="lp-footer">
         <span className="lp-brand">
-          <i className="lp-mark" aria-hidden>
-            L
-          </i>
+          <BrandMark size={22} />
           LCR TV
         </span>
         <nav>
