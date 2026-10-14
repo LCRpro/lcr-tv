@@ -44,17 +44,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setUser(res.user);
       setProfiles(res.profiles);
       /*
-       * Un seul profil : on le choisit sans rien demander.
-       *
-       * Poser « qui regarde ? » a quelqu'un qui n'a qu'une reponse possible est
-       * un ecran de trop. Des qu'il y en a plusieurs, l'application affiche le
-       * selecteur — c'est `profile === null` qui le declenche.
+       * On demande toujours « qui regarde ? » a la connexion, meme s'il n'y a
+       * qu'un profil : c'est l'entree du foyer, et un repere clair sur qui est
+       * actif. On ne choisit donc rien d'office — `profile === null` laisse le
+       * Gate afficher le selecteur, jusqu'a ce que l'utilisateur choisisse.
        */
-      let active = res.profile;
-      if (!active && res.profiles.length === 1) {
-        active = await api.post<Profile>(`/api/profiles/${res.profiles[0]!.id}/select`);
-      }
-      setProfile(active);
+      setProfile(res.profile);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         await setToken(null);
