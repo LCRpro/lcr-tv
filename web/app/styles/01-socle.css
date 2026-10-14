@@ -152,22 +152,22 @@
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --paper: #0d0e16;
-    --bg: #0d0e16;
-    --bg-soft: #14161f;
-    --elevated: #1b1e2a;
-    --hover: #232738;
-    --border: #272b3a;
-    --border-strong: #6a7091;
+    --paper: #080a12;
+    --bg: #080a12;
+    --bg-soft: #0e111a;
+    --elevated: #141824;
+    --hover: #1c2130;
+    --border: #232838;
+    --border-strong: #666c8a;
     --text: #eef0f7;
-    --dim: #9aa0b5;
-    --faint: #686d84;
+    --dim: #99a0b5;
+    --faint: #656a82;
 
     --accent: #4f82ff;
     --accent-hover: #6f99ff;
-    --accent-soft: rgba(79, 130, 255, 0.16);
-    --accent-line: rgba(79, 130, 255, 0.36);
-    --on-accent: #0d0e16;
+    --accent-soft: rgba(79, 130, 255, 0.14);
+    --accent-line: rgba(79, 130, 255, 0.32);
+    --on-accent: #080a12;
 
     --live: #ff5a5f;
     --live-soft: rgba(255, 90, 95, 0.16);
@@ -183,22 +183,22 @@
 
 /* Le choix explicite du sombre, qui doit gagner sur un système en clair. */
 :root[data-theme='dark'] {
-  --paper: #0d0e16;
-  --bg: #0d0e16;
-  --bg-soft: #14161f;
-  --elevated: #1b1e2a;
-  --hover: #232738;
-  --border: #272b3a;
-  --border-strong: #6a7091;
+  --paper: #080a12;
+  --bg: #080a12;
+  --bg-soft: #0e111a;
+  --elevated: #141824;
+  --hover: #1c2130;
+  --border: #232838;
+  --border-strong: #666c8a;
   --text: #eef0f7;
-  --dim: #9aa0b5;
-  --faint: #686d84;
+  --dim: #99a0b5;
+  --faint: #656a82;
 
   --accent: #4f82ff;
   --accent-hover: #6f99ff;
-  --accent-soft: rgba(79, 130, 255, 0.16);
-  --accent-line: rgba(79, 130, 255, 0.36);
-  --on-accent: #0d0e16;
+  --accent-soft: rgba(79, 130, 255, 0.14);
+  --accent-line: rgba(79, 130, 255, 0.32);
+  --on-accent: #080a12;
 
   --live: #ff5a5f;
   --live-soft: rgba(255, 90, 95, 0.16);

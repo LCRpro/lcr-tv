@@ -371,33 +371,33 @@ export function ChannelCard({
 export function RailTitle({ title, right }: { title: string; right?: ReactNode }) {
   return (
     <View style={rail.head}>
-      <View style={rail.left}>
-        <View style={rail.bar} />
-        <Text style={rail.title} numberOfLines={1}>
-          {title}
-        </Text>
-      </View>
+      <Text style={rail.title} numberOfLines={1}>
+        {title}
+      </Text>
       {right ?? null}
     </View>
   );
 }
 
 const rail = {
+  // Pas de barre d'accent décorative devant chaque rangée : le titre, en Outfit,
+  // porte la hiérarchie à lui seul — plus éditorial, moins « template ».
   head: {
     flexDirection: 'row' as const,
-    alignItems: 'center' as const,
+    alignItems: 'baseline' as const,
     justifyContent: 'space-between' as const,
-    marginTop: 22,
-    marginBottom: 11,
+    gap: 12,
+    marginTop: 26,
+    marginBottom: 12,
   },
-  left: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 9, flex: 1, minWidth: 0 },
-  bar: { width: 3, height: 18, borderRadius: 2, backgroundColor: colors.accent },
   title: {
     color: colors.text,
     fontFamily: 'Outfit',
-    fontSize: 17,
-    fontWeight: '800' as const,
+    fontSize: 19,
+    fontWeight: '700' as const,
     letterSpacing: -0.3,
+    flex: 1,
+    minWidth: 0,
   },
 };
 
