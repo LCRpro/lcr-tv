@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { CurrentUser, LoginResponse, Profile } from '@iptv/shared';
+import type { CurrentUser, HomePayload, LoginResponse, Profile, SyncStatus } from '@iptv/shared';
 import { api, ApiError, setToken } from './api';
 
 interface SessionState {
@@ -27,6 +27,8 @@ interface SessionState {
    * une grille vide qui se remplit ensuite par à-coups.
    */
   warming: boolean;
+  /** Le message affiché pendant l'attente — progression de la synchronisation. */
+  warmupMessage: string;
   login: (email: string, password: string) => Promise<void>;
   /** Crée un compte et ouvre la session dans la foulée (transport bearer). */
   signup: (email: string, password: string, profileName?: string, code?: string) => Promise<void>;
@@ -36,12 +38,34 @@ interface SessionState {
 
 const SessionContext = createContext<SessionState | null>(null);
 
+const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+const SYNC_PHASE: Record<string, string> = {
+  idle: 'préparation',
+  categories: 'catégories',
+  live: 'chaînes',
+  vod: 'films',
+  series: 'séries',
+  done: 'presque prêt',
+  failed: 'échec',
+};
+
+/** Le message d'attente, tiré de l'état de la synchronisation en cours. */
+function syncWaitMessage(s: SyncStatus): string {
+  const got = s.counts.vod + s.counts.series + s.counts.live;
+  const phase = SYNC_PHASE[s.phase] ?? s.phase;
+  return got > 0
+    ? `Synchronisation du catalogue… ${phase} · ${got} reçus`
+    : `Synchronisation du catalogue… ${phase}`;
+}
+
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [warming, setWarming] = useState(false);
+  const [warmupMessage, setWarmupMessage] = useState('Préparation de votre catalogue…');
 
   const refresh = useCallback(async () => {
     try {
@@ -111,16 +135,43 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const selectProfile = useCallback(async (id: number) => {
     setWarming(true);
+    setWarmupMessage('Préparation de votre catalogue…');
     try {
       setProfile(await api.post<Profile>(`/api/profiles/${id}/select`));
-      // On tire l'accueil tout de suite : au retour, l'écran de marque cède la
-      // place à un contenu déjà chargé, et non à un squelette qui se remplit.
-      // Le cache mémo du backend fait que la requête de l'accueil qui suivra
-      // répond dans la foulée. Une erreur ici n'est pas bloquante — l'accueil
-      // la reprendra à son compte.
-      await api.get('/api/home').catch(() => {});
+
+      /*
+       * On ne révèle l'app que lorsqu'il y a de quoi la remplir.
+       *
+       * Si le catalogue n'est pas encore synchronisé, on reste sur l'écran de
+       * marque : on lance la synchronisation si rien ne tourne, puis on suit sa
+       * progression jusqu'à ce qu'il y ait du contenu. On ne bloque pas pour
+       * rien — un compte sans abonnement, une erreur réseau ou une synchro qui
+       * échoue rendent la main à l'accueil, qui affiche alors l'état adéquat.
+       */
+      let kicked = false;
+      for (let i = 0; i < 240; i++) {
+        const home = await api.get<HomePayload>('/api/home').catch(() => null);
+        if (!home) break; // réseau : l'accueil reprendra
+        if (home.noProvider || !home.catalogEmpty) break; // rien à attendre, ou prêt
+
+        if (!home.sync?.running) {
+          if (!kicked) {
+            // Rien ne tourne et le catalogue est vide : on déclenche la synchro.
+            kicked = true;
+            setWarmupMessage('Démarrage de la synchronisation…');
+            await api.post('/api/providers/sync').catch(() => {});
+            await wait(1500);
+            continue;
+          }
+          break; // relancée une fois sans succès : on rend la main à l'accueil
+        }
+
+        setWarmupMessage(syncWaitMessage(home.sync));
+        await wait(2500);
+      }
     } finally {
       setWarming(false);
+      setWarmupMessage('Préparation de votre catalogue…');
     }
   }, []);
 
@@ -147,8 +198,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, profiles, loading, warming, login, signup, logout, refresh, selectProfile, leaveProfile }),
-    [user, profile, profiles, loading, warming, login, signup, logout, refresh, selectProfile, leaveProfile],
+    () => ({ user, profile, profiles, loading, warming, warmupMessage, login, signup, logout, refresh, selectProfile, leaveProfile }),
+    [user, profile, profiles, loading, warming, warmupMessage, login, signup, logout, refresh, selectProfile, leaveProfile],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

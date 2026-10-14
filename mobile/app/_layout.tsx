@@ -17,7 +17,7 @@ import { BrandSplash } from '../components/BrandSplash';
 import { QuickActionsProvider } from '../components/QuickActions';
 
 function Gate() {
-  const { user, profile, loading, warming } = useSession();
+  const { user, profile, loading, warming, warmupMessage } = useSession();
   const segments = useSegments();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -68,7 +68,7 @@ function Gate() {
   // On vient de choisir un profil : l'écran de marque tient la place le temps
   // que son catalogue descende, avant de révéler l'accueil déjà chargé.
   if (warming && !IS_TV) {
-    return <BrandSplash />;
+    return <BrandSplash message={warmupMessage} />;
   }
 
   /*
