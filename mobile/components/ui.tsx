@@ -361,10 +361,44 @@ export function ChannelCard({
   );
 }
 
+/**
+ * Le titre d'une rangée, avec son trait d'accent.
+ *
+ * Un petit bâton coloré devant le nom : il donne du rythme à la page et
+ * rattache chaque rangée à la couleur de l'app. `right` accueille un « Tout
+ * voir » quand la rangée mène quelque part.
+ */
+export function RailTitle({ title, right }: { title: string; right?: ReactNode }) {
+  return (
+    <View style={rail.head}>
+      <View style={rail.left}>
+        <View style={rail.bar} />
+        <Text style={rail.title} numberOfLines={1}>
+          {title}
+        </Text>
+      </View>
+      {right ?? null}
+    </View>
+  );
+}
+
+const rail = {
+  head: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    marginTop: 22,
+    marginBottom: 11,
+  },
+  left: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 9, flex: 1, minWidth: 0 },
+  bar: { width: 3, height: 18, borderRadius: 2, backgroundColor: colors.accent },
+  title: { color: colors.text, fontSize: 17, fontWeight: '800' as const, letterSpacing: -0.3 },
+};
+
 export function Row({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View style={{ marginBottom: 18 }}>
-      {title ? <Text style={styles.h2}>{title}</Text> : null}
+      {title ? <RailTitle title={title} /> : null}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

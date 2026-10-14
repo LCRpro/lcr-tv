@@ -14,7 +14,7 @@ import { workTitle, type FavoriteEntry, type HomePayload, type Spotlight } from 
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import { colors, styles } from '../../lib/theme';
-import { Card, ChannelCard, ErrorNotice, Loading, Row } from '../../components/ui';
+import { Card, ChannelCard, ErrorNotice, Loading, RailTitle, Row } from '../../components/ui';
 import { Focusable } from '../../components/Focusable';
 
 /**
@@ -288,17 +288,29 @@ function HomeHero({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
     void call.catch(() => setListed(!next));
   };
 
+  const genre = pick.genre ? pick.genre.split(/[,•]/)[0]?.trim() : null;
+
   return (
-    <Focusable onPress={onOpen} style={{ marginHorizontal: -16, marginTop: -16, marginBottom: 8 }}>
+    <Focusable onPress={onOpen} style={{ marginHorizontal: -16, marginTop: -16, marginBottom: 14 }}>
       <View style={styles.heroWrap}>
         <Image source={{ uri: pick.backdropUrl }} style={styles.heroBg} resizeMode="cover" />
         <LinearGradient
-          colors={['rgba(13,14,22,0.15)', 'rgba(13,14,22,0)', 'rgba(13,14,22,0.6)', '#0d0e16']}
-          locations={[0, 0.32, 0.72, 1]}
+          colors={[
+            'rgba(13,14,22,0.1)',
+            'rgba(13,14,22,0)',
+            'rgba(13,14,22,0.55)',
+            'rgba(13,14,22,0.92)',
+            '#0d0e16',
+          ]}
+          locations={[0, 0.3, 0.62, 0.86, 1]}
           style={styles.heroVeil}
           pointerEvents="none"
         />
         <View style={styles.heroBody}>
+          <View style={styles.heroEyebrow}>
+            <View style={styles.heroEyebrowDot} />
+            <Text style={styles.heroEyebrowText}>À LA UNE</Text>
+          </View>
           <Text style={styles.heroTitle} numberOfLines={2}>
             {workTitle(pick.name)}
           </Text>
@@ -307,13 +319,18 @@ function HomeHero({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
               <Text style={styles.heroStar}>★ {pick.rating.toFixed(1)}</Text>
             ) : null}
             {pick.year ? <Text style={styles.heroMeta}>{pick.year}</Text> : null}
-            {pick.genre ? <View style={styles.heroDot} /> : null}
-            {pick.genre ? (
+            {genre ? <View style={styles.heroDot} /> : null}
+            {genre ? (
               <Text style={styles.heroMeta} numberOfLines={1}>
-                {pick.genre}
+                {genre}
               </Text>
             ) : null}
           </View>
+          {pick.plot ? (
+            <Text style={styles.heroPlot} numberOfLines={2}>
+              {pick.plot}
+            </Text>
+          ) : null}
           <View style={styles.heroActions}>
             <Focusable onPress={toggle} style={styles.heroRound}>
               <Ionicons
@@ -323,7 +340,7 @@ function HomeHero({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
               />
             </Focusable>
             <Focusable onPress={onOpen} style={styles.heroPlay}>
-              <Ionicons name="play" size={16} color={colors.onAccent} />
+              <Ionicons name="play" size={17} color={colors.onAccent} />
               <Text style={styles.heroPlayText}>Lecture</Text>
             </Focusable>
             <Focusable onPress={onOpen} style={styles.heroRound}>
@@ -381,11 +398,13 @@ function SpotCard({
 
 function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll: () => void }) {
   return (
-    <View style={styles.sectionHeader}>
-      <Text style={[styles.h2, { marginTop: 0, marginBottom: 0 }]}>{title}</Text>
-      <Focusable onPress={onSeeAll} hitSlop={10}>
-        <Text style={styles.dim}>Tout voir →</Text>
-      </Focusable>
-    </View>
+    <RailTitle
+      title={title}
+      right={
+        <Focusable onPress={onSeeAll} hitSlop={10}>
+          <Text style={{ color: colors.accent, fontSize: 13, fontWeight: '700' }}>Tout voir →</Text>
+        </Focusable>
+      }
+    />
   );
 }
