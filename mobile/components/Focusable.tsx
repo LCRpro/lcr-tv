@@ -29,6 +29,7 @@ interface State {
 export function Focusable({
   children,
   onPress,
+  onLongPress,
   style,
   focusedStyle,
   disabled,
@@ -36,6 +37,8 @@ export function Focusable({
 }: {
   children: ReactNode | ((state: State) => ReactNode);
   onPress: () => void;
+  /** Appui long — au doigt (mobile, tablette) comme au select maintenu (tvOS). */
+  onLongPress?: () => void;
   style?: StyleProp<ViewStyle> | ((state: State) => StyleProp<ViewStyle>);
   /** Style additionnel quand l'element a le focus, au-dela de l'anneau. */
   focusedStyle?: StyleProp<ViewStyle>;
@@ -47,6 +50,8 @@ export function Focusable({
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={300}
       disabled={disabled}
       hitSlop={hitSlop}
       // `focusable` n'a d'effet que sur les plateformes a telecommande ; le

@@ -28,6 +28,7 @@ import { colors, gridColumns, onArt, radius, styles } from '../lib/theme';
 import { cardTarget, TV_SAFE } from '../lib/tv';
 import { Card, ChannelCard, Empty, ErrorNotice, Loading } from './ui';
 import { Focusable } from './Focusable';
+import { useQuickActions } from './QuickActions';
 import { CategoryMark, IconClock, IconStar } from './marks';
 import { TagPicker } from './TagPicker';
 
@@ -56,6 +57,7 @@ export function CatalogList({
   cardWidth = 130,
 }: Props) {
   const { width } = useWindowDimensions();
+  const qa = useQuickActions();
   // Sur TV on montre **moins** d'elements, pas plus : parcourir vingt colonnes
   // a la telecommande est interminable.
   const columns = gridColumns(width - TV_SAFE * 2, cardTarget(cardWidth));
@@ -386,7 +388,20 @@ export function CatalogList({
                 </Focusable>
               )}
               {item.type === 'live' ? (
-                <ChannelCard channel={item} stretch onPress={() => onSelect(item)} />
+                <ChannelCard
+                  channel={item}
+                  stretch
+                  onPress={() => onSelect(item)}
+                  onLongPress={() =>
+                    qa.open({
+                      kind: 'live',
+                      id: item.id,
+                      title: item.name,
+                      posterUrl: item.iconUrl,
+                      isFavorite: item.isFavorite,
+                    })
+                  }
+                />
               ) : (
                 <Card
                   title={item.name}
@@ -395,6 +410,15 @@ export function CatalogList({
                   rating={item.rating}
                   stretch
                   onPress={() => onSelect(item)}
+                  onLongPress={() =>
+                    qa.open({
+                      kind: item.type === 'series' ? 'series' : 'movie',
+                      id: item.id,
+                      title: item.name,
+                      posterUrl: item.type === 'series' ? item.coverUrl : item.iconUrl,
+                      isFavorite: item.isFavorite,
+                    })
+                  }
                 />
               )}
             </View>

@@ -8,6 +8,7 @@ import { useAsync, useDebounced } from '../lib/hooks';
 import { colors, gridColumns, radius, styles } from '../lib/theme';
 import { Card, ChannelCard, ErrorNotice, Loading } from './ui';
 import { Focusable } from './Focusable';
+import { useQuickActions } from './QuickActions';
 
 type Tab = 'movies' | 'series' | 'live';
 type Result = Movie | SeriesSummary | LiveChannel;
@@ -26,6 +27,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
   const [term, setTerm] = useState('');
   const [tab, setTab] = useState<Tab>('movies');
   const [focused, setFocused] = useState(false);
+  const qa = useQuickActions();
   const debounced = useDebounced(term);
 
   const { data, error, loading } = useAsync<SearchResults | null>(
@@ -154,7 +156,20 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
             ) : (
               <View style={{ flex: 1 }}>
                 {item.type === 'live' ? (
-                  <ChannelCard channel={item} stretch onPress={() => open(item)} />
+                  <ChannelCard
+                    channel={item}
+                    stretch
+                    onPress={() => open(item)}
+                    onLongPress={() =>
+                      qa.open({
+                        kind: 'live',
+                        id: item.id,
+                        title: item.name,
+                        posterUrl: item.iconUrl,
+                        isFavorite: item.isFavorite,
+                      })
+                    }
+                  />
                 ) : (
                   <Card
                     title={item.name}
@@ -163,6 +178,15 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
                     rating={item.rating}
                     stretch
                     onPress={() => open(item)}
+                    onLongPress={() =>
+                      qa.open({
+                        kind: item.type === 'series' ? 'series' : 'movie',
+                        id: item.id,
+                        title: item.name,
+                        posterUrl: item.type === 'series' ? item.coverUrl : item.iconUrl,
+                        isFavorite: item.isFavorite,
+                      })
+                    }
                   />
                 )}
               </View>

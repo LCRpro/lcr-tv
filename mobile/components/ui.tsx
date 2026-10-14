@@ -95,6 +95,8 @@ interface CardProps {
    */
   kind?: 'work' | 'channel';
   onPress: () => void;
+  /** Appui long : ouvre le menu de gestes (ma liste, étiquette, téléchargement). */
+  onLongPress?: () => void;
 }
 
 export function Card({
@@ -109,6 +111,7 @@ export function Card({
   stretch,
   kind = 'work',
   onPress,
+  onLongPress,
 }: CardProps) {
   // Le fournisseur prefixe ses titres du code langue (« EN - … ») : un drapeau
   // dit la meme chose sans manger la moitie de la ligne. Et la carte represente
@@ -168,6 +171,7 @@ export function Card({
     // ou l'on se trouve quand il n'y a ni curseur ni doigt.
     <Focusable
       onPress={onPress}
+      onLongPress={onLongPress}
       style={[
         wide ? styles.cardWide : styles.card,
         stretch && { width: '100%', marginRight: 0 },
@@ -256,11 +260,14 @@ export function ChannelCard({
   channel,
   stretch,
   onPress,
+  onLongPress,
 }: {
   channel: LiveChannel;
   /** En grille, la carte prend la largeur de sa colonne. */
   stretch?: boolean;
   onPress: () => void;
+  /** Appui long : ouvre le menu de gestes (ma liste, étiquette). */
+  onLongPress?: () => void;
 }) {
   const { tag, title: raw } = splitLanguage(channel.name);
   const name = channelTitle(channel.name);
@@ -276,6 +283,7 @@ export function ChannelCard({
   return (
     <Focusable
       onPress={onPress}
+      onLongPress={onLongPress}
       style={[styles.cardWide, stretch && { width: '100%', marginRight: 0 }]}
     >
       <View style={styles.chanMedia}>

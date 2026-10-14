@@ -18,6 +18,7 @@ import { colors, styles } from '../../lib/theme';
 import { Card, ErrorNotice, RailTitle, Row } from '../../components/ui';
 import { Focusable } from '../../components/Focusable';
 import { BrandSplash } from '../../components/BrandSplash';
+import { useQuickActions } from '../../components/QuickActions';
 
 /**
  * L'accueil.
@@ -34,6 +35,7 @@ import { BrandSplash } from '../../components/BrandSplash';
  */
 export default function HomeScreen() {
   const router = useRouter();
+  const qa = useQuickActions();
   const { data, error, loading, reload } = useAsync<HomePayload>(() => api.get('/api/home'), []);
 
   // Premier lancement : le catalogue se remplit, on suit sans que l'utilisateur
@@ -104,6 +106,9 @@ export default function HomeScreen() {
               title={fav.label}
               imageUrl={fav.imageUrl}
               onPress={() => openFavorite(fav)}
+              onLongPress={() =>
+                qa.open({ kind: 'movie', id: fav.itemId, title: fav.label, posterUrl: fav.imageUrl, isFavorite: true })
+              }
             />
           ))}
         </Row>
@@ -117,6 +122,9 @@ export default function HomeScreen() {
               title={fav.label}
               imageUrl={fav.imageUrl}
               onPress={() => openFavorite(fav)}
+              onLongPress={() =>
+                qa.open({ kind: 'series', id: fav.itemId, title: fav.label, posterUrl: fav.imageUrl, isFavorite: true })
+              }
             />
           ))}
         </Row>
@@ -139,6 +147,9 @@ export default function HomeScreen() {
                 rating={m.rating}
                 badge={m.isAdult ? '18+' : null}
                 onPress={() => router.push(`/film/${m.id}`)}
+                onLongPress={() =>
+                  qa.open({ kind: 'movie', id: m.id, title: m.name, posterUrl: m.iconUrl, isFavorite: m.isFavorite })
+                }
               />
             ))}
           </ScrollView>
@@ -160,6 +171,9 @@ export default function HomeScreen() {
                 imageUrl={s.coverUrl}
                 rating={s.rating}
                 onPress={() => router.push(`/serie/${s.id}`)}
+                onLongPress={() =>
+                  qa.open({ kind: 'series', id: s.id, title: s.name, posterUrl: s.coverUrl, isFavorite: s.isFavorite })
+                }
               />
             ))}
           </ScrollView>
@@ -177,6 +191,9 @@ export default function HomeScreen() {
               kind="channel"
               wide
               onPress={() => openFavorite(fav)}
+              onLongPress={() =>
+                qa.open({ kind: 'live', id: fav.itemId, title: fav.label, posterUrl: fav.imageUrl, isFavorite: true })
+              }
             />
           ))}
         </Row>

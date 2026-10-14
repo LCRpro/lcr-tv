@@ -14,6 +14,7 @@ import { BrandBar } from '../components/BrandBar';
 import { AppBottomBar } from '../components/AppBottomBar';
 import { SearchPanel } from '../components/SearchPanel';
 import { BrandSplash } from '../components/BrandSplash';
+import { QuickActionsProvider } from '../components/QuickActions';
 
 function Gate() {
   const { user, profile, loading, warming } = useSession();
@@ -90,9 +91,10 @@ function Gate() {
   const chrome = Boolean(user && profile) && !fullscreen && !IS_TV;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      {chrome ? <BrandBar onSearch={() => setSearchOpen(true)} /> : null}
-      <View style={{ flex: 1 }}>
+    <QuickActionsProvider>
+      <View style={{ flex: 1, backgroundColor: colors.bg }}>
+        {chrome ? <BrandBar onSearch={() => setSearchOpen(true)} /> : null}
+        <View style={{ flex: 1 }}>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -124,9 +126,10 @@ function Gate() {
             <SearchPanel onClose={() => setSearchOpen(false)} />
           </View>
         ) : null}
+        </View>
+        {chrome ? <AppBottomBar /> : null}
       </View>
-      {chrome ? <AppBottomBar /> : null}
-    </View>
+    </QuickActionsProvider>
   );
 }
 
