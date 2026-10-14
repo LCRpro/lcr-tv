@@ -107,7 +107,7 @@ export default function TvPairScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: tv(40), flexWrap: 'wrap', justifyContent: 'center' }}>
           {/* Le QR sur une plaque blanche : un QR se lit sur du clair. */}
           <View style={{ padding: tv(16), borderRadius: radius.lg, backgroundColor: '#ffffff' }}>
-            <QRCode value={pairing.verificationUrl} size={tv(200)} backgroundColor="#ffffff" color="#0d0e16" />
+            <QRCode value={pairing.verificationUrl} size={tv(200)} backgroundColor="#ffffff" color="#080a12" />
           </View>
 
           <View style={{ alignItems: 'center' }}>

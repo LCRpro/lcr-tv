@@ -83,8 +83,9 @@ export default function ProfilesScreen() {
 const pickerStyles = {
   title: {
     color: colors.text,
-    fontSize: 30,
-    fontWeight: '800' as const,
+    fontFamily: 'Outfit',
+    fontSize: 28,
+    fontWeight: '700' as const,
     letterSpacing: -0.6,
     marginTop: 18,
     marginBottom: 8,

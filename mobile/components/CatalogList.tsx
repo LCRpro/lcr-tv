@@ -465,7 +465,7 @@ const cat = StyleSheet.create({
     borderColor: colors.border,
   },
   triggerMark: { width: 18, alignItems: 'center' },
-  triggerText: { flex: 1, color: colors.text, fontSize: 14.5, fontWeight: '700', letterSpacing: -0.2 },
+  triggerText: { flex: 1, color: colors.text, fontFamily: 'Outfit', fontSize: 14.5, fontWeight: '700', letterSpacing: -0.2 },
   modalRoot: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' },
   sheet: {
     backgroundColor: colors.elevated,
@@ -487,8 +487,9 @@ const cat = StyleSheet.create({
   },
   sheetTitle: {
     color: colors.text,
+    fontFamily: 'Outfit',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: -0.3,
     marginBottom: 8,
     paddingHorizontal: 4,

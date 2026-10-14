@@ -53,7 +53,7 @@ export function AuthBackdrop() {
       ) : null}
       {/* Le voile : les affiches donnent la couleur, le formulaire reste net. */}
       <LinearGradient
-        colors={['rgba(13,14,22,0.45)', 'rgba(13,14,22,0.82)', colors.bg]}
+        colors={['rgba(8,10,18,0.45)', 'rgba(8,10,18,0.82)', colors.bg]}
         locations={[0, 0.5, 0.92]}
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       />
