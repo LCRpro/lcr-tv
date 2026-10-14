@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Alert, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { DeviceSession, HistoryEntry, ProviderView, Tag } from '@iptv/shared';
@@ -7,21 +7,21 @@ import { api, API_URL } from '../lib/api';
 import { useAsync } from '../lib/hooks';
 import { useSession } from '../lib/session';
 import { colors, radius, styles } from '../lib/theme';
-import { Button, Empty, ErrorNotice, Loading } from '../components/ui';
+import { Empty, ErrorNotice, Loading } from '../components/ui';
 import { Avatar } from '../components/ProfileAvatar';
 import { Focusable } from '../components/Focusable';
 
 /**
  * Le compte — qui regarde, avec quoi, sur quels appareils.
  *
- * On y change de profil, on y voit et on y bascule les connecteurs, et on y
- * ferme les sessions ouvertes ailleurs. La creation d'un connecteur et la
- * synchronisation restent au web : elles demandent un clavier et des reglages
- * fins qu'on ne fait pas a la telecommande. Mais **voir** ses sources et les
- * (de)activer, ca, c'est ici — c'est le geste courant.
+ * Rangé par catégories, chacune dans sa carte : le compte, les étiquettes, les
+ * sources, les appareils, l'historique. Sur un large écran, les cartes se
+ * répartissent en deux colonnes ; au téléphone, elles s'empilent. La création
+ * d'un connecteur reste au web — ici c'est voir et basculer, le geste courant.
  */
 export default function CompteScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { user, profile, leaveProfile, logout } = useSession();
 
   const providers = useAsync<{ items: ProviderView[] }>(() => api.get('/api/providers'), []);
@@ -31,6 +31,13 @@ export default function CompteScreen() {
   const switchProfile = async () => {
     await leaveProfile();
     router.replace('/profils');
+  };
+
+  const confirmLogout = () => {
+    Alert.alert('Se déconnecter ?', 'Vous reviendrez à l’écran de connexion.', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Se déconnecter', style: 'destructive', onPress: () => void logout() },
+    ]);
   };
 
   const revoke = (id: number) => {
@@ -44,130 +51,252 @@ export default function CompteScreen() {
     ]);
   };
 
-  return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      {/* Qui regarde, et le compte du foyer derriere. */}
-      {profile ? (
-        <View style={cs.head}>
-          <Avatar avatar={profile.avatar} color={profile.color} size={56} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={cs.name}>{profile.name}</Text>
-            <Text style={styles.dim} numberOfLines={1}>
-              {user?.email}
-            </Text>
-          </View>
-        </View>
-      ) : null}
+  // ------------------------------------------------------------- les cartes
 
-      {/* Associer un téléviseur : on recopie le code qu'il affiche. */}
-      <Focusable onPress={() => router.push('/associer-tv')} style={cs.pairTv}>
-        <Ionicons name="tv-outline" size={20} color={colors.accent} />
-        <Text style={cs.pairTvText}>Associer une TV</Text>
-        <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-      </Focusable>
+  const compteCard = (
+    <Section title="Compte">
+      <LinkRow icon="people-outline" label="Changer de profil" onPress={() => void switchProfile()} />
+      <Divider />
+      <LinkRow
+        icon="log-out-outline"
+        label="Se déconnecter"
+        tone="danger"
+        chevron={false}
+        onPress={confirmLogout}
+      />
+    </Section>
+  );
 
-      <View style={cs.headActions}>
-        <Focusable onPress={() => void switchProfile()} style={[cs.action, { flex: 1 }]}>
-          <Text style={cs.actionText}>Changer de profil</Text>
-        </Focusable>
-        <Focusable onPress={() => void logout()} style={[cs.action, { flex: 1 }]}>
-          <Text style={cs.actionText}>Se déconnecter</Text>
-        </Focusable>
-      </View>
-
-      {/* ----------------------------------------------------- Étiquettes */}
+  const tagsCard = (
+    <Section title="Étiquettes" subtitle="Vos rayons perso : films, séries et chaînes mêlés.">
       <TagsManager />
+    </Section>
+  );
 
-      <View style={styles.separator} />
-
-      {/* ------------------------------------------------------- Sources */}
-      <Text style={styles.h2}>Sources</Text>
-      <Text style={[styles.dim, { marginBottom: 12, marginTop: -4 }]}>
-        Les connecteurs remplissent le catalogue. Ils se créent et se synchronisent depuis le web.
-      </Text>
+  const sourcesCard = (
+    <Section title="Sources" subtitle="Les connecteurs remplissent le catalogue. Ils se créent au web.">
       <ErrorNotice error={providers.error} />
       {providers.loading && !providers.data ? (
         <Loading />
       ) : !providers.data?.items.length ? (
         <Empty>Aucun connecteur. Ajoutez-en un depuis l&apos;interface web.</Empty>
       ) : (
-        providers.data.items.map((p) => (
-          <SourceCard key={p.id} provider={p} onChanged={() => providers.reload()} />
+        providers.data.items.map((p, i) => (
+          <View key={p.id}>
+            {i > 0 ? <Divider /> : null}
+            <ProviderRow provider={p} onChanged={() => providers.reload()} />
+          </View>
         ))
       )}
+    </Section>
+  );
 
-      <View style={styles.separator} />
+  const devicesCard = (
+    <Section title="Appareils">
+      <LinkRow
+        icon="tv-outline"
+        iconColor={colors.accent}
+        label="Associer une TV"
+        tone="accent"
+        onPress={() => router.push('/associer-tv')}
+      />
+      {sessions.loading ? (
+        <>
+          <Divider />
+          <Loading />
+        </>
+      ) : (
+        sessions.data?.items.map((s) => (
+          <View key={s.id}>
+            <Divider />
+            <View style={cs.deviceRow}>
+              <Ionicons
+                name={s.current ? 'phone-portrait-outline' : 'hardware-chip-outline'}
+                size={20}
+                color={colors.dim}
+              />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={cs.rowLabel} numberOfLines={1}>
+                  {s.deviceLabel ?? 'Appareil'}
+                  {s.current ? ' · celui-ci' : ''}
+                </Text>
+                <Text style={styles.dim} numberOfLines={1}>
+                  {new Date(s.lastSeenAt).toLocaleString('fr-FR')}
+                </Text>
+              </View>
+              {!s.current ? (
+                <Focusable onPress={() => revoke(s.id)} hitSlop={8} style={{ padding: 4 }}>
+                  <Ionicons name="close-circle-outline" size={20} color={colors.faint} />
+                </Focusable>
+              ) : null}
+            </View>
+          </View>
+        ))
+      )}
+    </Section>
+  );
 
-      {/* ----------------------------------------------------- Historique */}
-      <Text style={styles.h2}>Historique</Text>
+  const historyCard = (
+    <Section title="Historique">
       {history.loading ? (
         <Loading />
       ) : !history.data?.items.length ? (
         <Empty>Rien encore.</Empty>
       ) : (
-        history.data.items.map((entry) => (
-          <View key={`${entry.itemType}-${entry.itemId}`} style={styles.listItem}>
-            <View style={{ flex: 1 }}>
-              {entry.parentLabel ? <Text style={styles.dim}>{entry.parentLabel}</Text> : null}
-              <Text style={styles.text}>{entry.label}</Text>
-              <Text style={styles.dim}>
-                {entry.completed
-                  ? 'Terminé'
-                  : entry.durationSec
-                    ? `${Math.round((entry.positionSec / entry.durationSec) * 100)} %`
-                    : '—'}
-              </Text>
+        history.data.items.map((entry, i) => (
+          <View key={`${entry.itemType}-${entry.itemId}`}>
+            {i > 0 ? <Divider /> : null}
+            <View style={cs.deviceRow}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                {entry.parentLabel ? (
+                  <Text style={styles.dim} numberOfLines={1}>
+                    {entry.parentLabel}
+                  </Text>
+                ) : null}
+                <Text style={cs.rowLabel} numberOfLines={1}>
+                  {entry.label}
+                </Text>
+                <Text style={styles.dim}>
+                  {entry.completed
+                    ? 'Terminé'
+                    : entry.durationSec
+                      ? `${Math.round((entry.positionSec / entry.durationSec) * 100)} %`
+                      : '—'}
+                </Text>
+              </View>
+              <Focusable
+                onPress={() =>
+                  void api
+                    .del(`/api/me/history/${entry.itemType}/${entry.itemId}`)
+                    .then(() => history.reload())
+                }
+                hitSlop={8}
+                style={{ padding: 4 }}
+              >
+                <Ionicons name="close-circle-outline" size={20} color={colors.faint} />
+              </Focusable>
             </View>
-            <Button
-              label="Oublier"
-              onPress={() =>
-                void api
-                  .del(`/api/me/history/${entry.itemType}/${entry.itemId}`)
-                  .then(() => history.reload())
-              }
-            />
           </View>
         ))
       )}
+    </Section>
+  );
 
-      {/* --------------------------------------------------- Appareils */}
-      <Text style={styles.h2}>Appareils connectés</Text>
-      {sessions.loading ? (
-        <Loading />
-      ) : (
-        sessions.data?.items.map((s) => (
-          <View key={s.id} style={styles.listItem}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.text}>
-                {s.deviceLabel ?? 'Appareil'}
-                {s.current ? ' · celui-ci' : ''}
-              </Text>
+  // Deux colonnes dès qu'il y a la place ; sinon une seule, dans l'ordre utile.
+  const wide = width >= 760;
+  const left = [compteCard, tagsCard, historyCard];
+  const right = [devicesCard, sourcesCard];
+
+  return (
+    <ScrollView style={styles.screen} contentContainerStyle={cs.content}>
+      <View style={cs.inner}>
+        {profile ? (
+          <View style={cs.hero}>
+            <Avatar avatar={profile.avatar} color={profile.color} size={56} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={cs.name}>{profile.name}</Text>
               <Text style={styles.dim} numberOfLines={1}>
-                {new Date(s.lastSeenAt).toLocaleString('fr-FR')}
+                {user?.email}
               </Text>
             </View>
-            {!s.current && <Button label="Déconnecter" onPress={() => revoke(s.id)} />}
           </View>
-        ))
-      )}
+        ) : null}
 
-      <View style={{ height: 20 }} />
-      <Text style={[styles.faint, { textAlign: 'center' }]}>Serveur · {API_URL}</Text>
-      <Text style={[styles.faint, { textAlign: 'center', marginTop: 4 }]}>
-        Le jeton de session vit dans le trousseau sécurisé de l&apos;appareil.
-      </Text>
-      <View style={{ height: 24 }} />
+        {wide ? (
+          <View style={cs.columns}>
+            <View style={cs.column}>{left.map((c, i) => wrap(c, `l${i}`))}</View>
+            <View style={cs.column}>{right.map((c, i) => wrap(c, `r${i}`))}</View>
+          </View>
+        ) : (
+          <View>{[compteCard, tagsCard, sourcesCard, devicesCard, historyCard].map((c, i) => wrap(c, `s${i}`))}</View>
+        )}
+
+        <Text style={[styles.faint, { textAlign: 'center', marginTop: 8 }]}>Serveur · {API_URL}</Text>
+        <Text style={[styles.faint, { textAlign: 'center', marginTop: 4 }]}>
+          Le jeton de session vit dans le trousseau sécurisé de l&apos;appareil.
+        </Text>
+        <View style={{ height: 24 }} />
+      </View>
     </ScrollView>
   );
 }
 
+/** Une clé stable sur un élément déjà construit, sans le reconstruire. */
+function wrap(node: ReactNode, key: string): ReactNode {
+  return <View key={key}>{node}</View>;
+}
+
+// --------------------------------------------------------- briques d'interface
+
+/** Une catégorie : un titre, un sous-titre facultatif, et sa carte de rangées. */
+function Section({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
+  return (
+    <View style={cs.section}>
+      <Text style={cs.sectionTitle}>{title}</Text>
+      {subtitle ? <Text style={cs.sectionSub}>{subtitle}</Text> : null}
+      <View style={cs.card}>{children}</View>
+    </View>
+  );
+}
+
+/** Un filet entre deux rangées d'une même carte. */
+function Divider() {
+  return <View style={cs.divider} />;
+}
+
+/** Une rangée-lien : icône, libellé, valeur facultative, chevron. */
+function LinkRow({
+  icon,
+  iconColor,
+  label,
+  value,
+  tone,
+  chevron = true,
+  onPress,
+}: {
+  icon?: keyof typeof Ionicons.glyphMap;
+  iconColor?: string;
+  label: string;
+  value?: string;
+  tone?: 'accent' | 'danger';
+  chevron?: boolean;
+  onPress: () => void;
+}) {
+  const labelColor =
+    tone === 'danger' ? colors.live : tone === 'accent' ? colors.text : colors.text;
+  return (
+    <Focusable onPress={onPress} style={({ pressed }) => [cs.row, pressed && { opacity: 0.7 }]}>
+      {icon ? (
+        <Ionicons
+          name={icon}
+          size={20}
+          color={iconColor ?? (tone === 'danger' ? colors.live : colors.dim)}
+        />
+      ) : null}
+      <Text style={[cs.rowLabel, { color: labelColor }]} numberOfLines={1}>
+        {label}
+      </Text>
+      <View style={{ flex: 1 }} />
+      {value ? <Text style={cs.rowValue}>{value}</Text> : null}
+      {chevron ? <Ionicons name="chevron-forward" size={18} color={colors.faint} /> : null}
+    </Focusable>
+  );
+}
+
 /**
- * Le gestionnaire d'étiquettes.
+ * Le gestionnaire d'étiquettes, posé dans la carte « Étiquettes ».
  *
  * On y crée ses rayons, on les supprime, et on ouvre chacun pour voir tout ce
  * qu'il range — films, séries et chaînes mêlés. Les étiquettes elles-mêmes se
- * posent sur les contenus, depuis leur fiche ou leur vignette ; ici c'est la
- * vue d'ensemble, le seul endroit qui réunit les trois types.
+ * posent sur les contenus, depuis leur fiche ou leur vignette.
  */
 function TagsManager() {
   const router = useRouter();
@@ -201,11 +330,6 @@ function TagsManager() {
 
   return (
     <View>
-      <Text style={styles.h2}>Étiquettes</Text>
-      <Text style={[styles.dim, { marginBottom: 12, marginTop: -4 }]}>
-        Vos rayons perso. Rangez-y films, séries et chaînes, puis ouvrez-en un pour tout revoir.
-      </Text>
-
       <View style={cs.tagCreate}>
         <TextInput
           style={[styles.input, { flex: 1 }]}
@@ -232,24 +356,27 @@ function TagsManager() {
       ) : !tags.data?.items.length ? (
         <Empty>Aucune étiquette. Créez-en une ci-dessus.</Empty>
       ) : (
-        tags.data.items.map((tag) => (
-          <Focusable
-            key={tag.id}
-            onPress={() => router.push(`/tag/${tag.id}?name=${encodeURIComponent(tag.name)}`)}
-            style={cs.tagRow}
-          >
-            <Ionicons name="pricetag" size={18} color={colors.accent} />
-            <Text style={cs.tagName} numberOfLines={1}>
-              {tag.name}
-            </Text>
-            <Text style={cs.tagCount}>
-              {tag.count} {tag.count > 1 ? 'éléments' : 'élément'}
-            </Text>
-            <Focusable onPress={() => remove(tag)} hitSlop={8} style={{ padding: 4 }}>
-              <Ionicons name="trash-outline" size={18} color={colors.faint} />
+        tags.data.items.map((tag, i) => (
+          <View key={tag.id}>
+            {i > 0 ? <Divider /> : null}
+            <Focusable
+              onPress={() => router.push(`/tag/${tag.id}?name=${encodeURIComponent(tag.name)}`)}
+              style={({ pressed }) => [cs.row, pressed && { opacity: 0.7 }]}
+            >
+              <Ionicons name="pricetag" size={18} color={colors.accent} />
+              <Text style={cs.rowLabel} numberOfLines={1}>
+                {tag.name}
+              </Text>
+              <View style={{ flex: 1 }} />
+              <Text style={cs.rowValue}>
+                {tag.count} {tag.count > 1 ? 'éléments' : 'élément'}
+              </Text>
+              <Focusable onPress={() => remove(tag)} hitSlop={8} style={{ padding: 4 }}>
+                <Ionicons name="trash-outline" size={18} color={colors.faint} />
+              </Focusable>
+              <Ionicons name="chevron-forward" size={18} color={colors.faint} />
             </Focusable>
-            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
-          </Focusable>
+          </View>
         ))
       )}
     </View>
@@ -257,13 +384,13 @@ function TagsManager() {
 }
 
 /**
- * Une source, avec son interrupteur.
+ * Une source et son interrupteur, en rangée d'une carte.
  *
  * L'interrupteur bascule aussitot a l'ecran, avant la reponse du serveur :
  * attendre un aller-retour donnerait l'impression qu'il ne repond pas. En cas
  * d'echec, on recharge — l'etat affiche redevient celui de la base.
  */
-function SourceCard({ provider, onChanged }: { provider: ProviderView; onChanged: () => void }) {
+function ProviderRow({ provider, onChanged }: { provider: ProviderView; onChanged: () => void }) {
   const [active, setActive] = useState(provider.isActive);
   const [busy, setBusy] = useState(false);
   const total = provider.catalogue.live + provider.catalogue.vod + provider.catalogue.series;
@@ -284,7 +411,7 @@ function SourceCard({ provider, onChanged }: { provider: ProviderView; onChanged
   };
 
   return (
-    <View style={cs.src}>
+    <View style={cs.provRow}>
       <View style={cs.srcTop}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}>
           <Text style={cs.srcName} numberOfLines={1}>
@@ -337,29 +464,56 @@ function maskHost(url: string): string {
 }
 
 const cs = {
-  head: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 14, marginBottom: 16 },
-  name: { color: colors.text, fontSize: 20, fontWeight: '800' as const, letterSpacing: -0.4 },
-  pairTv: {
+  content: { padding: 16, paddingBottom: 40 },
+  inner: { width: '100%' as const, maxWidth: 900, alignSelf: 'center' as const },
+  hero: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 14, marginBottom: 20 },
+  name: { color: colors.text, fontSize: 22, fontWeight: '800' as const, letterSpacing: -0.4 },
+
+  columns: { flexDirection: 'row' as const, gap: 14, alignItems: 'flex-start' as const },
+  column: { flex: 1, minWidth: 0 },
+
+  section: { marginBottom: 18 },
+  sectionTitle: {
+    color: colors.dim,
+    fontSize: 12,
+    fontWeight: '700' as const,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase' as const,
+    marginBottom: 7,
+    marginLeft: 2,
+  },
+  sectionSub: { color: colors.faint, fontSize: 12.5, marginBottom: 9, marginLeft: 2, lineHeight: 17 },
+  card: {
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 2,
+  },
+  divider: { height: 1, backgroundColor: colors.border, marginHorizontal: -14 },
+
+  row: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 11,
     paddingVertical: 14,
-    paddingHorizontal: 15,
-    borderRadius: radius.md,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accentLine,
-    marginBottom: 12,
   },
-  pairTvText: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '700' as const,
-    letterSpacing: -0.2,
+  rowLabel: { color: colors.text, fontSize: 15, fontWeight: '600' as const, letterSpacing: -0.2 },
+  rowValue: { color: colors.faint, fontSize: 13 },
+  deviceRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 11,
+    paddingVertical: 12,
   },
-  headActions: { flexDirection: 'row' as const, gap: 10, marginBottom: 24 },
-  tagCreate: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginBottom: 12 },
+
+  tagCreate: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    paddingVertical: 12,
+  },
   tagAdd: {
     width: 48,
     height: 48,
@@ -368,42 +522,13 @@ const cs = {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
-  tagRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 11,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    borderRadius: radius.md,
-    backgroundColor: colors.bgSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: 9,
-  },
-  tagName: { color: colors.text, fontSize: 15, fontWeight: '700' as const, letterSpacing: -0.2, maxWidth: '45%' as const },
-  tagCount: { flex: 1, color: colors.faint, fontSize: 12.5 },
-  action: {
-    paddingVertical: 12,
-    borderRadius: radius.md,
-    backgroundColor: colors.bgSoft,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center' as const,
-  },
-  actionText: { color: colors.text, fontSize: 14, fontWeight: '600' as const },
-  src: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    backgroundColor: colors.bgSoft,
-    padding: 15,
-    marginBottom: 11,
-  },
+
+  provRow: { paddingVertical: 13 },
   srcTop: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     justifyContent: 'space-between' as const,
-    marginBottom: 10,
+    marginBottom: 9,
   },
   srcName: { color: colors.text, fontSize: 16, fontWeight: '700' as const, letterSpacing: -0.2 },
   kind: {
@@ -417,10 +542,11 @@ const cs = {
     borderRadius: 6,
     letterSpacing: 0.4,
   },
-  host: { color: colors.faint, fontSize: 12, fontFamily: 'monospace', marginBottom: 12 },
+  host: { color: colors.faint, fontSize: 12, fontFamily: 'monospace', marginBottom: 11 },
   facts: { flexDirection: 'row' as const, gap: 22 },
   factK: { fontSize: 10, fontWeight: '700' as const, letterSpacing: 0.5, color: colors.faint },
   factV: { fontSize: 13, fontWeight: '600' as const, color: colors.text, marginTop: 2 },
+
   toggle: {
     width: 44,
     height: 26,
