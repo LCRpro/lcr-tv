@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Image,
   RefreshControl,
   ScrollView,
+  StyleSheet,
   Text,
   useWindowDimensions,
   View,
@@ -14,7 +15,7 @@ import { workTitle, type FavoriteEntry, type HomePayload, type Spotlight } from 
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import { colors, styles } from '../../lib/theme';
-import { Card, ChannelCard, ErrorNotice, Loading, RailTitle, Row } from '../../components/ui';
+import { Card, ErrorNotice, Loading, RailTitle, Row } from '../../components/ui';
 import { Focusable } from '../../components/Focusable';
 
 /**
@@ -32,7 +33,6 @@ import { Focusable } from '../../components/Focusable';
  */
 export default function HomeScreen() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
   const { data, error, loading, reload } = useAsync<HomePayload>(() => api.get('/api/home'), []);
 
   // Premier lancement : le catalogue se remplit, on suit sans que l'utilisateur
@@ -70,21 +70,11 @@ export default function HomeScreen() {
       });
   };
 
-  const arrivals = (data?.arrivals.movies ?? 0) + (data?.arrivals.series ?? 0);
-
-  /*
-   * « Ma liste », en trois rangees.
-   *
-   * Elle etait une rangee unique ou un logo de chaine en 16/9 voisinait avec
-   * des affiches en 2/3 : la rangee ondulait, et on ne savait pas ce qu'on
-   * cherchait. Trois groupes, dans l'ordre de la page : films, series,
-   * chaines.
-   */
-  const listGroups: Array<[string, FavoriteEntry[]]> = [
-    ['Films', (data?.favorites ?? []).filter((f) => f.target.kind === 'movie')],
-    ['Séries', (data?.favorites ?? []).filter((f) => f.target.kind === 'series')],
-    ['Chaînes', (data?.favorites ?? []).filter((f) => f.target.kind === 'live')],
-  ];
+  // L'accueil, dans l'ordre voulu : la mise en avant en diaporama, puis les
+  // favoris du profil (films, séries), les dernières nouveautés, et ses chaînes.
+  const favMovies = (data?.favorites ?? []).filter((f) => f.target.kind === 'movie');
+  const favSeries = (data?.favorites ?? []).filter((f) => f.target.kind === 'series');
+  const favLive = (data?.favorites ?? []).filter((f) => f.target.kind === 'live');
 
   return (
     <ScrollView
@@ -96,85 +86,50 @@ export default function HomeScreen() {
     >
       <ErrorNotice error={error} />
 
-      {/* 1. Le hero : la selection du jour, plein ecran. Le reste de la
-          selection suit en rail, pour ne pas la perdre. */}
+      {/* 1. La mise en avant, en diaporama : elle défile seule et se touche. */}
       {data?.spotlight.length ? (
-        <HomeHero
-          pick={data.spotlight[0]!}
-          onOpen={() => {
-            const p = data.spotlight[0]!;
-            router.push(p.kind === 'series' ? `/serie/${p.id}` : `/film/${p.id}`);
-          }}
+        <HeroSlider
+          picks={data.spotlight}
+          onOpen={(p) => router.push(p.kind === 'series' ? `/serie/${p.id}` : `/film/${p.id}`)}
         />
       ) : null}
 
-      {data && data.spotlight.length > 1 ? (
-        <Row title="Ce soir aussi">
-          {data.spotlight.slice(1).map((pick) => (
-            <SpotCard
-              key={`${pick.kind}-${pick.id}`}
-              pick={pick}
-              width={Math.min(340, width - 76)}
-              onPress={() =>
-                router.push(pick.kind === 'series' ? `/serie/${pick.id}` : `/film/${pick.id}`)
-              }
-            />
-          ))}
-        </Row>
-      ) : null}
-
-      {/* 2. Les reprises, juste en dessous : elles restent, sans ouvrir la page. */}
-      {data?.resume.length ? (
-        <Row title="Reprendre">
-          {data.resume.map((entry) => (
+      {/* 2. Les favoris du profil : ses films, puis ses séries. */}
+      {favMovies.length ? (
+        <Row title="Mes films">
+          {favMovies.map((fav) => (
             <Card
-              key={`${entry.itemType}-${entry.itemId}`}
-              title={entry.parentLabel ?? entry.label}
-              subtitle={entry.parentLabel ? entry.label : undefined}
-              imageUrl={entry.imageUrl}
-              progressRatio={entry.durationSec ? entry.positionSec / entry.durationSec : null}
-              onPress={() => {
-                if (entry.target.kind === 'series') {
-                  router.push(`/serie/${entry.target.id}`);
-                } else {
-                  router.push({
-                    pathname: '/player',
-                    params: {
-                      itemType: 'stream',
-                      itemId: String(entry.itemId),
-                      label: entry.label,
-                    },
-                  });
-                }
-              }}
+              key={`fm-${fav.itemId}`}
+              title={fav.label}
+              imageUrl={fav.imageUrl}
+              onPress={() => openFavorite(fav)}
             />
           ))}
         </Row>
       ) : null}
 
-      {/* 3. Ce qui est arrive depuis la derniere visite. */}
-      {data?.arrivals.since && arrivals > 0 ? (
-        <View style={styles.news}>
-          <View style={styles.newsN}>
-            <Text style={styles.newsNum}>{arrivals.toLocaleString('fr-FR')}</Text>
-            <Text style={styles.newsWord}>{arrivals > 1 ? 'nouveautés' : 'nouveauté'}</Text>
-          </View>
-          <View style={styles.newsBar} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.newsTitle}>Nouveau depuis votre dernière visite</Text>
-            <Text style={styles.newsSub}>
-              {`${data.arrivals.movies} films et ${data.arrivals.series} séries depuis le ${new Date(
-                data.arrivals.since,
-              ).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`}
-            </Text>
-          </View>
-        </View>
+      {favSeries.length ? (
+        <Row title="Mes séries">
+          {favSeries.map((fav) => (
+            <Card
+              key={`fs-${fav.itemId}`}
+              title={fav.label}
+              imageUrl={fav.imageUrl}
+              onPress={() => openFavorite(fav)}
+            />
+          ))}
+        </Row>
       ) : null}
 
+      {/* 3. Les dernières nouveautés — films, puis séries. */}
       {data?.recentMovies.length ? (
         <>
-          <SectionHeader title="Films" onSeeAll={() => router.push('/films')} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <SectionHeader title="Derniers films" onSeeAll={() => router.push('/films')} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingRight: 8 }}
+          >
             {data.recentMovies.map((m) => (
               <Card
                 key={m.id}
@@ -191,8 +146,12 @@ export default function HomeScreen() {
 
       {data?.recentSeries.length ? (
         <>
-          <SectionHeader title="Séries" onSeeAll={() => router.push('/series')} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <SectionHeader title="Dernières séries" onSeeAll={() => router.push('/series')} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingRight: 8 }}
+          >
             {data.recentSeries.map((s) => (
               <Card
                 key={s.id}
@@ -206,55 +165,23 @@ export default function HomeScreen() {
         </>
       ) : null}
 
-      {/* 4. Ma liste, par type. */}
-      {listGroups.map(([label, entries]) =>
-        entries.length ? (
-          <Row key={label} title={`Ma liste · ${label}`}>
-            {entries.map((fav) => (
-              <Card
-                key={`${fav.itemType}-${fav.itemId}`}
-                title={fav.label}
-                imageUrl={fav.imageUrl}
-                kind={fav.target.kind === 'live' ? 'channel' : 'work'}
-                wide={fav.target.kind === 'live'}
-                onPress={() => openFavorite(fav)}
-              />
-            ))}
-          </Row>
-        ) : null,
-      )}
-
-      {/* 5. Les rangees par categorie, telles que le serveur les compose. */}
-      {data?.rows.map((row) => (
-        <Row key={row.category.id} title={row.category.name}>
-          {row.items.map((item) =>
-            item.type === 'live' ? (
-              <ChannelCard
-                key={`live-${item.id}`}
-                channel={item}
-                onPress={() =>
-                  router.push({
-                    pathname: '/player',
-                    params: { itemType: 'stream', itemId: String(item.id), label: item.name },
-                  })
-                }
-              />
-            ) : (
-              <Card
-                key={`${item.type}-${item.id}`}
-                title={item.name}
-                imageUrl={item.type === 'series' ? item.coverUrl : item.iconUrl}
-                rating={item.rating}
-                onPress={() =>
-                  item.type === 'series'
-                    ? router.push(`/serie/${item.id}`)
-                    : router.push(`/film/${item.id}`)
-                }
-              />
-            ),
-          )}
+      {/* 4. Les chaînes TV mises en favori. */}
+      {favLive.length ? (
+        <Row title="Chaînes favorites">
+          {favLive.map((fav) => (
+            <Card
+              key={`fl-${fav.itemId}`}
+              title={fav.label}
+              imageUrl={fav.imageUrl}
+              kind="channel"
+              wide
+              onPress={() => openFavorite(fav)}
+            />
+          ))}
         </Row>
-      ))}
+      ) : null}
+
+      <View style={{ height: 16 }} />
     </ScrollView>
   );
 }
@@ -267,15 +194,60 @@ export default function HomeScreen() {
  * degrade, comme sur toutes les autres cartes depuis la refonte.
  */
 /**
- * Le hero — l'image large du jour, plein ecran, et ce qu'elle annonce dessus.
+ * Le diaporama de mise en avant.
  *
- * Il saigne hors du rembourrage de la page (marges negatives) pour toucher les
- * bords et le haut, juste sous la barre. Le degrade le fond dans le bleu de
- * nuit : le rail suivant parait ne du meme bloc. « Lecture » ouvre la fiche,
- * ou vit le vrai choix de version ; l'etoile range l'oeuvre dans la liste du
- * profil, du meme geste que partout.
+ * Plusieurs titres passent en grand, l'un après l'autre : le diaporama avance
+ * seul toutes les six secondes, et répond au doigt qui le fait glisser. Des
+ * points sous l'image disent où l'on en est. Il saigne hors du rembourrage de
+ * la page pour toucher les bords, et chaque vue se touche pour ouvrir la fiche.
  */
-function HomeHero({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
+function HeroSlider({ picks, onOpen }: { picks: Spotlight[]; onOpen: (p: Spotlight) => void }) {
+  const { width } = useWindowDimensions();
+  const [index, setIndex] = useState(0);
+  const ref = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (picks.length <= 1) return;
+    const timer = setInterval(() => {
+      setIndex((i) => {
+        const next = (i + 1) % picks.length;
+        ref.current?.scrollTo({ x: next * width, animated: true });
+        return next;
+      });
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [picks.length, width]);
+
+  return (
+    <View style={{ marginHorizontal: -16, marginTop: -16, marginBottom: 2 }}>
+      <ScrollView
+        ref={ref}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={(e) => {
+          const i = Math.round(e.nativeEvent.contentOffset.x / width);
+          if (i !== index) setIndex(i);
+        }}
+      >
+        {picks.map((p) => (
+          <View key={`${p.kind}-${p.id}`} style={{ width }}>
+            <HeroSlide pick={p} onOpen={() => onOpen(p)} />
+          </View>
+        ))}
+      </ScrollView>
+      {picks.length > 1 ? (
+        <View style={hs.dots}>
+          {picks.map((p, i) => (
+            <View key={`${p.kind}-${p.id}`} style={[hs.dot, i === index && hs.dotOn]} />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function HeroSlide({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
   const [listed, setListed] = useState(pick.isFavorite);
   const itemType = pick.kind === 'series' ? 'series' : 'stream';
 
@@ -291,7 +263,7 @@ function HomeHero({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
   const genre = pick.genre ? pick.genre.split(/[,•]/)[0]?.trim() : null;
 
   return (
-    <Focusable onPress={onOpen} style={{ marginHorizontal: -16, marginTop: -16, marginBottom: 14 }}>
+    <Focusable onPress={onOpen} style={{ width: '100%' }}>
       <View style={styles.heroWrap}>
         <Image source={{ uri: pick.backdropUrl }} style={styles.heroBg} resizeMode="cover" />
         <LinearGradient
@@ -353,48 +325,17 @@ function HomeHero({ pick, onOpen }: { pick: Spotlight; onOpen: () => void }) {
   );
 }
 
-function SpotCard({
-  pick,
-  width,
-  onPress,
-}: {
-  pick: Spotlight;
-  width: number;
-  onPress: () => void;
-}) {
-  const parts = [pick.genre, pick.year].filter(Boolean).join(' · ');
-  return (
-    <Focusable onPress={onPress} style={[styles.spot, { width }]}>
-      <View style={styles.spotMedia}>
-        <Image
-          source={{ uri: pick.backdropUrl }}
-          style={{ width: '100%', height: '100%' }}
-          resizeMode="cover"
-        />
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.92)']}
-          locations={[0, 0.45, 1]}
-          style={styles.spotVeil}
-          pointerEvents="none"
-        >
-          <Text style={styles.spotTitle} numberOfLines={2}>
-            {workTitle(pick.name)}
-          </Text>
-          <View style={styles.spotLine}>
-            {pick.rating != null && pick.rating > 0 ? (
-              <Text style={styles.spotRating}>{pick.rating.toFixed(1)}</Text>
-            ) : null}
-            {parts ? (
-              <Text style={styles.spotMeta} numberOfLines={1}>
-                {parts}
-              </Text>
-            ) : null}
-          </View>
-        </LinearGradient>
-      </View>
-    </Focusable>
-  );
-}
+const hs = StyleSheet.create({
+  dots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 11,
+    paddingBottom: 6,
+  },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.borderStrong },
+  dotOn: { backgroundColor: colors.accent, width: 18 },
+});
 
 function SectionHeader({ title, onSeeAll }: { title: string; onSeeAll: () => void }) {
   return (

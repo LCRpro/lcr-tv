@@ -84,13 +84,15 @@ export const meRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/favorites', async (req) => {
     const input = favoriteSchema.parse(req.body);
-    await addFavorite(ctx(req).user.id, input.itemType, input.itemId);
+    // Les favoris appartiennent au profil, pas au compte : c'est son `profileId`
+    // qu'il faut écrire, celui-là même que la lecture interroge.
+    await addFavorite(viewerOf(req).profileId, input.itemType, input.itemId);
     return { ok: true };
   });
 
   app.delete('/favorites/:itemType/:itemId', async (req) => {
     const { itemType, itemId } = favoriteParams.parse(req.params);
-    await removeFavorite(ctx(req).user.id, itemType, itemId);
+    await removeFavorite(viewerOf(req).profileId, itemType, itemId);
     return { ok: true };
   });
 
@@ -103,13 +105,13 @@ export const meRoutes: FastifyPluginAsync = async (app) => {
    */
   app.post('/favorites/categories', async (req) => {
     const { categoryId } = favoriteCategorySchema.parse(req.body);
-    await toggleFavoriteCategory(ctx(req).user.id, categoryId, true);
+    await toggleFavoriteCategory(viewerOf(req).profileId, categoryId, true);
     return { ok: true };
   });
 
   app.delete('/favorites/categories/:categoryId', async (req) => {
     const { categoryId } = categoryParams.parse(req.params);
-    await toggleFavoriteCategory(ctx(req).user.id, categoryId, false);
+    await toggleFavoriteCategory(viewerOf(req).profileId, categoryId, false);
     return { ok: true };
   });
 
