@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Text, useWindowDimensions, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { LiveChannel, Movie, SearchResults, SeriesSummary } from '@iptv/shared';
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
@@ -66,9 +66,11 @@ export default function TagScreen() {
 
   return (
     <View style={styles.screen}>
-      <Stack.Screen options={{ title: name ? name : 'Étiquette' }} />
+      <Text style={[styles.h1, { paddingHorizontal: 14, paddingTop: 14, marginBottom: 6 }]}>
+        {name ? name : 'Étiquette'}
+      </Text>
 
-      <View style={[styles.row, { paddingHorizontal: 12, paddingTop: 12, marginBottom: 8 }]}>
+      <View style={[styles.row, { paddingHorizontal: 12, marginBottom: 8 }]}>
         {(
           [
             ['movies', `Films (${counts.movies})`],

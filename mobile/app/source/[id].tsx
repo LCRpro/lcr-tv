@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, Switch, Text, TextInput, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { ProviderView } from '@iptv/shared';
 import { api, ApiError } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
@@ -121,7 +121,9 @@ export default function SourceEditor() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
-      <Stack.Screen options={{ title: isNew ? 'Ajouter une source' : 'Modifier la source' }} />
+      <Text style={[styles.h1, { marginBottom: 4 }]}>
+        {isNew ? 'Ajouter une source' : 'Modifier la source'}
+      </Text>
 
       <Text style={ss.label}>Type de source</Text>
       {isNew ? (

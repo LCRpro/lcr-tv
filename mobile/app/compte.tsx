@@ -12,7 +12,6 @@ import { colors, radius, styles } from '../lib/theme';
 import { Empty, ErrorNotice, Loading } from '../components/ui';
 import { Avatar } from '../components/ProfileAvatar';
 import { Focusable } from '../components/Focusable';
-import { BrandBar } from '../components/BrandBar';
 
 /**
  * Le compte — qui regarde, avec quoi, sur quels appareils.
@@ -325,9 +324,7 @@ export default function CompteScreen() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <BrandBar />
-      <ScrollView style={styles.screen} contentContainerStyle={cs.content}>
+    <ScrollView style={styles.screen} contentContainerStyle={cs.content}>
         <View style={cs.inner}>
           {profile ? (
             <View style={cs.hero}>
@@ -357,7 +354,6 @@ export default function CompteScreen() {
           <View style={{ height: 24 }} />
         </View>
       </ScrollView>
-    </View>
   );
 }
 

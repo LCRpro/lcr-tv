@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, styles } from '../lib/theme';
 import { useSession } from '../lib/session';
@@ -8,21 +8,30 @@ import { Avatar } from './ProfileAvatar';
 import { Focusable } from './Focusable';
 
 /**
- * La barre du haut — l'identité et les deux gestes de côté.
+ * La barre du haut — présente partout, l'identité et les gestes de côté.
  *
  * Elle ne porte plus les sections (parties au bas de l'écran, sous le pouce) :
- * elle dit où l'on est — LCR TV — et garde à portée les deux actions qui ne
- * sont pas des destinations qu'on laisse ouvertes, la recherche et le compte.
- * Le profil actif se reconnaît à sa vignette dans le coin. Sur téléviseur c'est
- * `TopNav` qui reprend le rôle, sections comprises.
+ * elle dit où l'on est — LCR TV — et garde à portée la recherche et le compte,
+ * le profil actif reconnaissable à sa vignette. Sur un écran empilé (une fiche,
+ * un réglage) une flèche de retour s'ajoute à gauche ; sur les onglets, non, car
+ * la barre du bas y suffit. Sur téléviseur c'est `TopNav` qui reprend le rôle.
  */
 export function BrandBar({ onSearch }: { onSearch?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const segments = useSegments();
   const { profile } = useSession();
+
+  // Retour visible dès qu'on n'est pas sur un onglet (donc sur un écran empilé).
+  const showBack = Boolean(segments[0]) && segments[0] !== '(tabs)';
 
   return (
     <View style={[styles.navBar, { paddingTop: insets.top + 8 }]}>
+      {showBack ? (
+        <Focusable onPress={() => router.back()} hitSlop={8} style={{ marginRight: -3 }}>
+          <Ionicons name="chevron-back" size={25} color={colors.text} />
+        </Focusable>
+      ) : null}
       <View style={styles.navLogo}>
         <Text style={styles.navLogoText}>L</Text>
       </View>
