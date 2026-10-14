@@ -69,3 +69,21 @@ export function Avatar({
     </LinearGradient>
   );
 }
+
+/** Le glyphe Ionicons d'une vignette — pour l'afficher à plat, sans aplat de couleur. */
+export function avatarGlyph(avatar: ProfileAvatar): keyof typeof Ionicons.glyphMap {
+  return ICONS[avatar] ?? 'water';
+}
+
+/** Une pastille de couleur : le dégradé de la teinte, en rond — pour le sélecteur. */
+export function ColorSwatch({ color, size = 34 }: { color: ProfileColor; size?: number }) {
+  const pair = TINTS[color] ?? TINTS.blue;
+  return (
+    <LinearGradient
+      colors={pair}
+      start={{ x: 0.15, y: 0 }}
+      end={{ x: 0.85, y: 1 }}
+      style={{ width: size, height: size, borderRadius: size / 2 }}
+    />
+  );
+}

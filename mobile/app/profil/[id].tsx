@@ -7,11 +7,12 @@ import {
   type ProfileAvatar,
   type ProfileColor,
 } from '@iptv/shared';
+import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../lib/api';
 import { useSession } from '../../lib/session';
 import { confirmAction } from '../../lib/confirm';
 import { colors, radius, styles } from '../../lib/theme';
-import { Avatar } from '../../components/ProfileAvatar';
+import { Avatar, ColorSwatch, avatarGlyph } from '../../components/ProfileAvatar';
 import { Focusable } from '../../components/Focusable';
 
 /**
@@ -75,11 +76,12 @@ export default function ProfileEditor() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
+    <ScrollView style={styles.screen} contentContainerStyle={{ padding: 20, paddingBottom: 96 }}>
       <Stack.Screen options={{ title: isNew ? 'Nouveau profil' : 'Modifier le profil' }} />
 
+      {/* L'aperçu : l'avatar tel qu'il sera, et le nom en direct. */}
       <View style={ps.preview}>
-        <Avatar avatar={avatar} color={color} size={96} />
+        <Avatar avatar={avatar} color={color} size={88} />
         <Text style={ps.previewName} numberOfLines={1}>
           {name.trim() || 'Nouveau profil'}
         </Text>
@@ -93,40 +95,59 @@ export default function ProfileEditor() {
 
       <Text style={ps.label}>Nom</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { fontFamily: 'Inter' }]}
         placeholder="Prénom"
-        placeholderTextColor={colors.dim}
+        placeholderTextColor={colors.faint}
         value={name}
         onChangeText={setName}
         maxLength={24}
         autoCapitalize="words"
       />
 
+      {/* Vignette : des tuiles neutres ; seule la sélection prend l'accent. */}
       <Text style={ps.label}>Vignette</Text>
       <View style={ps.grid}>
-        {PROFILE_AVATARS.map((a) => (
-          <Focusable
-            key={a}
-            onPress={() => setAvatar(a)}
-            style={[ps.option, avatar === a && ps.optionOn]}
-          >
-            <Avatar avatar={a} color={color} size={52} />
-          </Focusable>
-        ))}
+        {PROFILE_AVATARS.map((a) => {
+          const on = avatar === a;
+          return (
+            <Focusable
+              key={a}
+              onPress={() => setAvatar(a)}
+              style={[ps.tile, on && ps.tileOn]}
+            >
+              <Ionicons
+                name={avatarGlyph(a)}
+                size={24}
+                color={on ? colors.accent : colors.dim}
+              />
+            </Focusable>
+          );
+        })}
       </View>
 
+      {/* Couleur : des pastilles rondes ; la sélection porte un anneau net. */}
       <Text style={ps.label}>Couleur</Text>
-      <View style={ps.grid}>
-        {PROFILE_COLORS.map((c) => (
-          <Focusable
-            key={c}
-            onPress={() => setColor(c)}
-            style={[ps.option, color === c && ps.optionOn]}
-          >
-            <Avatar avatar={avatar} color={c} size={44} />
-          </Focusable>
-        ))}
+      <View style={ps.swatches}>
+        {PROFILE_COLORS.map((c) => {
+          const on = color === c;
+          return (
+            <Focusable
+              key={c}
+              onPress={() => setColor(c)}
+              style={[ps.swatchRing, on && ps.swatchRingOn]}
+            >
+              <ColorSwatch color={c} size={30} />
+              {on ? (
+                <View style={ps.swatchCheck}>
+                  <Ionicons name="checkmark" size={13} color={colors.onAccent} />
+                </View>
+              ) : null}
+            </Focusable>
+          );
+        })}
       </View>
+
+      <View style={ps.divider} />
 
       <View style={ps.kidRow}>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -163,41 +184,98 @@ export default function ProfileEditor() {
 }
 
 const ps = {
-  preview: { alignItems: 'center' as const, gap: 12, marginBottom: 20 },
-  previewName: { color: colors.text, fontSize: 20, fontWeight: '800' as const, letterSpacing: -0.4 },
+  preview: { alignItems: 'center' as const, gap: 12, marginTop: 4, marginBottom: 12 },
+  previewName: {
+    color: colors.text,
+    fontFamily: 'Outfit' as const,
+    fontSize: 20,
+    fontWeight: '700' as const,
+    letterSpacing: -0.4,
+  },
   label: {
     color: colors.dim,
-    fontSize: 12,
+    fontFamily: 'Inter' as const,
+    fontSize: 11.5,
     fontWeight: '700' as const,
     letterSpacing: 0.6,
     textTransform: 'uppercase' as const,
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 22,
+    marginBottom: 11,
   },
-  grid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 12 },
-  option: {
-    padding: 4,
-    borderRadius: radius.pill,
+
+  // Les vignettes : tuiles neutres, l'icône en sourdine ; la sélection s'allume.
+  grid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 10 },
+  tile: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  tileOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+
+  // Les couleurs : pastilles rondes, anneau net sur la sélection, sans halo.
+  swatches: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 14 },
+  swatchRing: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: 'transparent',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
-  optionOn: { borderColor: colors.accent },
+  swatchRingOn: { borderColor: colors.text },
+  swatchCheck: {
+    position: 'absolute' as const,
+    right: -1,
+    bottom: -1,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.accent,
+    borderWidth: 2,
+    borderColor: colors.bg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+
+  divider: { height: 1, backgroundColor: colors.border, marginTop: 24 },
   kidRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 12,
-    marginTop: 24,
-    paddingVertical: 8,
+    marginTop: 18,
+    paddingVertical: 6,
   },
-  kidTitle: { color: colors.text, fontSize: 15, fontWeight: '700' as const, letterSpacing: -0.2 },
+  kidTitle: {
+    color: colors.text,
+    fontFamily: 'Outfit' as const,
+    fontSize: 15,
+    fontWeight: '700' as const,
+    letterSpacing: -0.2,
+  },
   save: {
     backgroundColor: colors.accent,
     borderRadius: radius.md,
     paddingVertical: 15,
     alignItems: 'center' as const,
-    marginTop: 28,
+    marginTop: 26,
   },
-  saveText: { color: colors.onAccent, fontSize: 15, fontWeight: '800' as const },
+  saveText: {
+    color: colors.onAccent,
+    fontFamily: 'Outfit' as const,
+    fontSize: 15,
+    fontWeight: '700' as const,
+  },
   delete: { paddingVertical: 14, alignItems: 'center' as const, marginTop: 8 },
-  deleteText: { color: colors.live, fontSize: 14, fontWeight: '700' as const },
+  deleteText: {
+    color: colors.live,
+    fontFamily: 'Outfit' as const,
+    fontSize: 14,
+    fontWeight: '700' as const,
+  },
 };
