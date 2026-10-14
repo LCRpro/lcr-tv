@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import {
   categoryIcon,
   languageRank,
@@ -56,6 +57,7 @@ export function CatalogList({
   cardWidth = 130,
 }: Props) {
   const { width } = useWindowDimensions();
+  const router = useRouter();
   const qa = useQuickActions();
   // Sur TV on montre **moins** d'elements, pas plus : parcourir vingt colonnes
   // a la telecommande est interminable.
@@ -310,7 +312,31 @@ export function CatalogList({
       {first.loading && items.length === 0 ? (
         <Loading />
       ) : items.length === 0 ? (
-        <Empty>Aucun résultat pour ce filtre.</Empty>
+        // Sans filtre actif, une liste vide n'est pas « aucun résultat » : c'est
+        // le catalogue lui-même qui est vide (sync jamais faite, ou en échec).
+        // On le dit, et on renvoie vers le compte pour (re)synchroniser.
+        categoryId === null && tagId === null ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 10 }}>
+            <Ionicons name="cloud-offline-outline" size={36} color={colors.dim} />
+            <Text style={[styles.h2, { textAlign: 'center' }]}>Catalogue vide</Text>
+            <Text style={[styles.dim, { textAlign: 'center', lineHeight: 20 }]}>
+              Aucun contenu synchronisé pour l’instant. Lancez une synchronisation depuis vos sources,
+              ou vérifiez les filtres de langue de ce profil.
+            </Text>
+            <Focusable
+              onPress={() => router.push('/compte')}
+              style={({ pressed }) => [
+                { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, backgroundColor: colors.accent },
+                pressed && { opacity: 0.7 },
+              ]}
+            >
+              <Ionicons name="settings-outline" size={16} color={colors.onAccent} />
+              <Text style={{ color: colors.onAccent, fontFamily: 'Outfit', fontSize: 15, fontWeight: '700' }}>Gérer mes sources</Text>
+            </Focusable>
+          </View>
+        ) : (
+          <Empty>Aucun résultat pour ce filtre.</Empty>
+        )
       ) : (
         <FlatList
           data={gridData}

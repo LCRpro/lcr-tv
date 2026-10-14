@@ -121,6 +121,55 @@ export default function HomeScreen() {
   const favSeries = (data?.favorites ?? []).filter((f) => f.target.kind === 'series');
   const favLive = (data?.favorites ?? []).filter((f) => f.target.kind === 'live');
 
+  // Rien à montrer : le catalogue répond, mais aucune rangée n'a de quoi
+  // s'afficher. On ne laisse jamais l'accueil vide et muet — on explique, et on
+  // donne une sortie (réessayer, ou aller gérer les sources et les langues).
+  const nothing =
+    !data?.spotlight.length &&
+    !favMovies.length &&
+    !favSeries.length &&
+    !data?.recentMovies.length &&
+    !data?.recentSeries.length &&
+    !favLive.length;
+
+  if (!error && nothing) {
+    const retry = () => {
+      void api.post('/api/providers/sync').then(reload).catch(() => reload());
+    };
+    return (
+      <View style={[styles.screen, { justifyContent: 'center', padding: 24, gap: 10 }]}>
+        <Ionicons name="sparkles-outline" size={40} color={colors.dim} style={{ alignSelf: 'center' }} />
+        <Text style={[styles.h1, { textAlign: 'center', marginBottom: 0 }]}>Rien à afficher pour l’instant</Text>
+        <Text style={[styles.dim, { textAlign: 'center', lineHeight: 20 }]}>
+          Votre catalogue est vide, ou les filtres de langue de ce profil ne laissent passer aucun titre.
+          Relancez une synchronisation, ou ajustez vos sources et vos langues depuis le compte.
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 10, alignSelf: 'center', marginTop: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Focusable
+            onPress={retry}
+            style={({ pressed }) => [
+              { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, backgroundColor: colors.accent },
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Ionicons name="sync" size={16} color={colors.onAccent} />
+            <Text style={{ color: colors.onAccent, fontFamily: 'Outfit', fontSize: 15, fontWeight: '700' }}>Réessayer</Text>
+          </Focusable>
+          <Focusable
+            onPress={() => router.push('/compte')}
+            style={({ pressed }) => [
+              { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border },
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Ionicons name="settings-outline" size={16} color={colors.text} />
+            <Text style={{ color: colors.text, fontFamily: 'Outfit', fontSize: 15, fontWeight: '700' }}>Gérer mes sources</Text>
+          </Focusable>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.screen}
