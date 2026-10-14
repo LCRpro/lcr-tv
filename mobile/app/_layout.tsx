@@ -157,7 +157,11 @@ export default function RootLayout() {
     const base = document.createElement('style');
     base.id = 'lcrtv-font-base';
     base.textContent =
-      ":root,body,#root{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}";
+      ":root,body,#root{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}" +
+      // Le navigateur dessine un liseré blanc/bleu autour d'un champ au focus :
+      // trop voyant pour la charte. On le retire ; l'indication de focus se fait
+      // discrètement via la bordure du champ (voir les composants concernés).
+      'input:focus,input:focus-visible,textarea:focus,[contenteditable]:focus{outline:none;box-shadow:none;}';
     document.head.appendChild(base);
   }, []);
 

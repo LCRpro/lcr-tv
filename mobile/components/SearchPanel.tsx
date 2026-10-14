@@ -25,6 +25,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
   const { width } = useWindowDimensions();
   const [term, setTerm] = useState('');
   const [tab, setTab] = useState<Tab>('movies');
+  const [focused, setFocused] = useState(false);
   const debounced = useDebounced(term);
 
   const { data, error, loading } = useAsync<SearchResults | null>(
@@ -74,8 +75,8 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
   return (
     <View style={[styles.screen, { flex: 1 }]}>
       <View style={sp.head}>
-        <View style={sp.field}>
-          <Ionicons name="search" size={18} color={colors.dim} />
+        <View style={[sp.field, focused && sp.fieldOn]}>
+          <Ionicons name="search" size={18} color={focused ? colors.accent : colors.dim} />
           <TextInput
             style={sp.input}
             placeholder="Films, séries, chaînes…"
@@ -85,6 +86,8 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
             autoFocus
             value={term}
             onChangeText={setTerm}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             returnKeyType="search"
           />
           {term ? (
@@ -209,6 +212,8 @@ const sp = {
     borderColor: colors.border,
     borderRadius: radius.md,
   },
+  // Focus discret : la bordure prend l'accent, sans halo ni liseré voyant.
+  fieldOn: { borderColor: colors.accent },
   input: { flex: 1, color: colors.text, fontFamily: 'Inter', fontSize: 15 },
   cancel: { paddingHorizontal: 2, paddingVertical: 6 },
   cancelText: { color: colors.accent, fontFamily: 'Outfit', fontSize: 14, fontWeight: '600' as const },
