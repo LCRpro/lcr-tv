@@ -19,6 +19,14 @@ interface SessionState {
   /** Repose « qui regarde ? » : on quitte le profil sans se deconnecter. */
   leaveProfile: () => Promise<void>;
   loading: boolean;
+  /**
+   * Le catalogue du profil qu'on vient de choisir est en cours de chargement.
+   *
+   * Vrai depuis l'instant du choix jusqu'à ce que l'accueil ait de quoi
+   * s'afficher : le Gate montre alors l'écran de marque, pour ne pas révéler
+   * une grille vide qui se remplit ensuite par à-coups.
+   */
+  warming: boolean;
   login: (email: string, password: string) => Promise<void>;
   /** Crée un compte et ouvre la session dans la foulée (transport bearer). */
   signup: (email: string, password: string, profileName?: string, code?: string) => Promise<void>;
@@ -33,6 +41,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [warming, setWarming] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -101,7 +110,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   );
 
   const selectProfile = useCallback(async (id: number) => {
-    setProfile(await api.post<Profile>(`/api/profiles/${id}/select`));
+    setWarming(true);
+    try {
+      setProfile(await api.post<Profile>(`/api/profiles/${id}/select`));
+      // On tire l'accueil tout de suite : au retour, l'écran de marque cède la
+      // place à un contenu déjà chargé, et non à un squelette qui se remplit.
+      // Le cache mémo du backend fait que la requête de l'accueil qui suivra
+      // répond dans la foulée. Une erreur ici n'est pas bloquante — l'accueil
+      // la reprendra à son compte.
+      await api.get('/api/home').catch(() => {});
+    } finally {
+      setWarming(false);
+    }
   }, []);
 
   const leaveProfile = useCallback(async () => {
@@ -127,8 +147,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, profiles, loading, login, signup, logout, refresh, selectProfile, leaveProfile }),
-    [user, profile, profiles, loading, login, signup, logout, refresh, selectProfile, leaveProfile],
+    () => ({ user, profile, profiles, loading, warming, login, signup, logout, refresh, selectProfile, leaveProfile }),
+    [user, profile, profiles, loading, warming, login, signup, logout, refresh, selectProfile, leaveProfile],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

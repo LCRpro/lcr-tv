@@ -15,8 +15,9 @@ import { workTitle, type FavoriteEntry, type HomePayload, type Spotlight } from 
 import { api } from '../../lib/api';
 import { useAsync } from '../../lib/hooks';
 import { colors, styles } from '../../lib/theme';
-import { Card, ErrorNotice, Loading, RailTitle, Row } from '../../components/ui';
+import { Card, ErrorNotice, RailTitle, Row } from '../../components/ui';
 import { Focusable } from '../../components/Focusable';
+import { BrandSplash } from '../../components/BrandSplash';
 
 /**
  * L'accueil.
@@ -43,7 +44,7 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, [data?.catalogEmpty, data?.sync?.running, reload]);
 
-  if (loading && !data) return <Loading />;
+  if (loading && !data) return <BrandSplash />;
 
   if (data?.catalogEmpty) {
     return (

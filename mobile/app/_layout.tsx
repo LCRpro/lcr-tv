@@ -13,9 +13,10 @@ import { Loading } from '../components/ui';
 import { BrandBar } from '../components/BrandBar';
 import { AppBottomBar } from '../components/AppBottomBar';
 import { SearchPanel } from '../components/SearchPanel';
+import { BrandSplash } from '../components/BrandSplash';
 
 function Gate() {
-  const { user, profile, loading } = useSession();
+  const { user, profile, loading, warming } = useSession();
   const segments = useSegments();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -61,6 +62,12 @@ function Gate() {
         <Loading />
       </View>
     );
+  }
+
+  // On vient de choisir un profil : l'écran de marque tient la place le temps
+  // que son catalogue descende, avant de révéler l'accueil déjà chargé.
+  if (warming && !IS_TV) {
+    return <BrandSplash />;
   }
 
   /*
