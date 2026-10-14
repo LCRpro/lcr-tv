@@ -1,7 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import type { DeviceSession, HistoryEntry, Profile, ProviderView, Tag } from '@iptv/shared';
 import { api, API_URL } from '../lib/api';
 import { useAsync } from '../lib/hooks';
@@ -12,7 +12,6 @@ import { Empty, ErrorNotice, Loading } from '../components/ui';
 import { Avatar } from '../components/ProfileAvatar';
 import { Focusable } from '../components/Focusable';
 import { BrandBar } from '../components/BrandBar';
-import { AppBottomBar } from '../components/AppBottomBar';
 
 /**
  * Le compte — qui regarde, avec quoi, sur quels appareils.
@@ -30,6 +29,15 @@ export default function CompteScreen() {
   const providers = useAsync<{ items: ProviderView[] }>(() => api.get('/api/providers'), []);
   const history = useAsync<{ items: HistoryEntry[] }>(() => api.get('/api/me/history?limit=20'), []);
   const sessions = useAsync<{ items: DeviceSession[] }>(() => api.get('/api/me/sessions'), []);
+
+  // Au retour sur le compte — après avoir ajouté une source, par exemple — on
+  // relit la liste pour qu'elle reflète ce qui vient de changer.
+  useFocusEffect(
+    useCallback(() => {
+      providers.reload();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
 
   const switchProfile = async () => {
     await leaveProfile();
@@ -120,7 +128,7 @@ export default function CompteScreen() {
       {providers.loading && !providers.data ? (
         <Loading />
       ) : !providers.data?.items.length ? (
-        <Empty>Aucun connecteur. Ajoutez-en un depuis l&apos;interface web.</Empty>
+        <Empty>Aucune source. Ajoutez-en une ci-dessous.</Empty>
       ) : (
         providers.data.items.map((p, i) => (
           <View key={p.id}>
@@ -129,6 +137,14 @@ export default function CompteScreen() {
           </View>
         ))
       )}
+      <Divider />
+      <LinkRow
+        icon="add-circle-outline"
+        iconColor={colors.accent}
+        tone="accent"
+        label="Ajouter une source"
+        onPress={() => router.push('/source/new')}
+      />
     </Section>
   );
 
@@ -267,7 +283,6 @@ export default function CompteScreen() {
           <View style={{ height: 24 }} />
         </View>
       </ScrollView>
-      <AppBottomBar />
     </View>
   );
 }

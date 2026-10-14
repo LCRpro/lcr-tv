@@ -5,7 +5,6 @@ import { colors } from '../../lib/theme';
 import { IS_TV } from '../../lib/tv';
 import { TopNav } from '../../components/TopNav';
 import { BrandBar } from '../../components/BrandBar';
-import { AppBottomBar } from '../../components/AppBottomBar';
 import { SearchPanel } from '../../components/SearchPanel';
 
 /**
@@ -48,8 +47,10 @@ export default function TabsLayout() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <BrandBar onSearch={() => setSearchOpen(true)} />
       <View style={{ flex: 1 }}>
+        {/* La barre du bas est globale (voir le layout racine) : ici on
+            n'en met pas, pour ne pas la doubler. */}
         <Tabs
-          tabBar={() => <AppBottomBar />}
+          tabBar={() => null}
           screenOptions={{
             headerShown: false,
             sceneStyle: { backgroundColor: colors.bg },
