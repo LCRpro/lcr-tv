@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useFonts } from 'expo-font';
+import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { Outfit_600SemiBold, Outfit_700Bold, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import { SessionProvider, useSession } from '../lib/session';
 import { colors } from '../lib/theme';
 import { IS_TV } from '../lib/tv';
@@ -121,6 +124,57 @@ function Gate() {
 }
 
 export default function RootLayout() {
+  /*
+   * Les polices de la charte.
+   *
+   * Sur le web, on injecte la feuille Google Fonts (toutes les graisses d'Outfit
+   * et d'Inter), et `useFonts({})` est prêt d'emblée : on laisse le navigateur
+   * choisir la graisse exacte depuis `fontWeight`, sans fausse graisse. Sur
+   * mobile natif, `expo-font` fournit Outfit et Inter sous les mêmes noms de
+   * famille, et l'app attend qu'elles soient prêtes avant de s'afficher, pour
+   * ne pas montrer un premier rendu dans la police système.
+   */
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    if (document.getElementById('lcrtv-fonts')) return;
+    const link = document.createElement('link');
+    link.id = 'lcrtv-fonts';
+    link.rel = 'stylesheet';
+    link.href =
+      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap';
+    document.head.appendChild(link);
+    // Inter devient la famille héritée par défaut : tout texte sans police
+    // explicite la prend (react-native-web laisse hériter la cascade CSS), les
+    // titres et boutons demandant Outfit à la main. `defaultProps` ne marche
+    // plus sous React 19, d'où cette règle au lieu d'un défaut sur <Text>.
+    const base = document.createElement('style');
+    base.id = 'lcrtv-font-base';
+    base.textContent =
+      ":root,body,#root{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}";
+    document.head.appendChild(base);
+  }, []);
+
+  const [fontsReady] = useFonts(
+    Platform.OS === 'web'
+      ? {}
+      : {
+          Inter: Inter_400Regular,
+          'Inter-Semi': Inter_600SemiBold,
+          'Inter-Bold': Inter_700Bold,
+          Outfit: Outfit_700Bold,
+          'Outfit-Semi': Outfit_600SemiBold,
+          'Outfit-Black': Outfit_800ExtraBold,
+        },
+  );
+
+  if (!fontsReady) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg, justifyContent: 'center' }}>
+        <Loading />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />

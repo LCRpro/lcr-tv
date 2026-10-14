@@ -392,7 +392,13 @@ const rail = {
   },
   left: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 9, flex: 1, minWidth: 0 },
   bar: { width: 3, height: 18, borderRadius: 2, backgroundColor: colors.accent },
-  title: { color: colors.text, fontSize: 17, fontWeight: '800' as const, letterSpacing: -0.3 },
+  title: {
+    color: colors.text,
+    fontFamily: 'Outfit',
+    fontSize: 17,
+    fontWeight: '800' as const,
+    letterSpacing: -0.3,
+  },
 };
 
 export function Row({ title, children }: { title: string; children: ReactNode }) {

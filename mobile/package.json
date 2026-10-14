@@ -12,6 +12,8 @@
     "build:tv": "npx eas-cli build --platform android --profile preview"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/outfit": "^0.4.3",
     "@expo/metro-runtime": "~57.0.16",
     "@expo/vector-icons": "^15.1.1",
     "@iptv/shared": "workspace:*",

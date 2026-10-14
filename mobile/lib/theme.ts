@@ -44,6 +44,7 @@ export const styles = StyleSheet.create({
   },
   h1: {
     color: colors.text,
+    fontFamily: 'Outfit',
     fontSize: 24,
     fontWeight: '800',
     letterSpacing: -0.4,
@@ -51,6 +52,7 @@ export const styles = StyleSheet.create({
   },
   h2: {
     color: colors.text,
+    fontFamily: 'Outfit',
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: -0.2,
@@ -59,15 +61,18 @@ export const styles = StyleSheet.create({
   },
   text: {
     color: colors.text,
+    fontFamily: 'Inter',
     fontSize: 15,
   },
   dim: {
     color: colors.dim,
+    fontFamily: 'Inter',
     fontSize: 13,
     lineHeight: 19,
   },
   faint: {
     color: colors.faint,
+    fontFamily: 'Inter',
     fontSize: 11.5,
   },
   input: {
@@ -100,6 +105,7 @@ export const styles = StyleSheet.create({
   },
   buttonText: {
     color: colors.text,
+    fontFamily: 'Outfit',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -608,6 +614,7 @@ export const styles = StyleSheet.create({
   },
   navLogoText: {
     color: colors.onAccent,
+    fontFamily: 'Outfit',
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: -0.5,
@@ -619,6 +626,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   navTab: {
+    fontFamily: 'Outfit',
     fontSize: 15,
     fontWeight: '600',
     color: colors.faint,

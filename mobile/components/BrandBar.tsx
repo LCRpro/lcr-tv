@@ -4,6 +4,7 @@ import { useRouter, useSegments } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, styles } from '../lib/theme';
 import { Focusable } from './Focusable';
+import { BrandMark } from './BrandMark';
 
 /**
  * La barre du haut — présente partout, l'identité et les gestes de côté.
@@ -29,9 +30,7 @@ export function BrandBar({ onSearch }: { onSearch?: () => void }) {
           <Ionicons name="chevron-back" size={25} color={colors.text} />
         </Focusable>
       ) : null}
-      <View style={styles.navLogo}>
-        <Text style={styles.navLogoText}>L</Text>
-      </View>
+      <BrandMark size={30} />
       <Text style={bs.wordmark}>LCR TV</Text>
 
       <View style={{ flex: 1 }} />
@@ -54,9 +53,10 @@ export function BrandBar({ onSearch }: { onSearch?: () => void }) {
 const bs = StyleSheet.create({
   wordmark: {
     color: colors.text,
+    fontFamily: 'Outfit',
     fontSize: 17,
     fontWeight: '800',
-    letterSpacing: -0.3,
-    marginLeft: 2,
+    letterSpacing: 0.2,
+    marginLeft: 8,
   },
 });

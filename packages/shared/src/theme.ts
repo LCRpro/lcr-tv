@@ -85,14 +85,14 @@ export const LIGHT: Palette = {
  * Site web, application mobile et téléviseur la partagent : un seul endroit
  * décide des couleurs du mode sombre. La règle ne change pas — l'affiche porte
  * la teinte, la coquille porte le contraste — mais ici la coquille n'est plus
- * neutre : le fond tire vers un bleu de nuit, et l'accent est un périvenche
- * électrique. L'accent devient donc une vraie teinte (le bouton de lecture, la
- * puce active, l'anneau de focus), là où un sombre neutre n'inversait que
- * l'encre et le papier. Le rouge reste le direct, le laiton reste la note : ces
- * deux-là ne bougent pas. Le web garde en plus un thème clair, `LIGHT`.
+ * neutre : le fond tire vers un bleu de nuit, et l'accent est le bleu azur du
+ * logo. L'accent devient donc une vraie teinte (le bouton de lecture, la puce
+ * active, l'anneau de focus), là où un sombre neutre n'inversait que l'encre et
+ * le papier. Le rouge reste le direct, le laiton reste la note : ces deux-là ne
+ * bougent pas. Le web garde en plus un thème clair, `LIGHT`.
  *
- * `onAccent` est sombre, parce que le périvenche est clair : une encre foncée
- * s'y lit mieux qu'un blanc qui tomberait sous le seuil.
+ * `onAccent` est sombre, parce que l'azur est clair : une encre foncée s'y lit
+ * mieux qu'un blanc qui tomberait sous le seuil.
  */
 export const INDIGO: Palette = {
   bg: '#0d0e16',
@@ -104,10 +104,10 @@ export const INDIGO: Palette = {
   text: '#eef0f7',
   dim: '#9aa0b5',
   faint: '#686d84',
-  accent: '#8b93ff',
-  accentHover: '#a7adff',
-  accentSoft: 'rgba(139, 147, 255, 0.14)',
-  accentLine: 'rgba(139, 147, 255, 0.34)',
+  accent: '#4f82ff',
+  accentHover: '#6f99ff',
+  accentSoft: 'rgba(79, 130, 255, 0.16)',
+  accentLine: 'rgba(79, 130, 255, 0.36)',
   onAccent: '#0d0e16',
   live: '#ff5a5f',
   liveSoft: 'rgba(255, 90, 95, 0.16)',
@@ -146,6 +146,16 @@ export const ON_ART = {
  * valeur par valeur, jusqu'à ce que ça tombe juste. Huit pas suffisent, et deux
  * éléments réglés séparément retombent alors d'accord sans qu'on s'en occupe.
  */
+/**
+ * Le dégradé du logo — cyan, bleu, violet — la signature de la marque.
+ *
+ * L'accent plat (`accent`) en est le cœur bleu, pour tout ce qui se répète ;
+ * le dégradé lui-même ne sert qu'aux pièces qui portent l'identité : le logo,
+ * le chargement, le grand bouton de lecture. On le garde ici pour que les deux
+ * clients tirent leurs stops du même endroit.
+ */
+export const BRAND_GRADIENT = ['#19b2f0', '#2f6bf2', '#7a35ec'] as const;
+
 export const SPACE = [4, 8, 12, 16, 24, 32, 48, 64] as const;
 
 export const RADIUS = { sm: 6, md: 10, lg: 14, xl: 20, pill: 999 } as const;
