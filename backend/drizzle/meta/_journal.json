@@ -169,6 +169,13 @@
       "when": 1791971875513,
       "tag": "0023_profile_source_mutes",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791994347724,
+      "tag": "0024_profile_lang_filters",
+      "breakpoints": true
     }
   ]
 }

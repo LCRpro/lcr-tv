@@ -5,12 +5,15 @@ import {
   AVATAR_GROUPS,
   PROFILE_COLORS,
   isPhotoAvatar,
+  languageTag,
   type AvatarId,
+  type CatalogLanguage,
   type ProfileAvatar,
   type ProfileColor,
 } from '@iptv/shared';
 import { Ionicons } from '@expo/vector-icons';
 import { api, ApiError } from '../../lib/api';
+import { useAsync } from '../../lib/hooks';
 import { useSession } from '../../lib/session';
 import { confirmAction } from '../../lib/confirm';
 import { colors, radius, styles } from '../../lib/theme';
@@ -45,6 +48,48 @@ export default function ProfileEditor() {
   });
   const currentGroup = AVATAR_GROUPS.find((g) => g.key === group) ?? AVATAR_GROUPS[0]!;
   const [isKid, setIsKid] = useState(existing?.isKid ?? false);
+
+  // Les filtres de langue, un par type. Vides = aucun filtre (tout remonte).
+  const [langFilters, setLangFilters] = useState<{ vod: string[]; series: string[]; live: string[] }>(
+    () => ({
+      vod: existing?.languageFilters?.vod ?? [],
+      series: existing?.languageFilters?.series ?? [],
+      live: existing?.languageFilters?.live ?? [],
+    }),
+  );
+  const langs = useAsync<{ items: CatalogLanguage[] }>(() => api.get('/api/languages'), []);
+  // Les langues du catalogue si le fournisseur en a assez ; sinon un socle
+  // courant, pour que le réglage reste utilisable même sur un petit catalogue.
+  const langOptions = ((): { code: string; label: string; flag: string | null }[] => {
+    const fromCatalog = langs.data?.items ?? [];
+    const base =
+      fromCatalog.length > 0
+        ? fromCatalog.map((l) => ({ code: l.code, label: l.label, flag: l.flag }))
+        : ['FR', 'EN', 'ES', 'DE', 'IT', 'PT', 'AR', 'NL'].map((c) => {
+            const t = languageTag(c);
+            return { code: c, label: t?.label ?? c, flag: t?.flag ?? null };
+          });
+    // On ajoute les langues déjà choisies qui ne seraient pas dans la liste.
+    const chosen = [...langFilters.vod, ...langFilters.series, ...langFilters.live];
+    for (const c of chosen) {
+      if (!base.some((b) => b.code === c)) {
+        const t = languageTag(c);
+        base.push({ code: c, label: t?.label ?? c, flag: t?.flag ?? null });
+      }
+    }
+    return base;
+  })();
+
+  const toggleLang = (kind: 'vod' | 'series' | 'live', code: string) => {
+    setLangFilters((prev) => {
+      const on = prev[kind].includes(code);
+      return { ...prev, [kind]: on ? prev[kind].filter((c) => c !== code) : [...prev[kind], code] };
+    });
+  };
+
+  // « Mêmes langues pour les trois » : on recopie le réglage des films partout.
+  const syncAll = () => setLangFilters((prev) => ({ vod: prev.vod, series: [...prev.vod], live: [...prev.vod] }));
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +99,7 @@ export default function ProfileEditor() {
     if (!canSave) return;
     setBusy(true);
     setError(null);
-    const body = { name: name.trim(), avatar, color, isKid };
+    const body = { name: name.trim(), avatar, color, isKid, languageFilters: langFilters };
     try {
       if (isNew) await api.post('/api/profiles', body);
       else if (existing) await api.patch(`/api/profiles/${existing.id}`, body);
@@ -186,6 +231,38 @@ export default function ProfileEditor() {
 
       <View style={ps.divider} />
 
+      {/* Filtres de langue, un par type. Vide = tout ; sinon, on ne montre que
+          ce qui existe dans l'une des langues choisies. */}
+      <Text style={ps.label}>Langues du catalogue</Text>
+      <Text style={[styles.dim, { marginTop: -4, marginBottom: 12, lineHeight: 18 }]}>
+        Laissez vide pour tout voir. Sinon, chaque type ne montre que ce qui est disponible dans
+        ces langues.
+      </Text>
+      <LangFilterRow
+        title="Films"
+        options={langOptions}
+        selected={langFilters.vod}
+        onToggle={(c) => toggleLang('vod', c)}
+      />
+      <LangFilterRow
+        title="Séries"
+        options={langOptions}
+        selected={langFilters.series}
+        onToggle={(c) => toggleLang('series', c)}
+      />
+      <LangFilterRow
+        title="Direct"
+        options={langOptions}
+        selected={langFilters.live}
+        onToggle={(c) => toggleLang('live', c)}
+      />
+      <Focusable onPress={syncAll} style={({ pressed }) => [ps.syncBtn, pressed && { opacity: 0.7 }]}>
+        <Ionicons name="copy-outline" size={16} color={colors.accent} />
+        <Text style={ps.syncText}>Mêmes langues pour les trois (celles des films)</Text>
+      </Focusable>
+
+      <View style={ps.divider} />
+
       <View style={ps.kidRow}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={ps.kidTitle}>Profil enfant</Text>
@@ -217,6 +294,49 @@ export default function ProfileEditor() {
         </Text>
       ) : null}
     </ScrollView>
+  );
+}
+
+/** Un type (Films, Séries, Direct) et ses langues en puces à cocher. */
+function LangFilterRow({
+  title,
+  options,
+  selected,
+  onToggle,
+}: {
+  title: string;
+  options: { code: string; label: string; flag: string | null }[];
+  selected: string[];
+  onToggle: (code: string) => void;
+}) {
+  return (
+    <View style={ps.langBlock}>
+      <View style={ps.langHead}>
+        <Text style={ps.langTitle}>{title}</Text>
+        {selected.length > 0 ? (
+          <Text style={ps.langCount}>{selected.length}</Text>
+        ) : (
+          <Text style={ps.langAll}>Toutes</Text>
+        )}
+      </View>
+      <View style={ps.langChips}>
+        {options.map((o) => {
+          const on = selected.includes(o.code);
+          return (
+            <Focusable
+              key={o.code}
+              onPress={() => onToggle(o.code)}
+              style={[ps.langChip, on && ps.langChipOn]}
+            >
+              <Text style={[ps.langChipText, on && ps.langChipTextOn]}>
+                {o.flag ? `${o.flag} ` : ''}
+                {o.label}
+              </Text>
+            </Focusable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -314,6 +434,38 @@ const ps = {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
+
+  // Filtres de langue, par type.
+  langBlock: { marginBottom: 14 },
+  langHead: {
+    flexDirection: 'row' as const,
+    alignItems: 'baseline' as const,
+    justifyContent: 'space-between' as const,
+    marginBottom: 8,
+  },
+  langTitle: { color: colors.text, fontFamily: 'Outfit' as const, fontSize: 14, fontWeight: '700' as const },
+  langCount: { color: colors.accent, fontFamily: 'Inter' as const, fontSize: 12, fontWeight: '700' as const },
+  langAll: { color: colors.faint, fontFamily: 'Inter' as const, fontSize: 12 },
+  langChips: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8 },
+  langChip: {
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.bgSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  langChipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
+  langChipText: { color: colors.dim, fontFamily: 'Inter' as const, fontSize: 13, fontWeight: '600' as const },
+  langChipTextOn: { color: colors.accent },
+  syncBtn: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    paddingVertical: 10,
+    marginTop: 2,
+  },
+  syncText: { color: colors.accent, fontFamily: 'Inter' as const, fontSize: 13, fontWeight: '600' as const },
 
   divider: { height: 1, backgroundColor: colors.border, marginTop: 24 },
   kidRow: {

@@ -190,7 +190,14 @@ export async function upstreamUrlFor(payload: TicketPayload): Promise<string> {
     // Aucune donnee de profil n'est lue lors de la reconstruction d'URL :
     // seul le compte compte pour retrouver l'abonnement d'origine.
     // `languages` vide : rien ici n'ordonne, on reconstruit une URL.
-    { id: payload.u, profileId: 0, canWatchAdult: true, languages: [], uiLanguage: null },
+    {
+      id: payload.u,
+      profileId: 0,
+      canWatchAdult: true,
+      languages: [],
+      langFilters: { vod: [], series: [], live: [] },
+      uiLanguage: null,
+    },
   );
 
   /*

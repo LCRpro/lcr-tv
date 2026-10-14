@@ -103,6 +103,11 @@ export function viewerOf(req: FastifyRequest): Viewer {
     profileId: profile.id,
     canWatchAdult: user.canWatchAdult && profile.canWatchAdult && !profile.isKid,
     languages: profile.languages,
+    langFilters: {
+      vod: profile.langFilterVod,
+      series: profile.langFilterSeries,
+      live: profile.langFilterLive,
+    },
     uiLanguage: profile.uiLanguage,
   };
 }

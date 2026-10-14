@@ -31,6 +31,11 @@ export function toProfile(row: ProfileRow, accountAdult: boolean): Profile {
     isKid: row.isKid,
     canWatchAdult: effectiveAdult(row, accountAdult),
     languages: row.languages,
+    languageFilters: {
+      vod: row.langFilterVod,
+      series: row.langFilterSeries,
+      live: row.langFilterLive,
+    },
     uiLanguage: row.uiLanguage,
     createdAt: row.createdAt.toISOString(),
   };
@@ -86,6 +91,13 @@ export async function createProfile(
         // Un profil naissant est ferme : on l'ouvre ensuite, sciemment.
         canWatchAdult: input.isKid ? false : (input.canWatchAdult ?? false),
         ...(input.languages ? { languages: input.languages } : {}),
+        ...(input.languageFilters?.vod !== undefined ? { langFilterVod: input.languageFilters.vod } : {}),
+        ...(input.languageFilters?.series !== undefined
+          ? { langFilterSeries: input.languageFilters.series }
+          : {}),
+        ...(input.languageFilters?.live !== undefined
+          ? { langFilterLive: input.languageFilters.live }
+          : {}),
         ...(input.uiLanguage !== undefined ? { uiLanguage: input.uiLanguage } : {}),
       })
       .returning();
@@ -117,6 +129,10 @@ export async function updateProfile(
         isKid,
         canWatchAdult: isKid ? false : (input.canWatchAdult ?? current.canWatchAdult),
         languages: input.languages ?? current.languages,
+        // Une liste vide **efface** le filtre ; `undefined` le laisse en place.
+        langFilterVod: input.languageFilters?.vod ?? current.langFilterVod,
+        langFilterSeries: input.languageFilters?.series ?? current.langFilterSeries,
+        langFilterLive: input.languageFilters?.live ?? current.langFilterLive,
         // `undefined` laisse en place, `null` remet sur « automatique ».
         uiLanguage: input.uiLanguage === undefined ? current.uiLanguage : input.uiLanguage,
       })

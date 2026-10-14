@@ -143,6 +143,14 @@ export const profiles = pgTable(
      */
     languages: text().array().notNull().default(['FR']),
     /*
+     * Filtres de langue, par type de contenu. Distincts de `languages` (qui
+     * ordonne) : une liste non vide restreint ce type aux œuvres disponibles
+     * dans l'une de ces langues ; vide, rien n'est filtré.
+     */
+    langFilterVod: text().array().notNull().default([]),
+    langFilterSeries: text().array().notNull().default([]),
+    langFilterLive: text().array().notNull().default([]),
+    /*
      * La langue de l'interface. Nulle par defaut : elle suit alors les langues
      * ci-dessus. Deux reglages et non un seul, parce que classer son catalogue
      * en italien ne veut pas dire vouloir des boutons en italien — d'autant que

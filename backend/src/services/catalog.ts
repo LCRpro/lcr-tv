@@ -79,6 +79,14 @@ export interface Viewer {
    */
   languages: string[];
   /**
+   * Les filtres de langue par type — films, séries, direct.
+   *
+   * Une liste non vide restreint ce type aux œuvres disponibles dans l'une de
+   * ces langues ; vide, rien n'est filtré. Distincts de `languages`, qui se
+   * contente d'ordonner.
+   */
+  langFilters: { vod: string[]; series: string[]; live: string[] };
+  /**
    * La langue dans laquelle ce profil **lit**, quand il en a choisi une.
    *
    * Distincte des precedentes : celles-la disent quel contenu remonter, celle-ci
@@ -162,6 +170,21 @@ function codeArray(codes: readonly string[]): SQL {
 function languageFilter(table: 'streams' | 'series', code: string): SQL {
   const col = table === 'streams' ? raw`streams.lang_code` : raw`series.lang_code`;
   return raw`${col} = any(${codeArray(languageSpellings(code))})`;
+}
+
+/**
+ * Le filtre de langue **du profil** : plusieurs langues à la fois.
+ *
+ * Là où `languageFilter` ne garde qu'une langue demandée par l'écran, celui-ci
+ * applique le réglage permanent du profil — « ne me montre que ce qui existe en
+ * français ou en anglais » — en réunissant toutes les orthographes de toutes
+ * les langues choisies. Une liste vide ne filtre rien (on retourne `null`).
+ */
+function profileLanguageFilter(table: 'streams' | 'series', codes: string[]): SQL | null {
+  if (codes.length === 0) return null;
+  const col = table === 'streams' ? raw`streams.lang_code` : raw`series.lang_code`;
+  const spellings = [...new Set(codes.flatMap((c) => languageSpellings(c)))];
+  return raw`${col} = any(${codeArray(spellings)})`;
 }
 
 /**
@@ -624,6 +647,7 @@ export async function primeCatalogCache(userId: number): Promise<void> {
         profileId: 0,
         canWatchAdult: false,
         languages,
+        langFilters: { vod: [], series: [], live: [] },
         uiLanguage: null,
       };
       return Promise.all([
@@ -1194,6 +1218,13 @@ export async function listStreams(
   // Les separateurs du fournisseur ne sont pas des chaines : hors listing.
   if (type === 'live' && !params.separators) extra.push(raw`not ${SEPARATOR}`);
   if (params.language) extra.push(languageFilter('streams', params.language));
+  // Le filtre de langue du profil, sur le parcours seulement : on ne cache ni
+  // ses favoris, ni son historique, ni ce qu'il cherche nommément.
+  if (!params.favorites && !params.watched && !params.q) {
+    const codes = type === 'live' ? viewer.langFilters.live : viewer.langFilters.vod;
+    const f = profileLanguageFilter('streams', codes);
+    if (f) extra.push(f);
+  }
   if (params.genre) extra.push(genreFilter('streams', params.genre));
   /*
    * Le favori porte sur la ligne mise en favori, qui n'est pas forcement le
@@ -1308,6 +1339,11 @@ export async function listSeries(
   if (params.categoryId) parts.push(eq(series.categoryId, params.categoryId));
   if (params.q) parts.push(trigramFilter('series', params.q));
   if (params.language) parts.push(languageFilter('series', params.language));
+  // Le filtre de langue du profil, hors favoris / historique / recherche.
+  if (!params.favorites && !params.watched && !params.q) {
+    const f = profileLanguageFilter('series', viewer.langFilters.series);
+    if (f) parts.push(f);
+  }
   if (params.genre) parts.push(genreFilter('series', params.genre));
   /*
    * Meme regle qu'en streams : le favori porte sur la ligne mise en favori, qui

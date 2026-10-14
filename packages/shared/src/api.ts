@@ -127,6 +127,15 @@ export interface Profile {
    */
   languages: string[];
   /**
+   * Filtres de langue par type de contenu — films, séries, direct.
+   *
+   * Distincts de `languages` : là où une liste est non vide, le catalogue de ce
+   * type ne montre que ce qui est disponible dans l'une de ces langues. Vide,
+   * rien n'est filtré. Trois réglages indépendants, pour un foyer dont le
+   * fournisseur n'a pas la même couverture en films, en séries et en direct.
+   */
+  languageFilters: { vod: string[]; series: string[]; live: string[] };
+  /**
    * La langue de l'interface, ou `null` pour la déduire des langues ci-dessus.
    *
    * Deux réglages et non un seul : mettre son catalogue en allemand ne veut pas
@@ -167,6 +176,19 @@ export const profileInputSchema = z.object({
     .array(z.string().trim().toUpperCase().regex(/^[A-Z]{2,8}$/))
     .min(1)
     .max(MAX_PROFILE_LANGUAGES)
+    .optional(),
+  /**
+   * Les filtres de langue, un par type. Chaque liste peut être vide (aucun
+   * filtre). Mêmes codes que `languages`, bornés pour ne pas tenir une requête
+   * interminable.
+   */
+  languageFilters: z
+    .object({
+      vod: z.array(z.string().trim().toUpperCase().regex(/^[A-Z]{2,8}$/)).max(8),
+      series: z.array(z.string().trim().toUpperCase().regex(/^[A-Z]{2,8}$/)).max(8),
+      live: z.array(z.string().trim().toUpperCase().regex(/^[A-Z]{2,8}$/)).max(8),
+    })
+    .partial()
     .optional(),
   /** `null` remet le réglage sur « suit les langues du catalogue ». */
   uiLanguage: z.enum(UI_LOCALES).nullable().optional(),
