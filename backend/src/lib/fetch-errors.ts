@@ -18,14 +18,16 @@ const HINTS: Record<string, string> = {
   ENOTFOUND: "nom d'hote introuvable (DNS)",
   EAI_AGAIN: 'resolution DNS temporairement impossible',
   ECONNREFUSED: 'connexion refusee : rien ne repond sur ce port',
-  ECONNRESET: 'connexion etablie puis coupee par le serveur ou un intermediaire',
+  ECONNRESET:
+    'le panel a coupe la connexion sans repondre — souvent une IP bloquee, un abonnement expire ou le nombre de connexions simultanees atteint',
   ETIMEDOUT: 'delai depasse : aucune reponse',
   EHOSTUNREACH: 'hote inatteignable',
   ENETUNREACH: 'reseau inatteignable',
   EPIPE: 'connexion interrompue en cours d envoi',
   UND_ERR_CONNECT_TIMEOUT: 'delai depasse a la connexion',
   UND_ERR_HEADERS_TIMEOUT: "delai depasse en attendant les en-tetes",
-  UND_ERR_SOCKET: 'socket fermee prematurement',
+  UND_ERR_SOCKET:
+    'le panel a accepte la connexion puis l a coupee sans rien renvoyer — souvent une IP bloquee, un abonnement expire ou le nombre de connexions simultanees atteint',
   CERT_HAS_EXPIRED: 'certificat TLS expire',
   DEPTH_ZERO_SELF_SIGNED_CERT: 'certificat TLS auto-signe',
   ERR_TLS_CERT_ALTNAME_INVALID: "le certificat TLS ne correspond pas a l'hote",
