@@ -134,7 +134,7 @@ export default function CompteScreen() {
         providers.data.items.map((p, i) => (
           <View key={p.id}>
             {i > 0 ? <Divider /> : null}
-            <ProviderRow provider={p} onChanged={() => providers.reload()} />
+            <ProviderRow provider={p} />
           </View>
         ))
       )}
@@ -570,85 +570,35 @@ function TagsManager() {
  * attendre un aller-retour donnerait l'impression qu'il ne repond pas. En cas
  * d'echec, on recharge — l'etat affiche redevient celui de la base.
  */
-function ProviderRow({ provider, onChanged }: { provider: ProviderView; onChanged: () => void }) {
+/**
+ * Une source, en ligne nette — comme un profil.
+ *
+ * Plus de carte dense : juste l'icône, le nom et la flèche qui ouvre l'éditeur,
+ * où vivent l'activation du compte et le choix des profils. On ne pose un mot à
+ * droite que pour signaler une exception — éteinte au compte, ou ignorée par ce
+ * profil-ci — sinon la ligne reste aussi sobre que celle d'un profil utilisé.
+ */
+function ProviderRow({ provider }: { provider: ProviderView }) {
   const router = useRouter();
-  // La source peut être éteinte au niveau du compte (réglé au web) : alors le
-  // profil ne peut rien y faire. Sinon, il choisit de l'utiliser ou non.
-  const accountOff = !provider.isActive;
-  const [active, setActive] = useState(provider.enabledHere);
-  const [busy, setBusy] = useState(false);
-  const total = provider.catalogue.live + provider.catalogue.vod + provider.catalogue.series;
-
-  const toggle = async () => {
-    if (busy || accountOff) return;
-    const next = !active;
-    setActive(next);
-    setBusy(true);
-    try {
-      await api.post(`/api/providers/${provider.id}/profile-enable`, { enabled: next });
-      onChanged();
-    } catch {
-      setActive(!next);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const state = !provider.isActive ? 'éteinte' : !provider.enabledHere ? 'ignorée ici' : null;
 
   return (
-    <View style={cs.provRow}>
-      <View style={cs.srcTop}>
-        <Focusable
-          onPress={() => router.push(`/source/${provider.id}`)}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1, minWidth: 0 }}
-        >
-          <Text style={cs.srcName} numberOfLines={1}>
-            {provider.name}
-          </Text>
-          <Text style={cs.kind}>{provider.kind === 'm3u' ? 'M3U' : 'PANEL'}</Text>
-          <Ionicons name="chevron-forward" size={15} color={colors.faint} />
-        </Focusable>
-        <Focusable onPress={() => void toggle()} disabled={busy || accountOff}>
-          <View style={[cs.toggle, active && cs.toggleOn, accountOff && { opacity: 0.4 }]}>
-            <View style={[cs.knob, active && cs.knobOn]} />
-          </View>
-        </Focusable>
+    <Focusable
+      onPress={() => router.push(`/source/${provider.id}`)}
+      style={({ pressed }) => [cs.row, pressed && { opacity: 0.7 }]}
+    >
+      <View style={cs.accIcon}>
+        <Ionicons name="server-outline" size={16} color={colors.accent} />
       </View>
-      <Text style={cs.host} numberOfLines={1}>
-        {maskHost(provider.baseUrl)}
+      <Text style={cs.rowLabel} numberOfLines={1}>
+        {provider.name}
       </Text>
-      <View style={cs.facts}>
-        <Fact k="Catalogue" v={total > 0 ? `${total.toLocaleString('fr-FR')} flux` : '—'} />
-        <Fact
-          k="Ce profil"
-          v={accountOff ? 'désactivée au compte' : active ? 'utilise' : 'ignorée'}
-          tone={!accountOff && active ? 'ok' : undefined}
-        />
-        {provider.sameAs.length > 0 ? <Fact k="Note" v="même fournisseur" /> : null}
-      </View>
-    </View>
+      <Text style={cs.kind}>{provider.kind === 'm3u' ? 'M3U' : 'PANEL'}</Text>
+      <View style={{ flex: 1 }} />
+      {state ? <Text style={cs.rowValue}>{state}</Text> : null}
+      <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+    </Focusable>
   );
-}
-
-function Fact({ k, v, tone }: { k: string; v: string; tone?: 'ok' }) {
-  return (
-    <View>
-      <Text style={cs.factK}>{k.toUpperCase()}</Text>
-      <Text style={[cs.factV, tone === 'ok' && { color: colors.ok }]}>{v}</Text>
-    </View>
-  );
-}
-
-/** On garde le schéma et le début de l'hôte, on masque le reste : l'adresse
- *  identifie le fournisseur, elle n'a pas à rester lisible en entier. */
-function maskHost(url: string): string {
-  try {
-    const u = new URL(url);
-    const h = u.hostname;
-    const shown = h.slice(0, 2);
-    return `${u.protocol}//${shown}${'•'.repeat(Math.max(3, h.length - 4))}${h.slice(-2)}`;
-  } catch {
-    return '—';
-  }
 }
 
 const cs = {
@@ -744,14 +694,6 @@ const cs = {
     justifyContent: 'center' as const,
   },
 
-  provRow: { paddingVertical: 13, paddingHorizontal: 14 },
-  srcTop: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    marginBottom: 9,
-  },
-  srcName: { color: colors.text, fontSize: 16, fontWeight: '700' as const, letterSpacing: -0.2 },
   kind: {
     fontSize: 10,
     fontWeight: '700' as const,
@@ -763,20 +705,4 @@ const cs = {
     borderRadius: 6,
     letterSpacing: 0.4,
   },
-  host: { color: colors.faint, fontSize: 12, fontFamily: 'monospace', marginBottom: 11 },
-  facts: { flexDirection: 'row' as const, gap: 22 },
-  factK: { fontSize: 10, fontWeight: '700' as const, letterSpacing: 0.5, color: colors.faint },
-  factV: { fontSize: 13, fontWeight: '600' as const, color: colors.text, marginTop: 2 },
-
-  toggle: {
-    width: 44,
-    height: 26,
-    borderRadius: 999,
-    backgroundColor: colors.border,
-    justifyContent: 'center' as const,
-    padding: 2,
-  },
-  toggleOn: { backgroundColor: colors.ok },
-  knob: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff' },
-  knobOn: { alignSelf: 'flex-end' as const },
 };
