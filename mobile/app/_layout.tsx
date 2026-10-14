@@ -151,7 +151,7 @@ export default function RootLayout() {
     link.id = 'lcrtv-fonts';
     link.rel = 'stylesheet';
     link.href =
-      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap';
+      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Noto+Color+Emoji&display=swap';
     document.head.appendChild(link);
     // Inter devient la famille héritée par défaut : tout texte sans police
     // explicite la prend (react-native-web laisse hériter la cascade CSS), les

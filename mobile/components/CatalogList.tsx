@@ -24,13 +24,12 @@ import {
 } from '@iptv/shared';
 import { api, qs } from '../lib/api';
 import { useAsync } from '../lib/hooks';
-import { colors, gridColumns, onArt, radius, styles } from '../lib/theme';
+import { colors, gridColumns, radius, styles } from '../lib/theme';
 import { cardTarget, TV_SAFE } from '../lib/tv';
 import { Card, ChannelCard, Empty, ErrorNotice, Loading } from './ui';
 import { Focusable } from './Focusable';
 import { useQuickActions } from './QuickActions';
 import { CategoryMark, IconClock, IconStar } from './marks';
-import { TagPicker } from './TagPicker';
 
 type Item = Movie | SeriesSummary | LiveChannel;
 
@@ -68,8 +67,6 @@ export function CatalogList({
    */
   const [categoryId, setCategoryId] = useState<number | 'favorites' | 'watched' | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  // La chaine qu'on est en train d'etiqueter (les chaines n'ont pas de fiche).
-  const [tagTarget, setTagTarget] = useState<number | null>(null);
   // Filtre par etiquette : exclusif du filtre par categorie, l'un efface l'autre.
   const [tagId, setTagId] = useState<number | null>(null);
 
@@ -77,7 +74,7 @@ export function CatalogList({
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [favoriteTick, setFavoriteTick] = useState(0);
+  const [favoriteTick] = useState(0);
 
   const categories = useAsync<{ items: Category[] }>(
     () => api.get(`/api/categories/${categoryType}`),
@@ -116,20 +113,6 @@ export function CatalogList({
    * etoile qui attend un aller-retour donne l'impression de ne pas repondre. En
    * cas d'echec on recharge, l'etat affiche redevient celui de la base.
    */
-  const toggleChannel = async (channel: LiveChannel) => {
-    const next = !channel.isFavorite;
-    setItems((prev) =>
-      prev.map((i) => (i.type === 'live' && i.id === channel.id ? { ...i, isFavorite: next } : i)),
-    );
-    try {
-      if (next) await api.post('/api/me/favorites', { itemType: 'stream', itemId: channel.id });
-      else await api.del(`/api/me/favorites/stream/${channel.id}`);
-      setFavoriteTick((t) => t + 1);
-    } catch {
-      first.reload();
-    }
-  };
-
   const togglePin = async (category: Category) => {
     try {
       if (category.isFavorite) await api.del(`/api/me/favorites/categories/${category.id}`);
@@ -347,46 +330,8 @@ export function CatalogList({
               <View style={{ flex: 1 }} />
             ) : (
             <View style={{ flex: 1 }}>
-              {item.type === 'live' && (
-                <Focusable
-                  onPress={() => void toggleChannel(item)}
-                  hitSlop={8}
-                  style={{
-                    position: 'absolute',
-                    top: 6,
-                    right: 6,
-                    zIndex: 3,
-                    width: 30,
-                    height: 30,
-                    borderRadius: 8,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(27,26,24,0.72)',
-                  }}
-                >
-                  <IconStar filled={Boolean(item.isFavorite)} color={item.isFavorite ? colors.gold : onArt.ink} />
-                </Focusable>
-              )}
-              {item.type === 'live' && (
-                <Focusable
-                  onPress={() => setTagTarget(item.id)}
-                  hitSlop={8}
-                  style={{
-                    position: 'absolute',
-                    top: 6,
-                    left: 6,
-                    zIndex: 3,
-                    width: 30,
-                    height: 30,
-                    borderRadius: 8,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(27,26,24,0.72)',
-                  }}
-                >
-                  <Ionicons name="pricetag-outline" size={16} color={onArt.ink} />
-                </Focusable>
-              )}
+              {/* Plus de boutons étoile/étiquette posés sur la chaîne : l'appui
+                  long ouvre « ma liste » et « étiquette », comme pour un film. */}
               {item.type === 'live' ? (
                 <ChannelCard
                   channel={item}
@@ -425,10 +370,6 @@ export function CatalogList({
           )}
         />
       )}
-
-      {tagTarget != null ? (
-        <TagPicker itemType="stream" itemId={tagTarget} onClose={() => setTagTarget(null)} />
-      ) : null}
     </View>
   );
 }

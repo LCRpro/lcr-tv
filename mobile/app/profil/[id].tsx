@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Platform, ScrollView, Switch, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AVATAR_GROUPS,
@@ -456,7 +456,14 @@ const ps = {
     borderColor: colors.border,
   },
   langChipOn: { backgroundColor: colors.accentSoft, borderColor: colors.accent },
-  langChipText: { color: colors.dim, fontFamily: 'Inter' as const, fontSize: 13, fontWeight: '600' as const },
+  langChipText: {
+    color: colors.dim,
+    // Sur le web (Windows surtout), Inter n'a pas les drapeaux : on ajoute la
+    // police emoji couleur en repli pour que 🇫🇷 s'affiche au lieu de « FR ».
+    fontFamily: Platform.select({ web: "Inter, 'Noto Color Emoji'", default: 'Inter' }),
+    fontSize: 13,
+    fontWeight: '600' as const,
+  },
   langChipTextOn: { color: colors.accent },
   syncBtn: {
     flexDirection: 'row' as const,
