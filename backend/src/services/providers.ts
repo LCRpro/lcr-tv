@@ -2,7 +2,7 @@ import { and, desc, eq, sql as raw } from 'drizzle-orm';
 import type { ProviderTestResult, ProviderView } from '@iptv/shared';
 import { db } from '../db/client.js';
 import { forgetCatalogCache } from './catalog-cache.js';
-import { providers, type Provider } from '../db/schema.js';
+import { profileProviderMutes, providers, type Provider } from '../db/schema.js';
 import { decryptSecret, encryptSecret } from '../lib/crypto.js';
 import { AppError, badRequest, notFound } from '../lib/errors.js';
 import { mask } from '../lib/redact.js';
@@ -19,7 +19,11 @@ import { normalizeBaseUrl } from '../xtream/urls.js';
  */
 export function toProviderView(
   row: Provider,
-  extras: { sameAs?: number[]; catalogue?: ProviderView['catalogue'] } = {},
+  extras: {
+    sameAs?: number[];
+    catalogue?: ProviderView['catalogue'];
+    enabledHere?: boolean;
+  } = {},
 ): ProviderView {
   const hasCredentials = row.kind === 'xtream';
   return {
@@ -33,6 +37,9 @@ export function toProviderView(
     passwordMasked: hasCredentials ? '••••••••' : '—',
     epgUrl: row.epgUrl,
     isActive: row.isActive,
+    // Hors contexte d'un profil (création, test, lecture d'une source), on
+    // retombe sur l'état du compte : la vue n'est de toute façon pas une liste.
+    enabledHere: extras.enabledHere ?? row.isActive,
     maxConnections: row.maxConnections,
     expiresAt: row.expiresAt?.toISOString() ?? null,
     status: row.status,
@@ -57,13 +64,28 @@ function safeDecrypt(value: string | null): string {
   }
 }
 
-export async function listProviders(userId: number): Promise<ProviderView[]> {
+export async function listProviders(
+  userId: number,
+  profileId?: number,
+): Promise<ProviderView[]> {
   const rows = await db
     .select()
     .from(providers)
     .where(eq(providers.userId, userId))
     .orderBy(desc(providers.isActive), providers.id);
   if (rows.length === 0) return [];
+
+  // Les sources que ce profil a éteintes : `enabledHere` les distingue des
+  // autres, actives sur le compte et gardées par le profil. Sans profil (CLI),
+  // on s'en tient à l'état du compte.
+  const mutedRows =
+    profileId == null
+      ? []
+      : await db
+          .select({ providerId: profileProviderMutes.providerId })
+          .from(profileProviderMutes)
+          .where(eq(profileProviderMutes.profileId, profileId));
+  const muted = new Set(mutedRows.map((r) => r.providerId));
 
   /*
    * La taille du catalogue par source, en lignes brutes.
@@ -108,8 +130,46 @@ export async function listProviders(userId: number): Promise<ProviderView[]> {
           peer.serverName === row.serverName,
       )
       .map((peer) => peer.id);
-    return toProviderView(row, { sameAs, catalogue });
+    return toProviderView(row, {
+      sameAs,
+      catalogue,
+      enabledHere: row.isActive && !muted.has(row.id),
+    });
   });
+}
+
+/**
+ * Un profil (dés)active une source partagée, pour lui seul.
+ *
+ * On ne touche pas à `isActive` — l'état du compte, réglé au web — mais à la
+ * liste des sources que *ce* profil a éteintes. Activer retire l'exception,
+ * désactiver l'ajoute. Le catalogue du profil change : on oublie son cache.
+ */
+export async function setProviderEnabledForProfile(
+  userId: number,
+  profileId: number,
+  providerId: number,
+  enabled: boolean,
+): Promise<void> {
+  // La source doit appartenir au foyer : sinon « introuvable », on n'en dit pas plus.
+  await getProvider(providerId, userId);
+
+  if (enabled) {
+    await db
+      .delete(profileProviderMutes)
+      .where(
+        and(
+          eq(profileProviderMutes.profileId, profileId),
+          eq(profileProviderMutes.providerId, providerId),
+        ),
+      );
+  } else {
+    await db
+      .insert(profileProviderMutes)
+      .values({ profileId, providerId })
+      .onConflictDoNothing();
+  }
+  forgetCatalogCache(userId);
 }
 
 /**

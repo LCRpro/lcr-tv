@@ -522,6 +522,14 @@ export interface ProviderView {
   /** Vide pour un panel, où la grille se déduit des identifiants. */
   epgUrl: string | null;
   isActive: boolean;
+  /**
+   * La source est-elle utilisée par le profil courant ?
+   *
+   * Les sources sont partagées par le foyer (`isActive`, réglé au web), mais
+   * chaque profil choisit lesquelles il utilise. `enabledHere` est vrai quand la
+   * source est active sur le compte **et** non désactivée pour ce profil.
+   */
+  enabledHere: boolean;
   /** `null` pour une playlist : il n'y a pas de connexions à compter. */
   maxConnections: number | null;
   /** Lus au dernier test du panel ; nuls pour une playlist ou avant tout test. */

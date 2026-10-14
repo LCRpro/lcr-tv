@@ -607,6 +607,28 @@ export const tags = pgTable(
  * distingue) ou `series`. On garde l'id tel quel : filtrer une section par
  * etiquette recoupe simplement ce type avec le contenu de l'etiquette.
  */
+/**
+ * Les sources qu'un profil a désactivées.
+ *
+ * Les connecteurs appartiennent au foyer et sont partagés par tous ses profils.
+ * Chacun choisit toutefois lesquels il utilise. On stocke l'exception — ce qu'un
+ * profil a **éteint** — plutôt que ce qu'il garde : ainsi un profil tout neuf
+ * voit par défaut tout le catalogue du foyer, et n'éteint que ce qui le gêne.
+ */
+export const profileProviderMutes = pgTable(
+  'profile_provider_mutes',
+  {
+    profileId: integer()
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    providerId: integer()
+      .notNull()
+      .references(() => providers.id, { onDelete: 'cascade' }),
+    createdAt: now(),
+  },
+  (t) => [primaryKey({ columns: [t.profileId, t.providerId] })],
+);
+
 export const tagItems = pgTable(
   'tag_items',
   {

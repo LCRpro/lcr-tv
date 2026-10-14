@@ -8,13 +8,14 @@ import {
   listProviders,
   providerCredentials,
   setProviderActive,
+  setProviderEnabledForProfile,
   testProvider,
   updateProvider,
 } from '../services/providers.js';
 import { getSyncStatus, runSyncAll } from '../services/sync.js';
 import { epgCoverage, getEpgStatus, importEpgAll, isEpgRunning } from '../services/epg.js';
 import { AppError } from '../lib/errors.js';
-import { ctx } from '../plugins/auth.js';
+import { ctx, viewerOf } from '../plugins/auth.js';
 
 const idParams = z.object({ id: z.coerce.number().int().positive() });
 
@@ -35,7 +36,10 @@ const idParams = z.object({ id: z.coerce.number().int().positive() });
 export const providerRoutes: FastifyPluginAsync = async (app) => {
   app.addHook('preHandler', app.requireAuth);
 
-  app.get('/', async (req) => ({ items: await listProviders(ctx(req).user.id) }));
+  app.get('/', async (req) => {
+    const v = viewerOf(req);
+    return { items: await listProviders(v.id, v.profileId) };
+  });
 
   app.post('/', async (req, reply) => {
     const input = providerCreateSchema.parse(req.body);
@@ -82,6 +86,15 @@ export const providerRoutes: FastifyPluginAsync = async (app) => {
     const { id } = idParams.parse(req.params);
     const { isActive } = z.object({ isActive: z.boolean().default(true) }).parse(req.body ?? {});
     return setProviderActive(id, ctx(req).user.id, isActive);
+  });
+
+  // Le profil courant (dés)active une source partagée, pour lui seul.
+  app.post('/:id/profile-enable', async (req) => {
+    const { id } = idParams.parse(req.params);
+    const { enabled } = z.object({ enabled: z.boolean() }).parse(req.body ?? {});
+    const v = viewerOf(req);
+    await setProviderEnabledForProfile(v.id, v.profileId, id, enabled);
+    return { ok: true };
   });
 
   // -------------------------------------------------------------- sync

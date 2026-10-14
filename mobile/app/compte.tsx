@@ -114,7 +114,7 @@ export default function CompteScreen() {
       title="Sources"
       icon="server-outline"
       count={providers.data?.items.length}
-      subtitle="Les connecteurs remplissent le catalogue. Ils se créent au web."
+      subtitle="Partagées par le foyer, créées au web. Chaque profil choisit lesquelles il utilise."
     >
       <ErrorNotice error={providers.error} />
       {providers.loading && !providers.data ? (
@@ -472,17 +472,20 @@ function TagsManager() {
  * d'echec, on recharge — l'etat affiche redevient celui de la base.
  */
 function ProviderRow({ provider, onChanged }: { provider: ProviderView; onChanged: () => void }) {
-  const [active, setActive] = useState(provider.isActive);
+  // La source peut être éteinte au niveau du compte (réglé au web) : alors le
+  // profil ne peut rien y faire. Sinon, il choisit de l'utiliser ou non.
+  const accountOff = !provider.isActive;
+  const [active, setActive] = useState(provider.enabledHere);
   const [busy, setBusy] = useState(false);
   const total = provider.catalogue.live + provider.catalogue.vod + provider.catalogue.series;
 
   const toggle = async () => {
-    if (busy) return;
+    if (busy || accountOff) return;
     const next = !active;
     setActive(next);
     setBusy(true);
     try {
-      await api.post(`/api/providers/${provider.id}/activate`, { isActive: next });
+      await api.post(`/api/providers/${provider.id}/profile-enable`, { enabled: next });
       onChanged();
     } catch {
       setActive(!next);
@@ -500,8 +503,8 @@ function ProviderRow({ provider, onChanged }: { provider: ProviderView; onChange
           </Text>
           <Text style={cs.kind}>{provider.kind === 'm3u' ? 'M3U' : 'PANEL'}</Text>
         </View>
-        <Focusable onPress={() => void toggle()} disabled={busy}>
-          <View style={[cs.toggle, active && cs.toggleOn]}>
+        <Focusable onPress={() => void toggle()} disabled={busy || accountOff}>
+          <View style={[cs.toggle, active && cs.toggleOn, accountOff && { opacity: 0.4 }]}>
             <View style={[cs.knob, active && cs.knobOn]} />
           </View>
         </Focusable>
@@ -512,9 +515,9 @@ function ProviderRow({ provider, onChanged }: { provider: ProviderView; onChange
       <View style={cs.facts}>
         <Fact k="Catalogue" v={total > 0 ? `${total.toLocaleString('fr-FR')} flux` : '—'} />
         <Fact
-          k="État"
-          v={provider.status ?? (provider.kind === 'm3u' ? 'playlist' : 'non testé')}
-          tone={provider.status ? 'ok' : undefined}
+          k="Ce profil"
+          v={accountOff ? 'désactivée au compte' : active ? 'utilise' : 'ignorée'}
+          tone={!accountOff && active ? 'ok' : undefined}
         />
         {provider.sameAs.length > 0 ? <Fact k="Note" v="même fournisseur" /> : null}
       </View>

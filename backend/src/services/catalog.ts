@@ -108,10 +108,24 @@ export interface Viewer {
  * sous-requete plutot que resolu en amont — la table tient en une poignee de
  * lignes, et il n'y a aucune invalidation a gerer.
  *
- * Le compte, jamais le profil : l'abonnement est paye par le foyer, tous ses
- * profils voient le meme catalogue.
+ * Les sources sont payees par le foyer, mais chaque profil choisit lesquelles
+ * il utilise : on part des sources actives du compte, puis on retire celles que
+ * ce profil a eteintes (`profile_provider_mutes`).
  */
-const activeProviders = (userId: number): SQL =>
+const activeProviders = (viewer: Viewer): SQL =>
+  raw`(select id from providers where is_active and user_id = ${viewer.id}
+    and id not in (
+      select provider_id from profile_provider_mutes where profile_id = ${viewer.profileId}
+    ))`;
+
+/**
+ * Les sources actives du compte, sans filtre de profil.
+ *
+ * Pour les rares calculs qui précèdent le choix d'un profil — les langues du
+ * catalogue, lues depuis l'écran « qui regarde ? » — où il n'y a pas encore de
+ * profil dont retirer les sources éteintes.
+ */
+const activeProvidersForAccount = (userId: number): SQL =>
   raw`(select id from providers where is_active and user_id = ${userId})`;
 
 /**
@@ -220,7 +234,7 @@ function dedupAcrossProviders(table: 'streams' | 'series', viewer: Viewer): SQL 
       where peer.type = streams.type
         and peer.group_key = streams.group_key
         and peer.removed_at is null
-        and peer.provider_id in ${activeProviders(viewer.id)}
+        and peer.provider_id in ${activeProviders(viewer)}
         and (${prefRank(viewer, 'peer')}, peer.quality_rank, peer.id)
           < (${prefRank(viewer, 'streams')}, streams.quality_rank, streams.id)
     )`;
@@ -229,7 +243,7 @@ function dedupAcrossProviders(table: 'streams' | 'series', viewer: Viewer): SQL 
     select 1 from series peer
     where peer.work_key = series.work_key
       and peer.removed_at is null
-      and peer.provider_id in ${activeProviders(viewer.id)}
+      and peer.provider_id in ${activeProviders(viewer)}
       and (${prefRank(viewer, 'peer')}, peer.id) < (${prefRank(viewer, 'series')}, series.id)
   )`;
 }
@@ -238,9 +252,9 @@ function fromActiveProvider(
   table: 'streams' | 'series' | 'categories',
   viewer: Viewer,
 ): SQL {
-  if (table === 'streams') return raw`streams.provider_id in ${activeProviders(viewer.id)}`;
-  if (table === 'series') return raw`series.provider_id in ${activeProviders(viewer.id)}`;
-  return raw`categories.provider_id in ${activeProviders(viewer.id)}`;
+  if (table === 'streams') return raw`streams.provider_id in ${activeProviders(viewer)}`;
+  if (table === 'series') return raw`series.provider_id in ${activeProviders(viewer)}`;
+  return raw`categories.provider_id in ${activeProviders(viewer)}`;
 }
 
 /**
@@ -447,12 +461,12 @@ export async function catalogLanguages(userId: number, min = 40): Promise<Catalo
     select lang_code as code, sum(n)::int as n from (
       select lang_code, count(*) as n from streams
       where removed_at is null and lang_code is not null
-        and provider_id in ${activeProviders(userId)}
+        and provider_id in ${activeProvidersForAccount(userId)}
       group by lang_code
       union all
       select lang_code, count(*) as n from series
       where removed_at is null and lang_code is not null
-        and provider_id in ${activeProviders(userId)}
+        and provider_id in ${activeProvidersForAccount(userId)}
       group by lang_code
     ) t
     group by lang_code
@@ -501,7 +515,7 @@ export async function listCategories(
         and peer.xtream_id = categories.xtream_id
         and peer.provider_id < categories.provider_id
         and peer.removed_at is null
-        and peer.provider_id in ${activeProviders(viewer.id)}
+        and peer.provider_id in ${activeProviders(viewer)}
     )`,
   ];
   if (!viewer.canWatchAdult) conditions.push(raw`categories.is_adult is not true`);
@@ -518,15 +532,17 @@ export async function listCategories(
      * `catalog-cache.ts` — c'est ce qui faisait attendre trois secondes a
      * chaque ouverture de page.
      */
-    memoByUser(`counts:${type}`, viewer.id, viewer.languages, () =>
+    memoByUser(`counts:${type}:p${viewer.profileId}`, viewer.id, viewer.languages, () =>
       categoryCounts(type, viewer),
     ),
     type === 'live'
-      ? // Les logos ne dependent pas de la langue : une cle commune evite de
-        // recalculer la meme chose pour chaque profil du foyer.
-        memoByUser('logos', viewer.id, [], () => categoryLogos(viewer))
+      ? // Les logos dependent des sources du profil : chacun peut en eteindre.
+        // La cle porte donc le profil, pas seulement le compte.
+        memoByUser(`logos:p${viewer.profileId}`, viewer.id, [], () => categoryLogos(viewer))
       : Promise.resolve(new Map<number, string>()),
-    memoByUser(`langs:${type}`, viewer.id, [], () => categoryLanguages(type, viewer)),
+    memoByUser(`langs:${type}:p${viewer.profileId}`, viewer.id, [], () =>
+      categoryLanguages(type, viewer),
+    ),
     db
       .select({ categoryId: favoriteCategories.categoryId })
       .from(favoriteCategories)
@@ -643,7 +659,7 @@ async function categoryLanguages(type: CategoryType, viewer: Viewer): Promise<Ma
       from ${table}
       where removed_at is null and category_id is not null
         and ${typeFilter}
-        and provider_id in ${activeProviders(viewer.id)}
+        and provider_id in ${activeProviders(viewer)}
     ), tally as (
       select category_id, lang, count(*) as n,
              sum(count(*)) over (partition by category_id) as total,
@@ -683,7 +699,7 @@ async function categoryLogos(viewer: Viewer): Promise<Map<number, string>> {
       select category_id, icon_url from ${streams}
       where type = 'live' and removed_at is null
         and category_id is not null and icon_url is not null and icon_url <> ''
-        and provider_id in ${activeProviders(viewer.id)}
+        and provider_id in ${activeProviders(viewer)}
     ), tally as (
       select category_id, icon_url, count(*) as n,
              sum(count(*)) over (partition by category_id) as total,
@@ -760,7 +776,7 @@ export async function genreCounts(
   viewer: Viewer,
   min = 40,
 ): Promise<GenreCount[]> {
-  const key = `genres:${type}:${viewer.canWatchAdult ? 'adult' : 'kid'}`;
+  const key = `genres:${type}:p${viewer.profileId}:${viewer.canWatchAdult ? 'adult' : 'kid'}`;
   return memoByUser(key, viewer.id, viewer.languages, async () => {
     const adult = viewer.canWatchAdult ? raw`true` : raw`(categories.is_adult is not true)`;
     const rows =
@@ -2588,11 +2604,11 @@ async function categoryRows(
       select *, row_number() over (partition by category_id order by md5(id::text || ${daySeed()})) as rn
       from ${streams}
       where removed_at is null and type = 'vod'
-        and provider_id in ${activeProviders(viewer.id)}
+        and provider_id in ${activeProviders(viewer)}
         and not exists (
           select 1 from streams peer
           where peer.type = streams.type and peer.group_key = streams.group_key
-            and peer.removed_at is null and peer.provider_id in ${activeProviders(viewer.id)}
+            and peer.removed_at is null and peer.provider_id in ${activeProviders(viewer)}
             and (${prefRank(viewer, 'peer')}, peer.quality_rank, peer.id)
               < (${prefRank(viewer, 'streams')}, streams.quality_rank, streams.id)
         )
@@ -2839,10 +2855,10 @@ export async function arrivalsSince(
   const [counts] = await db.execute<{ movies: number; series: number }>(raw`
     select
       (select count(*) from streams s
-        where s.provider_id in ${activeProviders(viewer.id)}
+        where s.provider_id in ${activeProviders(viewer)}
           and s.type = 'vod' and s.removed_at is null and s.added_at > ${sinceIso}) as movies,
       (select count(*) from series x
-        where x.provider_id in ${activeProviders(viewer.id)}
+        where x.provider_id in ${activeProviders(viewer)}
           and x.removed_at is null and x.added_at > ${sinceIso}) as series
   `);
 
