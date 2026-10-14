@@ -5,7 +5,7 @@ import { colors } from '../../lib/theme';
 import { IS_TV } from '../../lib/tv';
 import { TopNav } from '../../components/TopNav';
 import { BrandBar } from '../../components/BrandBar';
-import { BottomNav } from '../../components/BottomNav';
+import { AppBottomBar } from '../../components/AppBottomBar';
 import { SearchPanel } from '../../components/SearchPanel';
 
 /**
@@ -13,7 +13,7 @@ import { SearchPanel } from '../../components/SearchPanel';
  *
  * Deux barres encadrent les écrans. En haut, l'identité et les deux gestes de
  * côté — recherche et compte — portés par `BrandBar`. En bas, les sections
- * elles-mêmes, sous le pouce, portées par `BottomNav` fournie comme `tabBar`.
+ * elles-mêmes, sous le pouce, portées par `AppBottomBar` fournie comme `tabBar`.
  *
  * La recherche ne part pas sur un autre écran : la loupe ouvre `SearchPanel`
  * sur place, juste sous la barre, par-dessus la section en cours.
@@ -49,7 +49,7 @@ export default function TabsLayout() {
       <BrandBar onSearch={() => setSearchOpen(true)} />
       <View style={{ flex: 1 }}>
         <Tabs
-          tabBar={(props) => <BottomNav {...props} />}
+          tabBar={() => <AppBottomBar />}
           screenOptions={{
             headerShown: false,
             sceneStyle: { backgroundColor: colors.bg },

@@ -1,15 +1,18 @@
 import { useState, type ReactNode } from 'react';
-import { Alert, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import type { DeviceSession, HistoryEntry, ProviderView, Tag } from '@iptv/shared';
+import type { DeviceSession, HistoryEntry, Profile, ProviderView, Tag } from '@iptv/shared';
 import { api, API_URL } from '../lib/api';
 import { useAsync } from '../lib/hooks';
 import { useSession } from '../lib/session';
+import { confirmAction } from '../lib/confirm';
 import { colors, radius, styles } from '../lib/theme';
 import { Empty, ErrorNotice, Loading } from '../components/ui';
 import { Avatar } from '../components/ProfileAvatar';
 import { Focusable } from '../components/Focusable';
+import { BrandBar } from '../components/BrandBar';
+import { AppBottomBar } from '../components/AppBottomBar';
 
 /**
  * Le compte — qui regarde, avec quoi, sur quels appareils.
@@ -22,7 +25,7 @@ import { Focusable } from '../components/Focusable';
 export default function CompteScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { user, profile, leaveProfile, logout } = useSession();
+  const { user, profile, profiles, leaveProfile, logout } = useSession();
 
   const providers = useAsync<{ items: ProviderView[] }>(() => api.get('/api/providers'), []);
   const history = useAsync<{ items: HistoryEntry[] }>(() => api.get('/api/me/history?limit=20'), []);
@@ -33,23 +36,21 @@ export default function CompteScreen() {
     router.replace('/profils');
   };
 
-  const confirmLogout = () => {
-    Alert.alert('Se déconnecter ?', 'Vous reviendrez à l’écran de connexion.', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Se déconnecter', style: 'destructive', onPress: () => void logout() },
-    ]);
-  };
+  const confirmLogout = () =>
+    confirmAction({
+      title: 'Se déconnecter ?',
+      message: 'Vous reviendrez à l’écran de connexion.',
+      confirmLabel: 'Se déconnecter',
+      onConfirm: () => void logout(),
+    });
 
-  const revoke = (id: number) => {
-    Alert.alert('Déconnecter cet appareil ?', 'Sa session sera immédiatement révoquée.', [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Déconnecter',
-        style: 'destructive',
-        onPress: () => void api.del(`/api/me/sessions/${id}`).then(() => sessions.reload()),
-      },
-    ]);
-  };
+  const revoke = (id: number) =>
+    confirmAction({
+      title: 'Déconnecter cet appareil ?',
+      message: 'Sa session sera immédiatement révoquée.',
+      confirmLabel: 'Déconnecter',
+      onConfirm: () => void api.del(`/api/me/sessions/${id}`).then(() => sessions.reload()),
+    });
 
   // ------------------------------------------------------------- les cartes
 
@@ -63,6 +64,37 @@ export default function CompteScreen() {
         tone="danger"
         chevron={false}
         onPress={confirmLogout}
+      />
+    </Section>
+  );
+
+  const profilesCard = (
+    <Section title="Profils" icon="people-outline" count={profiles.length}>
+      {profiles.map((p, i) => (
+        <View key={p.id}>
+          {i > 0 ? <Divider /> : null}
+          <Focusable
+            onPress={() => router.push(`/profil/${p.id}`)}
+            style={({ pressed }) => [cs.row, pressed && { opacity: 0.7 }]}
+          >
+            <Avatar avatar={p.avatar} color={p.color} size={30} />
+            <Text style={cs.rowLabel} numberOfLines={1}>
+              {p.name}
+            </Text>
+            {p.isKid ? <Text style={cs.kidBadge}>ENFANT</Text> : null}
+            <View style={{ flex: 1 }} />
+            {p.id === profile?.id ? <Text style={cs.rowValue}>actif</Text> : null}
+            <Ionicons name="chevron-forward" size={18} color={colors.faint} />
+          </Focusable>
+        </View>
+      ))}
+      <Divider />
+      <LinkRow
+        icon="add-circle-outline"
+        iconColor={colors.accent}
+        tone="accent"
+        label="Créer un profil"
+        onPress={() => router.push('/profil/new')}
       />
     </Section>
   );
@@ -146,7 +178,12 @@ export default function CompteScreen() {
   );
 
   const historyCard = (
-    <Section title="Historique" icon="time-outline" count={history.data?.items.length}>
+    <Section
+      title="Historique"
+      icon="time-outline"
+      count={history.data?.items.length}
+      subtitle="Ce que ce profil a commencé à regarder, pour reprendre où il s’était arrêté."
+    >
       {history.loading ? (
         <Loading />
       ) : !history.data?.items.length ? (
@@ -193,40 +230,45 @@ export default function CompteScreen() {
 
   // Deux colonnes dès qu'il y a la place ; sinon une seule, dans l'ordre utile.
   const wide = width >= 760;
-  const left = [compteCard, tagsCard, historyCard];
+  const left = [compteCard, profilesCard, tagsCard, historyCard];
   const right = [devicesCard, sourcesCard];
+  const stacked = [compteCard, profilesCard, tagsCard, sourcesCard, devicesCard, historyCard];
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={cs.content}>
-      <View style={cs.inner}>
-        {profile ? (
-          <View style={cs.hero}>
-            <Avatar avatar={profile.avatar} color={profile.color} size={56} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={cs.name}>{profile.name}</Text>
-              <Text style={styles.dim} numberOfLines={1}>
-                {user?.email}
-              </Text>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <BrandBar />
+      <ScrollView style={styles.screen} contentContainerStyle={cs.content}>
+        <View style={cs.inner}>
+          {profile ? (
+            <View style={cs.hero}>
+              <Avatar avatar={profile.avatar} color={profile.color} size={56} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={cs.name}>{profile.name}</Text>
+                <Text style={styles.dim} numberOfLines={1}>
+                  {user?.email}
+                </Text>
+              </View>
             </View>
-          </View>
-        ) : null}
+          ) : null}
 
-        {wide ? (
-          <View style={cs.columns}>
-            <View style={cs.column}>{left.map((c, i) => wrap(c, `l${i}`))}</View>
-            <View style={cs.column}>{right.map((c, i) => wrap(c, `r${i}`))}</View>
-          </View>
-        ) : (
-          <View>{[compteCard, tagsCard, sourcesCard, devicesCard, historyCard].map((c, i) => wrap(c, `s${i}`))}</View>
-        )}
+          {wide ? (
+            <View style={cs.columns}>
+              <View style={cs.column}>{left.map((c, i) => wrap(c, `l${i}`))}</View>
+              <View style={cs.column}>{right.map((c, i) => wrap(c, `r${i}`))}</View>
+            </View>
+          ) : (
+            <View>{stacked.map((c, i) => wrap(c, `s${i}`))}</View>
+          )}
 
-        <Text style={[styles.faint, { textAlign: 'center', marginTop: 8 }]}>Serveur · {API_URL}</Text>
-        <Text style={[styles.faint, { textAlign: 'center', marginTop: 4 }]}>
-          Le jeton de session vit dans le trousseau sécurisé de l&apos;appareil.
-        </Text>
-        <View style={{ height: 24 }} />
-      </View>
-    </ScrollView>
+          <Text style={[styles.faint, { textAlign: 'center', marginTop: 8 }]}>Serveur · {API_URL}</Text>
+          <Text style={[styles.faint, { textAlign: 'center', marginTop: 4 }]}>
+            Le jeton de session vit dans le trousseau sécurisé de l&apos;appareil.
+          </Text>
+          <View style={{ height: 24 }} />
+        </View>
+      </ScrollView>
+      <AppBottomBar />
+    </View>
   );
 }
 
@@ -359,16 +401,13 @@ function TagsManager() {
     }
   };
 
-  const remove = (tag: Tag) => {
-    Alert.alert('Supprimer cette étiquette ?', `« ${tag.name} » et son contenu seront retirés.`, [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Supprimer',
-        style: 'destructive',
-        onPress: () => void api.del(`/api/me/tags/${tag.id}`).then(() => tags.reload()),
-      },
-    ]);
-  };
+  const remove = (tag: Tag) =>
+    confirmAction({
+      title: 'Supprimer cette étiquette ?',
+      message: `« ${tag.name} » et son contenu seront retirés.`,
+      confirmLabel: 'Supprimer',
+      onConfirm: () => void api.del(`/api/me/tags/${tag.id}`).then(() => tags.reload()),
+    });
 
   return (
     <View>
@@ -563,6 +602,17 @@ const cs = {
   },
   rowLabel: { color: colors.text, fontSize: 15, fontWeight: '600' as const, letterSpacing: -0.2 },
   rowValue: { color: colors.faint, fontSize: 13 },
+  kidBadge: {
+    fontSize: 9,
+    fontWeight: '700' as const,
+    color: colors.gold,
+    letterSpacing: 0.5,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    borderRadius: 5,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
   deviceRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,

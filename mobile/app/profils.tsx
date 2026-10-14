@@ -70,10 +70,10 @@ export default function ProfilesScreen() {
           ))}
         </View>
 
-        {/* La creation et la suppression restent sur le web : elles demandent un
-            clavier et des reglages fins qu'on ne fait pas a la telecommande. */}
+        {/* Création, renommage et suppression se font depuis le compte, une fois
+            un profil choisi — ici on ne fait que « qui regarde ? ». */}
         <Text style={pickerStyles.hint}>
-          Les profils se créent et se modifient depuis le navigateur.
+          Créez et modifiez vos profils depuis le compte, section « Profils ».
         </Text>
       </ScrollView>
     </View>
