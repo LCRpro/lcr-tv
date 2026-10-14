@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   FlatList,
   Modal,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -23,7 +22,7 @@ import {
   type SeriesSummary,
 } from '@iptv/shared';
 import { api, qs } from '../lib/api';
-import { useAsync, useDebounced } from '../lib/hooks';
+import { useAsync } from '../lib/hooks';
 import { colors, gridColumns, onArt, radius, styles } from '../lib/theme';
 import { cardTarget, TV_SAFE } from '../lib/tv';
 import { Card, ChannelCard, Empty, ErrorNotice, Loading } from './ui';
@@ -64,9 +63,7 @@ export function CatalogList({
    * de les mettre au meme endroit, et une seule est retenue a la fois.
    */
   const [categoryId, setCategoryId] = useState<number | 'favorites' | 'watched' | null>(null);
-  const [term, setTerm] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
-  const debounced = useDebounced(term);
 
   const [items, setItems] = useState<Item[]>([]);
   const [total, setTotal] = useState(0);
@@ -86,12 +83,11 @@ export function CatalogList({
           categoryId: typeof categoryId === 'number' ? categoryId : undefined,
           favorites: categoryId === 'favorites' ? true : undefined,
           watched: categoryId === 'watched' ? true : undefined,
-          q: debounced.trim().length >= 2 ? debounced.trim() : undefined,
           limit: PAGE_SIZE,
           offset: nextOffset,
         })}`,
       ),
-    [endpoint, categoryId, debounced],
+    [endpoint, categoryId],
   );
 
   const first = useAsync<Paginated<Item>>(() => query(0), [query]);
@@ -199,19 +195,18 @@ export function CatalogList({
       <Ionicons name="apps" size={16} color={colors.dim} />
     );
 
+  // Les affiches gardent toutes la meme largeur. Une FlatList etire l'element
+  // seul d'une derniere rangee incomplete sur toute la ligne ; on comble donc
+  // cette rangee de cases vides, pour qu'aucune affiche ne soit plus grande.
+  const gridData = useMemo<Array<Item | { spacer: string }>>(() => {
+    if (columns <= 1) return items;
+    const fill = (columns - (items.length % columns)) % columns;
+    if (fill === 0) return items;
+    return [...items, ...Array.from({ length: fill }, (_, k) => ({ spacer: `s${k}` }))];
+  }, [items, columns]);
+
   return (
     <View style={styles.screen}>
-      <View style={{ padding: 12, paddingBottom: 0 }}>
-        <TextInput
-          style={styles.input}
-          placeholder="Filtrer…"
-          placeholderTextColor={colors.dim}
-          autoCapitalize="none"
-          value={term}
-          onChangeText={setTerm}
-        />
-      </View>
-
       {/* Un seul bouton plutot qu'une rangee qui fuit hors de l'ecran : il dit
           la categorie en cours et ouvre la liste entiere d'un geste. */}
       <View style={{ paddingHorizontal: 12, paddingTop: 12 }}>
@@ -292,10 +287,10 @@ export function CatalogList({
         <Empty>Aucun résultat pour ce filtre.</Empty>
       ) : (
         <FlatList
-          data={items}
+          data={gridData}
           key={columns}
           numColumns={columns}
-          keyExtractor={(item) => `${item.type}-${item.id}`}
+          keyExtractor={(item) => ('spacer' in item ? item.spacer : `${item.type}-${item.id}`)}
           contentContainerStyle={{
             padding: 12 + TV_SAFE,
             paddingBottom: 44 + TV_SAFE,
@@ -304,7 +299,10 @@ export function CatalogList({
           onEndReached={() => void loadMore()}
           onEndReachedThreshold={0.5}
           ListFooterComponent={loadingMore ? <Loading /> : null}
-          renderItem={({ item }) => (
+          renderItem={({ item }) =>
+            'spacer' in item ? (
+              <View style={{ flex: 1 }} />
+            ) : (
             <View style={{ flex: 1 }}>
               {item.type === 'live' && (
                 <Focusable

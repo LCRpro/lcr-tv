@@ -16,7 +16,7 @@ import { Focusable } from './Focusable';
  * Le profil actif se reconnaît à sa vignette dans le coin. Sur téléviseur c'est
  * `TopNav` qui reprend le rôle, sections comprises.
  */
-export function BrandBar() {
+export function BrandBar({ onSearch }: { onSearch?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile } = useSession();
@@ -30,7 +30,7 @@ export function BrandBar() {
 
       <View style={{ flex: 1 }} />
 
-      <Focusable onPress={() => router.push('/search')} hitSlop={8}>
+      <Focusable onPress={() => (onSearch ? onSearch() : router.push('/search'))} hitSlop={8}>
         <View style={{ padding: 4 }}>
           <Ionicons name="search" size={21} color={colors.dim} />
         </View>
