@@ -2,8 +2,8 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import type { DeviceSession, HistoryEntry, Profile, ProviderView, Tag } from '@iptv/shared';
-import { api, API_URL } from '../lib/api';
+import type { DeviceSession, Profile, ProviderView, Tag } from '@iptv/shared';
+import { api } from '../lib/api';
 import { useAsync } from '../lib/hooks';
 import { useSession } from '../lib/session';
 import { confirmAction } from '../lib/confirm';
@@ -27,7 +27,6 @@ export default function CompteScreen() {
   const { user, profile, profiles, leaveProfile, logout } = useSession();
 
   const providers = useAsync<{ items: ProviderView[] }>(() => api.get('/api/providers'), []);
-  const history = useAsync<{ items: HistoryEntry[] }>(() => api.get('/api/me/history?limit=20'), []);
   const sessions = useAsync<{ items: DeviceSession[] }>(() => api.get('/api/me/sessions'), []);
   const downloads = useDownloads();
 
@@ -202,7 +201,7 @@ export default function CompteScreen() {
       subtitle="À regarder hors-ligne. Touchez la flèche sur un film ou un épisode pour le prendre."
     >
       {!DOWNLOADS_OK ? (
-        <View style={{ paddingVertical: 14 }}>
+        <View style={{ paddingVertical: 10, paddingHorizontal: 16 }}>
           <Text style={styles.dim}>Le téléchargement hors-ligne se fait depuis l’app mobile.</Text>
         </View>
       ) : downloads.length === 0 ? (
@@ -258,70 +257,11 @@ export default function CompteScreen() {
     </Section>
   );
 
-  const historyCard = (
-    <Section
-      title="Historique"
-      icon="time-outline"
-      count={history.data?.items.length}
-      subtitle="Ce que ce profil a commencé à regarder, pour reprendre où il s’était arrêté."
-    >
-      {history.loading ? (
-        <Loading />
-      ) : !history.data?.items.length ? (
-        <Empty>Rien encore.</Empty>
-      ) : (
-        history.data.items.map((entry, i) => (
-          <View key={`${entry.itemType}-${entry.itemId}`}>
-            {i > 0 ? <Divider /> : null}
-            <View style={cs.deviceRow}>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                {entry.parentLabel ? (
-                  <Text style={styles.dim} numberOfLines={1}>
-                    {entry.parentLabel}
-                  </Text>
-                ) : null}
-                <Text style={cs.rowLabel} numberOfLines={1}>
-                  {entry.label}
-                </Text>
-                <Text style={styles.dim}>
-                  {entry.completed
-                    ? 'Terminé'
-                    : entry.durationSec
-                      ? `${Math.round((entry.positionSec / entry.durationSec) * 100)} %`
-                      : '—'}
-                </Text>
-              </View>
-              <Focusable
-                onPress={() =>
-                  void api
-                    .del(`/api/me/history/${entry.itemType}/${entry.itemId}`)
-                    .then(() => history.reload())
-                }
-                hitSlop={8}
-                style={{ padding: 4 }}
-              >
-                <Ionicons name="close-circle-outline" size={20} color={colors.faint} />
-              </Focusable>
-            </View>
-          </View>
-        ))
-      )}
-    </Section>
-  );
-
   // Deux colonnes dès qu'il y a la place ; sinon une seule, dans l'ordre utile.
   const wide = width >= 760;
-  const left = [compteCard, profilesCard, tagsCard, historyCard];
+  const left = [compteCard, profilesCard, tagsCard];
   const right = [downloadsCard, devicesCard, sourcesCard];
-  const stacked = [
-    compteCard,
-    profilesCard,
-    tagsCard,
-    downloadsCard,
-    sourcesCard,
-    devicesCard,
-    historyCard,
-  ];
+  const stacked = [compteCard, profilesCard, tagsCard, downloadsCard, sourcesCard, devicesCard];
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={cs.content}>
@@ -360,10 +300,6 @@ export default function CompteScreen() {
             <Group items={stacked} />
           )}
 
-          <Text style={[styles.faint, { textAlign: 'center', marginTop: 8 }]}>Serveur · {API_URL}</Text>
-          <Text style={[styles.faint, { textAlign: 'center', marginTop: 4 }]}>
-            Le jeton de session vit dans le trousseau sécurisé de l&apos;appareil.
-          </Text>
           <View style={{ height: 24 }} />
         </View>
       </ScrollView>
@@ -396,13 +332,15 @@ function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
   return (
-    <View>
+    // Ouverte, la section ressort : son fond s'éclaircit et un filet d'accent la
+    // borde à gauche, pour qu'on la distingue d'un coup d'œil des autres rangées.
+    <View style={open ? cs.accOpen : undefined}>
       <Focusable
         onPress={() => setOpen((o) => !o)}
         style={({ pressed }) => [cs.accHeader, pressed && { opacity: 0.6 }]}
       >
         <Ionicons name={icon} size={20} color={open ? colors.accent : colors.dim} />
-        <Text style={cs.accTitle}>{title}</Text>
+        <Text style={[cs.accTitle, open && { color: colors.text }]}>{title}</Text>
         <View style={{ flex: 1 }} />
         {count != null ? <Text style={cs.accCount}>{count}</Text> : null}
         <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={17} color={colors.faint} />
@@ -658,6 +596,9 @@ const cs = {
     overflow: 'hidden' as const,
   },
   groupLine: { height: 1, backgroundColor: colors.border },
+  // La section ouverte prend le ton « surélevé » : plus clair que le fond du
+  // groupe, elle ressort nettement des sections encore repliées.
+  accOpen: { backgroundColor: colors.elevated },
   accHeader: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
@@ -679,9 +620,9 @@ const cs = {
   row: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 11,
+    gap: 12,
     paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
   rowLabel: { color: colors.text, fontSize: 15, fontWeight: '600' as const, letterSpacing: -0.2 },
   rowValue: { color: colors.faint, fontSize: 13 },
@@ -699,9 +640,9 @@ const cs = {
   deviceRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 11,
+    gap: 12,
     paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
 
   tagCreate: {
@@ -709,7 +650,7 @@ const cs = {
     alignItems: 'center' as const,
     gap: 8,
     paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
   },
   tagAdd: {
     width: 48,
