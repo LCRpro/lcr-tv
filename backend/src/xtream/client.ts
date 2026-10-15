@@ -1,3 +1,5 @@
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import { z } from 'zod';
 import { AppError } from '../lib/errors.js';
 import { safeUrl } from '../lib/redact.js';
@@ -50,6 +52,39 @@ export class XtreamClient {
   }
 
   // --------------------------------------------------------------- transport
+
+  /**
+   * Fallback to Node's direct HTTP client when Undici's fetch loses the socket.
+   * Some older Xtream panels/proxies behave differently with Undici. Never log
+   * the raw URL because it contains the account credentials.
+   */
+  private requestWithoutFetch(url: string): Promise<{ status: number; body: string }> {
+    return new Promise((resolve, reject) => {
+      const target = new URL(url);
+      const requestFn = target.protocol === 'https:' ? httpsRequest : httpRequest;
+      const req = requestFn(target, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          Accept: 'application/json, text/plain, */*',
+          'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+          Connection: 'close',
+        },
+      }, (res) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer | string) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+        res.on('end', () => resolve({
+          status: res.statusCode ?? 0,
+          body: Buffer.concat(chunks).toString('utf8'),
+        }));
+        res.on('error', reject);
+      });
+      const timer = setTimeout(() => req.destroy(new Error('HTTP request timed out')), this.timeoutMs);
+      req.on('error', reject);
+      req.on('close', () => clearTimeout(timer));
+      req.end();
+    });
+  }
 
   private async fetchJson(params: Record<string, string | number>): Promise<unknown> {
     const url = playerApiUrl(this.creds, params);
@@ -106,6 +141,32 @@ export class XtreamClient {
         }
       } finally {
         clearTimeout(timer);
+      }
+    }
+
+    // If fetch/Undici was reset, try the same request once with Node's
+    // built-in HTTP client before reporting the provider as unreachable.
+    const errorCode = (lastError as { cause?: { code?: string }; code?: string } | null)?.cause?.code
+      ?? (lastError as { code?: string } | null)?.code;
+    if (errorCode === 'UND_ERR_SOCKET' || errorCode === 'ECONNRESET') {
+      try {
+        const fallback = await this.requestWithoutFetch(url);
+        if (fallback.status >= 200 && fallback.status < 300) {
+          if (!fallback.body.trim()) return null;
+          try {
+            return JSON.parse(fallback.body);
+          } catch {
+            throw new AppError(
+              502,
+              'PROVIDER_UNREACHABLE',
+              `Reponse non JSON du panel sur ${safeUrl(url)}.`,
+            );
+          }
+        }
+        throw new Error(`HTTP ${fallback.status}`);
+      } catch (fallbackError) {
+        if (fallbackError instanceof AppError) throw fallbackError;
+        lastError = fallbackError;
       }
     }
 
