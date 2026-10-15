@@ -5,6 +5,7 @@ import {
   createProvider,
   deleteProvider,
   getActiveProviders,
+  getProvider,
   listProviders,
   providerCredentials,
   providerMutedProfiles,
@@ -13,7 +14,7 @@ import {
   testProvider,
   updateProvider,
 } from '../services/providers.js';
-import { getSyncStatus, runSyncAll } from '../services/sync.js';
+import { getSyncStatus, runSyncAll, runSyncProvider } from '../services/sync.js';
 import { epgCoverage, getEpgStatus, importEpgAll, isEpgRunning } from '../services/epg.js';
 import { AppError } from '../lib/errors.js';
 import { ctx, viewerOf } from '../plugins/auth.js';
@@ -143,6 +144,28 @@ export const providerRoutes: FastifyPluginAsync = async (app) => {
       req.log.error({ err }, 'Synchronisation echouee'),
     );
 
+    return reply.code(202).send(await getSyncStatus(userId));
+  });
+
+  /**
+   * Synchronise **une seule** source — celle qu'on gere.
+   *
+   * Le bouton « Synchroniser » de l'editeur de source ne doit toucher que la
+   * source ouverte, pas relancer tous les abonnements du compte : avec une
+   * autre source injoignable (un mock local eteint, par exemple), la passe
+   * globale faisait remonter une erreur sans rapport avec celle qu'on regarde.
+   */
+  app.post('/:id/sync', async (req, reply) => {
+    const { id } = idParams.parse(req.params);
+    const { withEpisodes } = z
+      .object({ withEpisodes: z.boolean().default(false) })
+      .parse(req.body ?? {});
+    const userId = ctx(req).user.id;
+    // getProvider verifie la propriete : une source d'autrui repond « introuvable ».
+    const provider = await getProvider(id, userId);
+    void runSyncProvider(provider, { withEpisodes, onLog: (m) => req.log.info(m) }).catch((err) =>
+      req.log.error({ err }, 'Synchronisation echouee'),
+    );
     return reply.code(202).send(await getSyncStatus(userId));
   });
 

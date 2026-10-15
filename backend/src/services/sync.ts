@@ -118,30 +118,41 @@ export async function runSyncAll(
       : await listActiveProviders(options.userId);
   for (const provider of active) {
     if (active.length > 1) log(`--- Abonnement "${provider.name}" ---`);
-    /*
-     * Une playlist se synchronise autrement : pas d'API a interroger, un
-     * fichier a telecharger. L'aiguillage est ici plutot que dans `runSync`,
-     * qui n'existe que pour un panel — depuis son verrou par abonnement jusqu'a
-     * ses phases (categories, live, vod, series) dont trois n'ont pas de sens
-     * pour un fichier de chaines.
-     */
-    if (provider.kind === 'm3u') {
-      try {
-        const result = await runM3uSync(provider, { onLog: log });
-        log(
-          `Playlist "${provider.name}" : ${result.live} chaine(s), ` +
-            `${result.categories} categorie(s), ${result.removed} disparue(s).`,
-        );
-      } catch (err) {
-        // Une playlist injoignable ne doit pas empecher les autres sources de
-        // se synchroniser : le catalogue se remplit avec ce qui repond.
-        log(`Playlist "${provider.name}" : ${(err as Error).message}`);
-      }
-      continue;
-    }
-    await runSync(provider, options);
+    await runSyncProvider(provider, options);
   }
   return getSyncStatus();
+}
+
+/**
+ * Synchronise UNE source — panel ou playlist.
+ *
+ * C'est l'unite partagee par la synchro globale (une passe par abonnement
+ * actif) et la synchro a la demande d'une seule source, depuis son editeur.
+ * L'aiguillage est ici plutot que dans `runSync`, qui n'existe que pour un
+ * panel : une playlist se telecharge (pas d'API a interroger, pas de phases
+ * categories/live/vod/series). Une playlist injoignable est journalisee sans
+ * faire echouer l'appelant — dans une passe globale, les autres sources doivent
+ * continuer ; un panel injoignable laisse remonter son echec, consigne dans
+ * l'etat de synchro que l'editeur affiche.
+ */
+export async function runSyncProvider(
+  provider: Provider,
+  options: SyncOptions = {},
+): Promise<void> {
+  const log = options.onLog ?? (() => {});
+  if (provider.kind === 'm3u') {
+    try {
+      const result = await runM3uSync(provider, { onLog: log });
+      log(
+        `Playlist "${provider.name}" : ${result.live} chaine(s), ` +
+          `${result.categories} categorie(s), ${result.removed} disparue(s).`,
+      );
+    } catch (err) {
+      log(`Playlist "${provider.name}" : ${(err as Error).message}`);
+    }
+    return;
+  }
+  await runSync(provider, options);
 }
 
 export async function runSync(

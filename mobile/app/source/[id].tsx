@@ -111,6 +111,7 @@ export default function SourceEditor() {
     if (!canSave) return;
     setBusy(true);
     try {
+      let syncId: number;
       if (isNew) {
         const body =
           kind === 'xtream'
@@ -129,7 +130,8 @@ export default function SourceEditor() {
                 epgUrl: epgUrl.trim() || undefined,
                 isActive: true,
               };
-        await api.post('/api/providers', body);
+        const created = await api.post<{ id: number }>('/api/providers', body);
+        syncId = created.id;
       } else {
         // Seuls les champs renseignés changent ; les identifiants vides gardent les actuels.
         const patch: Record<string, unknown> = {
@@ -143,8 +145,10 @@ export default function SourceEditor() {
           patch.epgUrl = epgUrl.trim();
         }
         await api.patch(`/api/providers/${existing!.id}`, patch);
+        syncId = existing!.id;
       }
-      void api.post('/api/providers/sync').catch(() => {});
+      // On ne resynchronise que CETTE source, pas tous les abonnements du compte.
+      void api.post(`/api/providers/${syncId}/sync`).catch(() => {});
       toastOk(isNew ? 'Source ajoutée' : 'Source enregistrée');
       router.back();
     } catch (err) {
@@ -173,17 +177,19 @@ export default function SourceEditor() {
   };
 
   /**
-   * Relance la synchronisation du catalogue, à la demande.
+   * Relance la synchronisation de CETTE source, à la demande.
    *
-   * Elle tourne pour tous les abonnements du compte et dure plusieurs minutes :
-   * le serveur répond aussitôt (202), on confirme juste qu'elle est lancée, puis
-   * on recharge l'état de la source une fois pour refléter la reprise.
+   * Seule la source ouverte est resynchronisée — pas les autres abonnements du
+   * compte. C'est ce qu'on attend du bouton d'un éditeur de source : une source
+   * injoignable ailleurs (un mock local éteint…) ne doit pas polluer celle-ci.
+   * Le serveur répond aussitôt (202), puis on suit la progression et on recharge
+   * l'état à la fin.
    */
   const syncNow = async () => {
-    if (syncing) return;
+    if (syncing || !existing) return;
     setSyncStatus(null);
     try {
-      const st = await api.post<SyncStatus>('/api/providers/sync');
+      const st = await api.post<SyncStatus>(`/api/providers/${existing.id}/sync`);
       setSyncStatus(st);
       setSyncing(true); // déclenche le suivi ci-dessous
     } catch (err) {
