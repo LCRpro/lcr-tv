@@ -55,13 +55,25 @@ export class XtreamClient {
     const url = playerApiUrl(this.creds, params);
     let lastError: unknown;
 
+    // Certains panels Xtream ferment les connexions selon le User-Agent.
+    // On varie l'identification lors des tentatives, sans changer l'URL ni les identifiants.
+    const userAgents = [
+      'IPTV-Personal/1.0',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'Dalvik/2.1.0 (Linux; U; Android 13; IPTV Player)',
+    ];
+
     for (let attempt = 0; attempt <= this.retries; attempt += 1) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), this.timeoutMs);
       try {
         const res = await fetch(url, {
           signal: controller.signal,
-          headers: { 'User-Agent': 'IPTV-Personal/1.0', Accept: 'application/json' },
+          headers: {
+            'User-Agent': userAgents[attempt % userAgents.length]!,
+            Accept: 'application/json, text/plain, */*',
+            'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+          },
         });
         if (!res.ok) {
           // 4xx cote panel : inutile de reessayer.
